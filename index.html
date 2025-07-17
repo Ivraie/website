@@ -295,10 +295,16 @@
                     <label for="damping">Damping <span id="dampingValue" class="value-display">0.918</span></label>
                     <input type="range" id="damping" min="0.9" max="0.999" step="0.001" value="0.918" />
                 </div>
+                <!-- START: REPLACED CHECKBOX WITH SELECTOR -->
                 <div>
-                    <input type="checkbox" id="useAccelerometer" checked/>
-                    <label for="useAccelerometer" class="checkbox-label">Use Accelerometer</label>
+                    <label for="gravitySource">Gravity Source</label>
+                    <select id="gravitySource">
+                        <option value="fixed" selected>Slider (Fixed)</option>
+                        <option value="motion">Device Motion</option>
+                        <option value="orientation">Device Orientation</option>
+                    </select>
                 </div>
+                <!-- END: REPLACED CHECKBOX WITH SELECTOR -->
                 <div>
                     <label for="gravity" id="gravityLabel">Gravity <span id="gravityValue" class="value-display">0.03</span></label>
                     <input type="range" id="gravity" min="0" max="0.5" step="0.01" value="0.03" />
@@ -381,7 +387,6 @@
 
         let frameCount = 0, lastFpsUpdateTime = 0, fps = 0;
 
-        // --- Default values from image ---
         let creatureShape = 'grid', pointDensity = 13, numFeet = 2, restLengthFactor = 1.0, useRandomPlacement = false;
         let damping = 0.918, springStiffness = 0.21, gravity = 0.03, shiverIntensityFactor = 0.5, shiverPropagationFactor = 0.95;
         let numSeekingFeet = 1, footCoordinationFactor = 0.0, stepCooldown = 10, stepDuration = 120, stepHeight = 30, wobbleStrength = 10, targetAttraction = 0.05;
@@ -396,7 +401,6 @@
         let pointBaseSize = 1.3;
         let letterToDraw = 'i';
 
-        let useAccelerometer = false;
         let gravityX = 0;
         let gravityY = gravity;
 
@@ -585,104 +589,85 @@
         function animate() { frameCount++; const currentTime = performance.now(); const deltaTime = currentTime - lastFpsUpdateTime; if (deltaTime > 1000) { fps = Math.round((frameCount * 1000) / deltaTime); if (fpsCounterElement) { fpsCounterElement.textContent = fps; } frameCount = 0; lastFpsUpdateTime = currentTime; } update(); draw(); requestAnimationFrame(animate); }
         function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'damping') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = isFloat ? value.toFixed(precision) : value; } if (requiresReset) { init(); } }); }
         function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
-       
-        function handleMotionEventIOP(event) {
-            console.log("Device motion event received:", event);
-        const x = event.accelerationIncludingGravity.x;
-        const y = event.accelerationIncludingGravity.y;
-        const z = event.accelerationIncludingGravity.z;
 
-        // Do something awesome.
-        console.log("x:", x, "y:", y, "z:", z);
-        }
-
-        window.addEventListener("deviceorientation", (event) => {
-             console.log(`${event.alpha} : ${event.beta} : ${event.gamma}`);
-        });
-
-        window.addEventListener("devicemotion", handleMotionEventIOP, true);
-
-
-        // START: MODIFIED ACCELEROMETER LOGIC
+        // START: MODIFIED/NEW GRAVITY CONTROL LOGIC
         function handleMotionEvent(event) {
-            alert("Device motion event received:" + JSON.stringify(event, null, 2));
-            if (event.accelerationIncludingGravity.x === null || event.accelerationIncludingGravity.y === null) {
-                console.warn("Accelerometer data is null. Stopping updates.");
-                window.removeEventListener('devicemotion', handleMotionEvent);
-                return;
-            }
-
+            if (event.accelerationIncludingGravity.x === null || event.accelerationIncludingGravity.y === null) return;
             const rawX = event.accelerationIncludingGravity.x;
             const rawY = event.accelerationIncludingGravity.y;
-            const sensitivity = gravity / 9.8; // Normalize and apply sensitivity
-
-            // The accelerometer's coordinate system is fixed to the device.
-            // The screen's coordinate system rotates. We must compensate.
-            // A 'switch' on window.orientation is a robust way to handle this.
+            const sensitivity = gravity / 9.8;
             switch (window.orientation) {
-                case 90: // Landscape, rotated counter-clockwise
-                    gravityX = rawY * sensitivity;
-                    gravityY = -rawX * sensitivity;
-                    break;
-
-                case -90: // Landscape, rotated clockwise
-                    gravityX = -rawY * sensitivity;
-                    gravityY = rawX * sensitivity;
-                    break;
-                
-                case 180: // Portrait, upside down
-                    gravityX = -rawX * sensitivity;
-                    gravityY = -rawY * sensitivity;
-                    break;
-
-                case 0: // Portrait, normal
-                default:
-                    // The device's Y-axis points "up", but the canvas's Y-axis points "down".
-                    // So we must invert the Y-axis reading.
-                    gravityX = rawX * sensitivity;
-                    gravityY = rawY * sensitivity; // Note: Original was wrong, this is correct for portrait
-                    break;
+                case 90: gravityX = rawY * sensitivity; gravityY = -rawX * sensitivity; break;
+                case -90: gravityX = -rawY * sensitivity; gravityY = rawX * sensitivity; break;
+                case 180: gravityX = -rawX * sensitivity; gravityY = -rawY * sensitivity; break;
+                case 0: default: gravityX = rawX * sensitivity; gravityY = rawY * sensitivity; break;
+            }
+        }
+        
+        function handleOrientationEvent(event) {
+            if (event.beta === null || event.gamma === null) return;
+            const DEG_TO_RAD = Math.PI / 180;
+            // Convert tilt angles to a force vector, scaled by the sensitivity slider
+            const tiltX = Math.sin(event.gamma * DEG_TO_RAD) * gravity; // gamma is side-to-side (roll)
+            const tiltY = Math.sin(event.beta * DEG_TO_RAD) * gravity; // beta is front-to-back (pitch)
+            switch (window.orientation) {
+                case 90: gravityX = tiltY; gravityY = -tiltX; break;
+                case -90: gravityX = -tiltY; gravityY = tiltX; break;
+                case 180: gravityX = -tiltX; gravityY = -tiltY; break;
+                case 0: default: gravityX = tiltX; gravityY = tiltY; break;
             }
         }
 
-        function setupAccelerometerControls() {
-            const checkbox = document.getElementById('useAccelerometer');
+        function setupGravityControls() {
+            const sourceSelector = document.getElementById('gravitySource');
             const gravityLabel = document.getElementById('gravityLabel');
-            if (!checkbox || !gravityLabel) return;
+            if (!sourceSelector || !gravityLabel) return;
 
-            const originalLabelText = gravityLabel.childNodes[0].nodeValue;
-
-            checkbox.addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                useAccelerometer = isChecked;
-
-                if (isChecked) {
-                    gravityLabel.childNodes[0].nodeValue = "Gravity Sensitivity ";
-                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                        DeviceMotionEvent.requestPermission()
-                            .then(permissionState => {
-                                if (permissionState === 'granted') {
-                                    window.addEventListener('devicemotion', handleMotionEvent);
-                                } else {
-                                    alert("Permission for accelerometer was denied.");
-                                    checkbox.checked = false;
-                                    useAccelerometer = false;
-                                    gravityLabel.childNodes[0].nodeValue = originalLabelText;
-                                }
-                            })
-                            .catch(console.error);
-                    } else {
-                        window.addEventListener('devicemotion', handleMotionEvent);
-                    }
+            const requestMotionPermissions = (addListenersCallback) => {
+                // For iOS 13+, we must request permission for both event types
+                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    DeviceMotionEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                addListenersCallback();
+                            } else {
+                                alert("Permission for device motion/orientation was denied.");
+                                sourceSelector.value = 'fixed';
+                                sourceSelector.dispatchEvent(new Event('change'));
+                            }
+                        })
+                        .catch(console.error);
                 } else {
-                    gravityLabel.childNodes[0].nodeValue = originalLabelText;
-                    window.removeEventListener('devicemotion', handleMotionEvent);
+                    addListenersCallback(); // For other devices that don't need explicit permission
+                }
+            };
+
+            sourceSelector.addEventListener('change', (e) => {
+                // Clear any existing listeners first
+                window.removeEventListener('devicemotion', handleMotionEvent);
+                window.removeEventListener('deviceorientation', handleOrientationEvent);
+
+                const source = e.target.value;
+
+                if (source === 'fixed') {
+                    gravityLabel.childNodes[0].nodeValue = "Gravity ";
                     gravityX = 0;
-                    gravityY = gravity; // Revert to slider-based gravity
+                    gravityY = gravity;
+                } else {
+                    gravityLabel.childNodes[0].nodeValue = "Gravity Sensitivity ";
+                    if (source === 'motion') {
+                        requestMotionPermissions(() => {
+                            window.addEventListener('devicemotion', handleMotionEvent);
+                        });
+                    } else if (source === 'orientation') {
+                        requestMotionPermissions(() => {
+                            window.addEventListener('deviceorientation', handleOrientationEvent);
+                        });
+                    }
                 }
             });
         }
-        // END: MODIFIED ACCELEROMETER LOGIC
+        // END: MODIFIED/NEW GRAVITY CONTROL LOGIC
 
         function setupShapeSelector() {
             const selector = document.getElementById('creatureShape');
@@ -792,7 +777,7 @@
         setupSlider('restLength', 'restLengthValue', (val) => { restLengthFactor = val; });
         setupSlider('gravity', 'gravityValue', (val) => {
              gravity = val;
-             if (!useAccelerometer) {
+             if (document.getElementById('gravitySource').value === 'fixed') {
                 gravityY = gravity;
                 gravityX = 0;
              }
@@ -821,7 +806,7 @@
         setupTendrilControls();
         setupAppearanceControls();
         setupToggleControlsButton();
-        setupAccelerometerControls();
+        setupGravityControls(); // Replaced the old call
 
         window.addEventListener('resize', handleResize);
         handleResize();
