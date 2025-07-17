@@ -127,7 +127,6 @@
         input[type="text"] { font-size: 1.2rem; text-align: center; font-weight: bold; text-transform: uppercase; }
         .value-display { float: right; font-weight: bold; color: #4a47a3; }
 
-        /* --- ADDED STYLES FOR FOOTER --- */
         footer {
             position: fixed;
             bottom: 20px;
@@ -135,10 +134,10 @@
             width: 100%;
             text-align: center;
             z-index: 5;
-            pointer-events: none; /* Let clicks pass through the container */
+            pointer-events: none;
         }
         footer a {
-            pointer-events: auto; /* Make the links themselves clickable */
+            pointer-events: auto;
             color: #1c1c2e;
             text-decoration: none;
             margin: 0 15px;
@@ -157,11 +156,39 @@
             border-color: rgba(0,0,0,0.15);
             transform: translateY(-2px);
         }
+        
+        /* START: ADDED STYLES FOR MOTION PROMPT */
+        #motion-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            z-index: 100;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        #motion-prompt.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(20px);
+        }
+        /* END: ADDED STYLES FOR MOTION PROMPT */
     </style>
 </head>
 <body>
-    <button id="toggleControlsBtn" title="Toggle Controls">
-    </button>
+    <!-- START: ADDED MOTION PROMPT ELEMENT -->
+    <div id="motion-prompt" class="hidden">Tap to enable motion controls</div>
+    <!-- END: ADDED MOTION PROMPT ELEMENT -->
+    
+    <button id="toggleControlsBtn" title="Toggle Controls"></button>
     <canvas id="canvas"></canvas>
     <div id="title-container"><h1>Ivraie</h1></div>
 
@@ -295,7 +322,6 @@
                     <label for="damping">Damping <span id="dampingValue" class="value-display">0.918</span></label>
                     <input type="range" id="damping" min="0.9" max="0.999" step="0.001" value="0.918" />
                 </div>
-                <!-- START: REPLACED CHECKBOX WITH SELECTOR -->
                 <div>
                     <label for="gravitySource">Gravity Source</label>
                     <select id="gravitySource">
@@ -304,7 +330,6 @@
                         <option value="orientation">Device Orientation</option>
                     </select>
                 </div>
-                <!-- END: REPLACED CHECKBOX WITH SELECTOR -->
                 <div>
                     <label for="gravity" id="gravityLabel">Gravity <span id="gravityValue" class="value-display">0.03</span></label>
                     <input type="range" id="gravity" min="0" max="0.5" step="0.01" value="0.03" />
@@ -590,7 +615,6 @@
         function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'damping') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = isFloat ? value.toFixed(precision) : value; } if (requiresReset) { init(); } }); }
         function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
 
-        // START: MODIFIED/NEW GRAVITY CONTROL LOGIC
         function handleMotionEvent(event) {
             if (event.accelerationIncludingGravity.x === null || event.accelerationIncludingGravity.y === null) return;
             const rawX = event.accelerationIncludingGravity.x;
@@ -607,9 +631,8 @@
         function handleOrientationEvent(event) {
             if (event.beta === null || event.gamma === null) return;
             const DEG_TO_RAD = Math.PI / 180;
-            // Convert tilt angles to a force vector, scaled by the sensitivity slider
-            const tiltX = Math.sin(event.gamma * DEG_TO_RAD) * gravity; // gamma is side-to-side (roll)
-            const tiltY = Math.sin(event.beta * DEG_TO_RAD) * gravity; // beta is front-to-back (pitch)
+            const tiltX = Math.sin(event.gamma * DEG_TO_RAD) * gravity;
+            const tiltY = Math.sin(event.beta * DEG_TO_RAD) * gravity;
             switch (window.orientation) {
                 case 90: gravityX = tiltY; gravityY = -tiltX; break;
                 case -90: gravityX = -tiltY; gravityY = tiltX; break;
@@ -623,27 +646,7 @@
             const gravityLabel = document.getElementById('gravityLabel');
             if (!sourceSelector || !gravityLabel) return;
 
-            const requestMotionPermissions = (addListenersCallback) => {
-                // For iOS 13+, we must request permission for both event types
-                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                    DeviceMotionEvent.requestPermission()
-                        .then(permissionState => {
-                            if (permissionState === 'granted') {
-                                addListenersCallback();
-                            } else {
-                                alert("Permission for device motion/orientation was denied.");
-                                sourceSelector.value = 'fixed';
-                                sourceSelector.dispatchEvent(new Event('change'));
-                            }
-                        })
-                        .catch(console.error);
-                } else {
-                    addListenersCallback(); // For other devices that don't need explicit permission
-                }
-            };
-
             sourceSelector.addEventListener('change', (e) => {
-                // Clear any existing listeners first
                 window.removeEventListener('devicemotion', handleMotionEvent);
                 window.removeEventListener('deviceorientation', handleOrientationEvent);
 
@@ -655,19 +658,66 @@
                     gravityY = gravity;
                 } else {
                     gravityLabel.childNodes[0].nodeValue = "Gravity Sensitivity ";
-                    if (source === 'motion') {
-                        requestMotionPermissions(() => {
-                            window.addEventListener('devicemotion', handleMotionEvent);
-                        });
-                    } else if (source === 'orientation') {
-                        requestMotionPermissions(() => {
-                            window.addEventListener('deviceorientation', handleOrientationEvent);
-                        });
-                    }
+                    // This function handles the permission request and adding the listeners
+                    requestAndStartMotion(source, sourceSelector);
                 }
             });
         }
-        // END: MODIFIED/NEW GRAVITY CONTROL LOGIC
+        
+        // START: NEW FUNCTIONS FOR AUTO-DEFAULTING TO MOTION CONTROLS
+        function requestAndStartMotion(source, sourceSelector) {
+            const addListeners = () => {
+                if (source === 'motion') {
+                    window.addEventListener('devicemotion', handleMotionEvent);
+                } else if (source === 'orientation') {
+                    window.addEventListener('deviceorientation', handleOrientationEvent);
+                }
+            };
+            
+            // For iOS 13+, we must request permission.
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            addListeners();
+                        } else {
+                            alert("Permission for device motion was denied.");
+                            // Revert the UI if permission is denied
+                            if (sourceSelector) {
+                                sourceSelector.value = 'fixed';
+                                sourceSelector.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                addListeners(); // For other devices that don't need explicit permission.
+            }
+        }
+        
+        function initializeMotionAsDefault() {
+            const sourceSelector = document.getElementById('gravitySource');
+            const motionPrompt = document.getElementById('motion-prompt');
+
+            // Check if device likely has motion sensors. This check covers modern iOS
+            // and most Android devices.
+            const hasMotionSupport = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') || ('ondevicemotion' in window);
+
+            if (hasMotionSupport) {
+                motionPrompt.classList.remove('hidden');
+                
+                // When user taps the prompt, try to activate motion controls.
+                // We use { once: true } so this event only fires one time.
+                motionPrompt.addEventListener('click', () => {
+                    motionPrompt.classList.add('hidden');
+                    // Programmatically set the selector and dispatch the change event
+                    // to trigger the setup logic in our existing event handler.
+                    sourceSelector.value = 'motion';
+                    sourceSelector.dispatchEvent(new Event('change'));
+                }, { once: true });
+            }
+        }
+        // END: NEW FUNCTIONS
 
         function setupShapeSelector() {
             const selector = document.getElementById('creatureShape');
@@ -707,7 +757,7 @@
                     if(parseInt(densitySlider.value) < 5) densitySlider.value = 5;
                 }
                 densityValue.textContent = densitySlider.value;
-                pointDensity = parseInt(densitySlider.value);
+                pointDensity = parseInt(slider.value);
                 init();
             });
             letterInput.addEventListener('input', () => { init(); });
@@ -806,10 +856,12 @@
         setupTendrilControls();
         setupAppearanceControls();
         setupToggleControlsButton();
-        setupGravityControls(); // Replaced the old call
+        setupGravityControls();
 
         window.addEventListener('resize', handleResize);
         handleResize();
+        
+        initializeMotionAsDefault(); // Try to set up motion controls by default.
 
         animate();
     </script>
