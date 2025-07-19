@@ -61,7 +61,7 @@
 
         .main-content {
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
             align-items: flex-start;
             width: 100%;
         }
@@ -115,7 +115,7 @@
             background: #000; border-radius: 50%;
             cursor: pointer; border: 2px solid #f4f4f9;
         }
-        select, input[type="text"] {
+        select, input[type="text"], button.control-button {
             width: 100%;
             padding: 8px;
             background: rgba(0,0,0,0.02);
@@ -126,6 +126,13 @@
         }
         input[type="text"] { font-size: 1.2rem; text-align: center; font-weight: bold; text-transform: uppercase; }
         .value-display { float: right; font-weight: bold; color: #4a47a3; }
+        button.control-button {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button.control-button:hover {
+            background-color: rgba(0,0,0,0.08);
+        }
 
         footer {
             position: fixed;
@@ -180,7 +187,6 @@
             transform: translateX(-50%) translateY(20px);
         }
         
-        /* START: ADDED STYLES FOR DEBUG INFO */
         #debug-info {
             background: rgba(0,0,0,0.03);
             border: 1px solid rgba(0,0,0,0.1);
@@ -198,8 +204,6 @@
             font-weight: bold;
             color: #d62828;
         }
-        /* END: ADDED STYLES FOR DEBUG INFO */
-
     </style>
 </head>
 <body>
@@ -336,8 +340,8 @@
                     <input type="range" id="stiffness" min="0.01" max="0.3" step="0.01" value="0.21" />
                 </div>
                 <div>
-                    <label for="damping">Damping <span id="dampingValue" class="value-display">0.918</span></label>
-                    <input type="range" id="damping" min="0.9" max="0.999" step="0.001" value="0.918" />
+                    <label for="dampingFactor">Damping <span id="dampingFactorValue" class="value-display">0.082</span></label>
+                    <input type="range" id="dampingFactor" min="0.001" max="0.1" step="0.001" value="0.082" />
                 </div>
                 <div>
                     <label for="gravitySource">Gravity Source</label>
@@ -349,15 +353,15 @@
                 </div>
                 <div>
                     <label for="gravity" id="gravityLabel">Gravity <span id="gravityValue" class="value-display">0.03</span></label>
-                    <input type="range" id="gravity" min="0" max="0.5" step="0.01" value="0.03" />
+                    <input type="range" id="gravity" min="-0.5" max="0.5" step="0.01" value="0.03" />
                 </div>
                  <div>
                     <label for="shiverIntensity">Shiver Intensity <span id="shiverIntensityValue" class="value-display">0.50</span></label>
                     <input type="range" id="shiverIntensity" min="-3.0" max="3.0" step="0.01" value="0.5" />
                 </div>
                  <div>
-                    <label for="shiverPropagation">Shiver Propagation <span id="shiverPropagationValue" class="value-display">0.95</span></label>
-                    <input type="range" id="shiverPropagation" min="0" max="2" step="0.01" value="0.95" />
+                    <label for="shiverPropagation">Shiver Propagation <span id="shiverPropagationValue" class="value-display">0.85</span></label>
+                    <input type="range" id="shiverPropagation" min="0" max="0.9" step="0.01" value="0.85" />
                 </div>
                 <div>
                     <label>Gravity Direction</label>
@@ -365,7 +369,6 @@
                         <canvas id="gravity-indicator-canvas" width="80" height="80" style="border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; background: #fdfdfd;"></canvas>
                     </div>
                 </div>
-                <!-- START: ADDED DEBUG INFO CONTAINER -->
                 <div id="debug-info-container" style="margin-top: 15px;">
                     <label>Debug Info</label>
                     <div id="debug-info">
@@ -376,7 +379,6 @@
                         <p>Gravity X|Y: <span id="debug-gravity-x">--</span> | <span id="debug-gravity-y">--</span></p>
                     </div>
                 </div>
-                <!-- END: ADDED DEBUG INFO CONTAINER -->
             </div>
             <div class="control-group">
                 <h3>Foot Behavior</h3>
@@ -428,6 +430,9 @@
                         <span id="fpsCounter" class="value-display">--</span>
                     </label>
                 </div>
+                <div style="margin-top: 15px;">
+                    <button id="reset-settings-btn" class="control-button">Reset to Defaults</button>
+                </div>
             </div>
         </div>
     </main>
@@ -444,7 +449,6 @@
         const gravityIndicatorCanvas = document.getElementById('gravity-indicator-canvas');
         const gravityIndicatorCtx = gravityIndicatorCanvas.getContext('2d');
         
-        // START: GET DEBUG INFO ELEMENTS
         const debugStatus = document.getElementById('debug-status');
         const debugOrientation = document.getElementById('debug-orientation');
         const debugAccelX = document.getElementById('debug-accel-x');
@@ -454,48 +458,115 @@
         const debugOrientGamma = document.getElementById('debug-orient-gamma');
         const debugGravityX = document.getElementById('debug-gravity-x');
         const debugGravityY = document.getElementById('debug-gravity-y');
-        // END: GET DEBUG INFO ELEMENTS
 
         let points = [], springs = [], feet = [];
         let time = 0, nextFootToWake = 0;
-
         let frameCount = 0, lastFpsUpdateTime = 0, fps = 0;
+        let gravityX = 0, gravityY = 0;
 
-        let creatureShape = 'grid', pointDensity = 13, numFeet = 2, restLengthFactor = 1.0, useRandomPlacement = false;
-        let damping = 0.918, springStiffness = 0.21, gravity = 0.03, shiverIntensityFactor = 0.5, shiverPropagationFactor = 0.95;
-        let numSeekingFeet = 1, footCoordinationFactor = 0.0, stepCooldown = 10, stepDuration = 120, stepHeight = 30, wobbleStrength = 10, targetAttraction = 0.05;
-        let gaitPattern = 'sequential', footPairs = [], nextPairToWake = 0, gaitActivationQueue = [], waveDelay = 5;
-
-        let enableTendrils = true, numTendrils = 10, tendrilLength = 5, tendrilStiffness = 0.1, placeFeetOnTendrils = true;
-        let tendrilPlacementMode = 'count', tendrilDensity = 0.1, tendrilQuality = 1.0, tendrilLengthVariation = 0;
-
-        let enableRigidCore = false, rigidCoreRadius = 50, rigidSectionStiffness = 0.8;
-
-        let drawMode = 'point';
-        let pointBaseSize = 1.3;
-        let letterToDraw = 'i';
-
-        let gravityX = 0;
-        let gravityY = gravity;
+        let config = {
+            creatureShape: 'grid',
+            letterInput: 'A',
+            pointDensity: 13,
+            numFeet: 2,
+            restLengthFactor: 1.0,
+            useRandomPlacement: false,
+            drawMode: 'point',
+            pointBaseSize: 1.3,
+            letterToDraw: 'i',
+            enableRigidCore: false,
+            rigidCoreRadius: 50,
+            rigidSectionStiffness: 0.8,
+            enableTendrils: true,
+            tendrilPlacementMode: 'count',
+            numTendrils: 10,
+            tendrilDensity: 0.1,
+            tendrilLength: 5,
+            tendrilQuality: 1.0,
+            tendrilLengthVariation: 0,
+            tendrilStiffness: 0.1,
+            placeFeetOnTendrils: true,
+            springStiffness: 0.21,
+            dampingFactor: 0.082,
+            gravity: 0.03,
+            shiverIntensityFactor: 0.5,
+            shiverPropagationFactor: 0.85,
+            gaitPattern: 'sequential',
+            numSeekingFeet: 1,
+            waveDelay: 5,
+            footCoordinationFactor: 0.0,
+            stepCooldown: 10,
+            targetAttraction: 0.05,
+            stepDuration: 120,
+            stepHeight: 30,
+            wobbleStrength: 10,
+        };
 
         const FOOT_STATES = { FIXED: 0, SEEKING: 1, SETTLING: 2 };
         const HIGH_DENSITY_THRESHOLD = 200;
 
-        function activateFoot(foot) { if (foot && foot.footState === FOOT_STATES.FIXED) { const randomTarget = foot.getRandomEdgeTarget(); const coordinatedTarget = foot.getCoordinatedTarget(); const finalX = randomTarget.x * (1 - footCoordinationFactor) + coordinatedTarget.x * footCoordinationFactor; const finalY = randomTarget.y * (1 - footCoordinationFactor) + coordinatedTarget.y * footCoordinationFactor; foot.targetPos = { x: finalX, y: finalY }; foot.footState = FOOT_STATES.SEEKING; foot.stepStartTime = time; return true; } return false; }
+        function saveConfig() {
+            try {
+                localStorage.setItem('ivraie-config', JSON.stringify(config));
+            } catch (e) {
+                console.error("Failed to save config to localStorage:", e);
+            }
+        }
+
+        function loadConfig() {
+            try {
+                const savedConfig = localStorage.getItem('ivraie-config');
+                if (savedConfig) {
+                    const parsedConfig = JSON.parse(savedConfig);
+                    config = { ...config, ...parsedConfig };
+                }
+            } catch (e) {
+                console.error("Failed to load config from localStorage:", e);
+            }
+        }
+
+        function applyConfigToUI() {
+            for (const key in config) {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = config[key];
+                    } else {
+                        element.value = config[key];
+                    }
+                    element.dispatchEvent(new Event('input', { bubbles:true }));
+                    element.dispatchEvent(new Event('change', { bubbles:true }));
+                }
+            }
+            document.getElementById('letterInput').value = config.letterInput;
+        }
+
+        function setupResetButton() {
+            const resetButton = document.getElementById('reset-settings-btn');
+            resetButton.addEventListener('click', () => {
+                if(confirm('Are you sure you want to reset all settings to their defaults?')) {
+                    localStorage.removeItem('ivraie-config');
+                    location.reload();
+                }
+            });
+        }
+
+        function activateFoot(foot) { if (foot && foot.footState === FOOT_STATES.FIXED) { const randomTarget = foot.getRandomEdgeTarget(); const coordinatedTarget = foot.getCoordinatedTarget(); const finalX = randomTarget.x * (1 - config.footCoordinationFactor) + coordinatedTarget.x * config.footCoordinationFactor; const finalY = randomTarget.y * (1 - config.footCoordinationFactor) + coordinatedTarget.y * config.footCoordinationFactor; foot.targetPos = { x: finalX, y: finalY }; foot.footState = FOOT_STATES.SEEKING; foot.stepStartTime = time; return true; } return false; }
         function processGaitQueue() { if (gaitActivationQueue.length === 0) return; for (let i = gaitActivationQueue.length - 1; i >= 0; i--) { const item = gaitActivationQueue[i]; item.delay--; if (item.delay <= 0) { activateFoot(item.foot); gaitActivationQueue.splice(i, 1); } } }
-        function wakeNextMovers(triggeringFoot = null) { switch (gaitPattern) { case 'paired': if (footPairs.length === 0) return; for (let i = 0; i < footPairs.length; i++) { const pairIndex = (nextPairToWake + i) % footPairs.length; const pair = footPairs[pairIndex]; if (pair.every(foot => foot.footState === FOOT_STATES.FIXED)) { for (const foot of pair) activateFoot(foot); nextPairToWake = (pairIndex + 1) % footPairs.length; return; } } break; case 'sidewinder': if (feet.length === 0 || gaitActivationQueue.length > 0) return; let centerX = 0; for (const p of points) centerX += p.x; centerX /= points.length; const triggerSide = triggeringFoot ? (triggeringFoot.x < centerX ? 'left' : 'right') : 'right'; const sideToWake = triggerSide === 'left' ? 'right' : 'left'; let feetToWake = feet.filter(foot => { const footSide = foot.x < centerX ? 'left' : 'right'; return footSide === sideToWake && foot.footState === FOOT_STATES.FIXED; }); if (feetToWake.length === 0) { feetToWake = feet.filter(foot => foot.footState === FOOT_STATES.FIXED); } feetToWake.sort((a, b) => a.y - b.y); for (let i = 0; i < feetToWake.length; i++) { gaitActivationQueue.push({ foot: feetToWake[i], delay: i * waveDelay }); } break; case 'sequential': default: if (feet.length === 0) return; for (let i = 0; i < feet.length; i++) { nextFootToWake = (nextFootToWake + 1) % feet.length; if (activateFoot(feet[nextFootToWake])) break; } break; } }
+        function wakeNextMovers(triggeringFoot = null) { switch (config.gaitPattern) { case 'paired': if (footPairs.length === 0) return; for (let i = 0; i < footPairs.length; i++) { const pairIndex = (nextPairToWake + i) % footPairs.length; const pair = footPairs[pairIndex]; if (pair.every(foot => foot.footState === FOOT_STATES.FIXED)) { for (const foot of pair) activateFoot(foot); nextPairToWake = (pairIndex + 1) % footPairs.length; return; } } break; case 'sidewinder': if (feet.length === 0 || gaitActivationQueue.length > 0) return; let centerX = 0; for (const p of points) centerX += p.x; centerX /= points.length; const triggerSide = triggeringFoot ? (triggeringFoot.x < centerX ? 'left' : 'right') : 'right'; const sideToWake = triggerSide === 'left' ? 'right' : 'left'; let feetToWake = feet.filter(foot => { const footSide = foot.x < centerX ? 'left' : 'right'; return footSide === sideToWake && foot.footState === FOOT_STATES.FIXED; }); if (feetToWake.length === 0) { feetToWake = feet.filter(foot => foot.footState === FOOT_STATES.FIXED); } feetToWake.sort((a, b) => a.y - b.y); for (let i = 0; i < feetToWake.length; i++) { gaitActivationQueue.push({ foot: feetToWake[i], delay: i * config.waveDelay }); } break; case 'sequential': default: if (feet.length === 0) return; for (let i = 0; i < feet.length; i++) { nextFootToWake = (nextFootToWake + 1) % feet.length; if (activateFoot(feet[nextFootToWake])) break; } break; } }
         class SpatialHashGrid { constructor(bounds, cellSize) { this.bounds = bounds; this.cellSize = cellSize; this.cols = Math.ceil(bounds.width / cellSize); this.rows = Math.ceil(bounds.height / cellSize); this.grid = new Map(); } _getKey(x, y) { return `${x}|${y}`; } insert(point, index) { const cx = Math.floor(point.x / this.cellSize); const cy = Math.floor(point.y / this.cellSize); const key = this._getKey(cx, cy); if (!this.grid.has(key)) { this.grid.set(key, []); } this.grid.get(key).push({ point, index }); } query(point, radius) { const nearby = []; const r = radius / this.cellSize; const cx = Math.floor(point.x / this.cellSize); const cy = Math.floor(point.y / this.cellSize); for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) { for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) { const key = this._getKey(x, y); if (this.grid.has(key)) { nearby.push(...this.grid.get(key)); } } } return nearby; } }
         class Point { constructor(x, y, isFoot = false) { this.x = this.oldX = x; this.y = this.oldY = y; this.isFoot = isFoot; this.isHair = false; this.footState = isFoot ? FOOT_STATES.FIXED : null; this.targetPos = { x, y }; this.searchPhase = Math.random() * Math.PI * 2; this.mass = 1; this.stepStartTime = 0; this.settleStartTime = 0; this.pulseMagnitude = 0; } update() { if (this.isFoot) this.updateFoot(); else this.updateBody(); }
             updateBody() {
-                const vX = (this.x - this.oldX) * damping;
-                const vY = (this.y - this.oldY) * damping;
+                const velocityRetention = 1.0 - config.dampingFactor;
+                const vX = (this.x - this.oldX) * velocityRetention;
+                const vY = (this.y - this.oldY) * velocityRetention;
                 this.oldX = this.x;
                 this.oldY = this.y;
                 this.x += vX + gravityX;
                 this.y += vY + gravityY;
             }
-            updateFoot() { switch (this.footState) { case FOOT_STATES.FIXED: this.x = this.targetPos.x; this.y = this.targetPos.y; break; case FOOT_STATES.SEEKING: let progress = (time - this.stepStartTime) / stepDuration; if (progress > 1) { this.setEdgeTarget(); this.stepStartTime = time; progress = 0; } const wobbleX = Math.sin(time * 0.02 + this.searchPhase) * wobbleStrength; const wobbleY = Math.cos(time * 0.015 + this.searchPhase) * wobbleStrength; const lift = Math.sin(progress * Math.PI) * stepHeight; this.x += (this.targetPos.x - this.x) * targetAttraction + wobbleX; this.y += (this.targetPos.y - this.y) * targetAttraction - lift + wobbleY + gravityY; this.x += gravityX; if (this.x <= 1 || this.x >= canvas.width - 1 || this.y <= 1 || this.y >= canvas.height - 1) { this.footState = FOOT_STATES.SETTLING; this.settleStartTime = time; this.targetPos.x = Math.max(0, Math.min(canvas.width, this.x)); this.targetPos.y = Math.max(0, Math.min(canvas.height, this.y)); this.pulseMagnitude = 1.0; } break; case FOOT_STATES.SETTLING: this.x = this.targetPos.x; this.y = this.targetPos.y; if (time > this.settleStartTime + stepCooldown) { this.footState = FOOT_STATES.FIXED; wakeNextMovers(this); } break; } } applyForce(fx, fy) { if (this.footState === FOOT_STATES.FIXED || this.footState === FOOT_STATES.SETTLING) return; this.x += fx / this.mass; this.y += fy / this.mass; } getRandomEdgeTarget() { const edge = Math.floor(Math.random() * 4); switch (edge) { case 0: return { x: Math.random() * canvas.width, y: 0 }; case 1: return { x: canvas.width, y: Math.random() * canvas.height }; case 2: return { x: Math.random() * canvas.width, y: canvas.height }; case 3: return { x: 0, y: Math.random() * canvas.height }; } } getCoordinatedTarget() { let centerX = 0, centerY = 0; for(const p of points) { centerX += p.x; centerY += p.y; } centerX /= points.length; centerY /= points.length; const vectorX = this.targetPos.x - centerX; const vectorY = this.targetPos.y - centerY; const oppositeX = centerX - vectorX; const oppositeY = centerY - vectorY; let bestDist = Infinity; let bestPoint = {x:0, y:0}; for(let x = 0; x <= canvas.width; x+= 50) { for(const p of [{x:x, y:0}, {x:x, y:canvas.height}]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if(d < bestDist) { bestDist = d; bestPoint = p; } } } for(let y = 0; y <= canvas.height; y+= 50) { for(const p of [{x:0, y:y}, {x:canvas.width, y:y}]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if(d < bestDist) { bestDist = d; bestPoint = p; } } } return bestPoint; } setEdgeTarget() { this.targetPos = this.getRandomEdgeTarget(); } }
-        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; this.isRigid = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; const contraction = 1.0 - (averagePulse * shiverIntensityFactor); const currentRestLength = this.baseRestLength * restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; let stiffness = springStiffness; if (this.isHair) { stiffness = tendrilStiffness; } else if (this.isRigid) { stiffness = rigidSectionStiffness; } const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
+            updateFoot() { switch (this.footState) { case FOOT_STATES.FIXED: this.x = this.targetPos.x; this.y = this.targetPos.y; break; case FOOT_STATES.SEEKING: let progress = (time - this.stepStartTime) / config.stepDuration; if (progress > 1) { this.setEdgeTarget(); this.stepStartTime = time; progress = 0; } const wobbleX = Math.sin(time * 0.02 + this.searchPhase) * config.wobbleStrength; const wobbleY = Math.cos(time * 0.015 + this.searchPhase) * config.wobbleStrength; const lift = Math.sin(progress * Math.PI) * config.stepHeight; this.x += (this.targetPos.x - this.x) * config.targetAttraction + wobbleX; this.y += (this.targetPos.y - this.y) * config.targetAttraction - lift + wobbleY + gravityY; this.x += gravityX; if (this.x <= 1 || this.x >= canvas.width - 1 || this.y <= 1 || this.y >= canvas.height - 1) { this.footState = FOOT_STATES.SETTLING; this.settleStartTime = time; this.targetPos.x = Math.max(0, Math.min(canvas.width, this.x)); this.targetPos.y = Math.max(0, Math.min(canvas.height, this.y)); this.pulseMagnitude = 1.0; } break; case FOOT_STATES.SETTLING: this.x = this.targetPos.x; this.y = this.targetPos.y; if (time > this.settleStartTime + config.stepCooldown) { this.footState = FOOT_STATES.FIXED; wakeNextMovers(this); } break; } } applyForce(fx, fy) { if (this.footState === FOOT_STATES.FIXED || this.footState === FOOT_STATES.SETTLING) return; this.x += fx / this.mass; this.y += fy / this.mass; } getRandomEdgeTarget() { const edge = Math.floor(Math.random() * 4); switch (edge) { case 0: return { x: Math.random() * canvas.width, y: 0 }; case 1: return { x: canvas.width, y: Math.random() * canvas.height }; case 2: return { x: Math.random() * canvas.width, y: canvas.height }; case 3: return { x: 0, y: Math.random() * canvas.height }; } } getCoordinatedTarget() { let centerX = 0, centerY = 0; for(const p of points) { centerX += p.x; centerY += p.y; } centerX /= points.length; centerY /= points.length; const vectorX = this.targetPos.x - centerX; const vectorY = this.targetPos.y - centerY; const oppositeX = centerX - vectorX; const oppositeY = centerY - vectorY; let bestDist = Infinity; let bestPoint = {x:0, y:0}; for(let x = 0; x <= canvas.width; x+= 50) { for(const p of [{x:x, y:0}, {x:x, y:canvas.height}]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if(d < bestDist) { bestDist = d; bestPoint = p; } } } for(let y = 0; y <= canvas.height; y+= 50) { for(const p of [{x:0, y:y}, {x:canvas.width, y:y}]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if(d < bestDist) { bestDist = d; bestPoint = p; } } } return bestPoint; } setEdgeTarget() { this.targetPos = this.getRandomEdgeTarget(); } }
+        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; this.isRigid = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; const contraction = 1.0 - (averagePulse * config.shiverIntensityFactor); const currentRestLength = this.baseRestLength * config.restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; let stiffness = config.springStiffness; if (this.isHair) { stiffness = config.tendrilStiffness; } else if (this.isRigid) { stiffness = config.rigidSectionStiffness; } const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
         function createGrid(density) { const bodySize = Math.min(canvas.width, canvas.height) * 0.6; const spacing = (density > 1) ? bodySize / (density - 1) : bodySize; const startX = (canvas.width - bodySize) / 2; const startY = (canvas.height - bodySize) / 2; for (let y = 0; y < density; y++) { for (let x = 0; x < density; x++) { points.push(new Point(startX + x * spacing, startY + y * spacing)); } } for (let y = 0; y < density; y++) { for (let x = 0; x < density; x++) { const i = y * density + x; if (x < density - 1) springs.push(new Spring(points[i], points[i + 1], spacing)); if (y < density - 1) springs.push(new Spring(points[i], points[i + density], spacing)); }} const perimeterRing = []; if (density > 1) { for (let i = 0; i < density; i++) perimeterRing.push(points[i]); for (let i = 1; i < density; i++) perimeterRing.push(points[i * density + (density - 1)]); for (let i = density - 2; i >= 0; i--) perimeterRing.push(points[(density - 1) * density + i]); for (let i = density - 2; i > 0; i--) perimeterRing.push(points[i * density]); } else if (points.length > 0) { perimeterRing.push(points[0]); } return { perimeter: perimeterRing }; }
         function createRing(numPoints) { const bodySize = Math.min(canvas.width, canvas.height) * 0.4; const radius = bodySize; const centerX = canvas.width / 2; const centerY = canvas.height / 2; for (let i = 0; i < numPoints; i++) { const angle = (i / numPoints) * Math.PI * 2; points.push(new Point(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle))); } const avgDist = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y); return { perimeter: points, springThreshold: avgDist * 2.5 }; }
         function createStar(numPoints) { if (numPoints % 2 !== 0) numPoints++; if (numPoints < 6) numPoints = 6; const bodySize = Math.min(canvas.width, canvas.height) * 0.4; const outerRadius = bodySize; const innerRadius = bodySize / 2; const centerX = canvas.width / 2; const centerY = canvas.height / 2; for (let i = 0; i < numPoints; i++) { const radius = (i % 2 === 0) ? outerRadius : innerRadius; const angle = (i / numPoints) * Math.PI * 2; points.push(new Point(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle))); } const avgDist = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y); return { perimeter: points, springThreshold: avgDist * 2.5 }; }
@@ -532,21 +603,21 @@
         function init() {
             points = []; springs = []; feet = []; time = 0; footPairs = []; gaitActivationQueue = [];
             let perimeterRing = []; let shapeData;
-            switch (creatureShape) {
-                case 'ring': shapeData = createRing(pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
-                case 'star': shapeData = createStar(pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
-                case 'letter': const char = document.getElementById('letterInput').value.toUpperCase() || 'A'; shapeData = createLetter(char, pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
+            switch (config.creatureShape) {
+                case 'ring': shapeData = createRing(config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
+                case 'star': shapeData = createStar(config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
+                case 'letter': shapeData = createLetter(config.letterInput, config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
                 case 'bug': shapeData = createBug(); perimeterRing = shapeData.perimeter; break;
-                default: shapeData = createGrid(pointDensity); perimeterRing = shapeData.perimeter; break;
+                default: shapeData = createGrid(config.pointDensity); perimeterRing = shapeData.perimeter; break;
             }
             const tendrilTips = [];
-            if (enableTendrils && perimeterRing.length > 0) {
+            if (config.enableTendrils && perimeterRing.length > 0) {
                 const hairSegmentLength = 5; let actualNumTendrils = 0;
-                if (tendrilPlacementMode === 'density') { actualNumTendrils = Math.floor(perimeterRing.length * tendrilDensity); } else { actualNumTendrils = numTendrils; }
+                if (config.tendrilPlacementMode === 'density') { actualNumTendrils = Math.floor(perimeterRing.length * config.tendrilDensity); } else { actualNumTendrils = config.numTendrils; }
                 actualNumTendrils = Math.min(actualNumTendrils, perimeterRing.length);
                 const shuffledPerimeter = [...perimeterRing].sort(() => 0.5 - Math.random());
-                const maxSegmentCount = Math.max(2, Math.floor(tendrilLength * tendrilQuality));
-                const minSegmentCount = Math.max(2, Math.floor(maxSegmentCount * (1 - tendrilLengthVariation)));
+                const maxSegmentCount = Math.max(2, Math.floor(config.tendrilLength * config.tendrilQuality));
+                const minSegmentCount = Math.max(2, Math.floor(maxSegmentCount * (1 - config.tendrilLengthVariation)));
                 for (let i = 0; i < actualNumTendrils; i++) {
                     const parentPoint = shuffledPerimeter[i]; let prevPoint = parentPoint;
                     const lengthRange = maxSegmentCount - minSegmentCount;
@@ -559,18 +630,18 @@
                     }
                 }
             }
-            if (enableRigidCore) { let centerX = 0, centerY = 0, bodyPointCount = 0; for (const p of points) { if (!p.isHair) { centerX += p.x; centerY += p.y; bodyPointCount++; } } if (bodyPointCount > 0) { centerX /= bodyPointCount; centerY /= bodyPointCount; for (const s of springs) { if (!s.isHair) { const d1 = Math.hypot(s.p1.x - centerX, s.p1.y - centerY); const d2 = Math.hypot(s.p2.x - centerX, s.p2.y - centerY); if (d1 < rigidCoreRadius && d2 < rigidCoreRadius) { s.isRigid = true; } } } } }
+            if (config.enableRigidCore) { let centerX = 0, centerY = 0, bodyPointCount = 0; for (const p of points) { if (!p.isHair) { centerX += p.x; centerY += p.y; bodyPointCount++; } } if (bodyPointCount > 0) { centerX /= bodyPointCount; centerY /= bodyPointCount; for (const s of springs) { if (!s.isHair) { const d1 = Math.hypot(s.p1.x - centerX, s.p1.y - centerY); const d2 = Math.hypot(s.p2.x - centerX, s.p2.y - centerY); if (d1 < config.rigidCoreRadius && d2 < config.rigidCoreRadius) { s.isRigid = true; } } } } }
 
             let footPlacementPool;
-            if (creatureShape === 'bug' && shapeData.legTips && shapeData.legTips.length > 0) { footPlacementPool = shapeData.legTips; }
-            else if (placeFeetOnTendrils && tendrilTips.length > 0) { footPlacementPool = tendrilTips; }
+            if (config.creatureShape === 'bug' && shapeData.legTips && shapeData.legTips.length > 0) { footPlacementPool = shapeData.legTips; }
+            else if (config.placeFeetOnTendrils && tendrilTips.length > 0) { footPlacementPool = tendrilTips; }
             else { footPlacementPool = perimeterRing.filter(p => !p.isFoot); }
 
-            const actualNumFeet = Math.min(numFeet, footPlacementPool.length);
-            if (actualNumFeet > 0) { if (useRandomPlacement) { const shuffledPool = [...footPlacementPool].sort(() => 0.5 - Math.random()); for (let i = 0; i < actualNumFeet; i++) { shuffledPool[i].isFoot = true; feet.push(shuffledPool[i]); } } else { for (let i = 0; i < actualNumFeet; i++) { const index = Math.floor(i * (footPlacementPool.length / actualNumFeet)); footPlacementPool[index].isFoot = true; feet.push(footPlacementPool[index]); } } }
-            if (feet.length > 0) { feet.sort((a, b) => a.x - b.x); let start = 0, end = feet.length - 1; while (start <= end) { if (start === end) { footPairs.push([feet[start]]); } else { footPairs.push([feet[start], feet[end]]); } start++; end--; } nextPairToWake = 0; for(const foot of feet) { foot.footState = FOOT_STATES.FIXED; foot.setEdgeTarget(); foot.x = foot.targetPos.x; foot.y = foot.targetPos.y; } const seekersToStart = gaitPattern === 'sequential' ? numSeekingFeet : 1; for(let i=0; i<seekersToStart; i++) { wakeNextMovers(); } }
+            const actualNumFeet = Math.min(config.numFeet, footPlacementPool.length);
+            if (actualNumFeet > 0) { if (config.useRandomPlacement) { const shuffledPool = [...footPlacementPool].sort(() => 0.5 - Math.random()); for (let i = 0; i < actualNumFeet; i++) { shuffledPool[i].isFoot = true; feet.push(shuffledPool[i]); } } else { for (let i = 0; i < actualNumFeet; i++) { const index = Math.floor(i * (footPlacementPool.length / actualNumFeet)); footPlacementPool[index].isFoot = true; feet.push(footPlacementPool[index]); } } }
+            if (feet.length > 0) { feet.sort((a, b) => a.x - b.x); let start = 0, end = feet.length - 1; while (start <= end) { if (start === end) { footPairs.push([feet[start]]); } else { footPairs.push([feet[start], feet[end]]); } start++; end--; } nextPairToWake = 0; for(const foot of feet) { foot.footState = FOOT_STATES.FIXED; foot.setEdgeTarget(); foot.x = foot.targetPos.x; foot.y = foot.targetPos.y; } const seekersToStart = config.gaitPattern === 'sequential' ? config.numSeekingFeet : 1; for(let i=0; i<seekersToStart; i++) { wakeNextMovers(); } }
         }
-        function propagateInternalPulse() { const pulseLoss = shiverPropagationFactor; const decayRate = 0.98; const newPulses = new Map(); for (const spring of springs) { const p1 = spring.p1; const p2 = spring.p2; if (p1.pulseMagnitude > p2.pulseMagnitude) { const current = newPulses.get(p2) || 0; newPulses.set(p2, Math.max(current, p1.pulseMagnitude * pulseLoss)); }  else if (p2.pulseMagnitude > p1.pulseMagnitude) { const current = newPulses.get(p1) || 0; newPulses.set(p1, Math.max(current, p2.pulseMagnitude * pulseLoss));} } for (const point of points) { const newPulse = newPulses.get(point); if (newPulse) { point.pulseMagnitude = Math.max(point.pulseMagnitude, newPulse); } point.pulseMagnitude *= decayRate; if (point.pulseMagnitude < 0.01) point.pulseMagnitude = 0; } }
+        function propagateInternalPulse() { const pulseLoss = config.shiverPropagationFactor; const decayRate = 0.98; const newPulses = new Map(); for (const spring of springs) { const p1 = spring.p1; const p2 = spring.p2; if (p1.pulseMagnitude > p2.pulseMagnitude) { const current = newPulses.get(p2) || 0; newPulses.set(p2, Math.max(current, p1.pulseMagnitude * pulseLoss)); }  else if (p2.pulseMagnitude > p1.pulseMagnitude) { const current = newPulses.get(p1) || 0; newPulses.set(p1, Math.max(current, p2.pulseMagnitude * pulseLoss));} } for (const point of points) { const newPulse = newPulses.get(point); if (newPulse) { point.pulseMagnitude = Math.max(point.pulseMagnitude, newPulse); } point.pulseMagnitude *= decayRate; if (point.pulseMagnitude < 0.01) point.pulseMagnitude = 0; } }
         function update() { time++; processGaitQueue(); propagateInternalPulse(); for (const s of springs) s.update(); for (const p of points) p.update(); }
 
         function drawGravityIndicator() {
@@ -628,7 +699,7 @@
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)'; ctx.lineWidth = 1; ctx.beginPath();
             for (const s of springs) { if (s.isHair) { ctx.moveTo(s.p1.x, s.p1.y); ctx.lineTo(s.p2.x, s.p2.y); } } ctx.stroke();
 
-            const baseBodyRadius = pointBaseSize;
+            const baseBodyRadius = config.pointBaseSize;
             const baseFootRadius = baseBodyRadius + 4.0;
 
             for (const p of points) {
@@ -645,25 +716,25 @@
                     const intensity = p.pulseMagnitude;
                     const gray = Math.floor(180 * (1 - intensity));
                     ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
-                    const radiusMultiplier = 1 + (intensity * shiverIntensityFactor * 3.0);
+                    const radiusMultiplier = 1 + (intensity * config.shiverIntensityFactor * 3.0);
 
-                    if (drawMode === 'point') {
+                    if (config.drawMode === 'point') {
                         const currentRadius = Math.max(0.1, baseBodyRadius * radiusMultiplier);
                         ctx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
                         ctx.fill();
-                    } else if (drawMode === 'letter') {
+                    } else if (config.drawMode === 'letter') {
                         const fontSize = Math.max(1, (baseBodyRadius * 3) * radiusMultiplier);
                         ctx.font = `bold ${fontSize}px sans-serif`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(letterToDraw, p.x, p.y);
+                        ctx.fillText(config.letterToDraw, p.x, p.y);
                     }
                 }
             }
         }
         function animate() { frameCount++; const currentTime = performance.now(); const deltaTime = currentTime - lastFpsUpdateTime; if (deltaTime > 1000) { fps = Math.round((frameCount * 1000) / deltaTime); if (fpsCounterElement) { fpsCounterElement.textContent = fps; } frameCount = 0; lastFpsUpdateTime = currentTime; } update(); draw(); drawGravityIndicator(); requestAnimationFrame(animate); }
-        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'damping') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = isFloat ? value.toFixed(precision) : value; } if (requiresReset) { init(); } }); }
-        function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
+        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'dampingFactor') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = isFloat ? value.toFixed(precision) : value; } saveConfig(); if (requiresReset) { init(); } }); }
+        function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); saveConfig(); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
 
         function handleMotionEvent(event) {
             if (event.accelerationIncludingGravity.x === null || event.accelerationIncludingGravity.y === null) return;
@@ -671,12 +742,11 @@
             const rawY = event.accelerationIncludingGravity.y;
             const rawZ = event.accelerationIncludingGravity.z;
             
-            // Update debug info
             debugAccelX.textContent = rawX.toFixed(3);
             debugAccelY.textContent = rawY.toFixed(3);
-            debugAccelZ.textContent = rawZ.toFixed(3);
+            debugAccelZ.textContent = rawZ ? rawZ.toFixed(3) : 'null';
             
-            const sensitivity = gravity / 9.8;
+            const sensitivity = config.gravity / 9.8;
             switch (window.orientation) {
                 case 90: gravityX = rawY * sensitivity; gravityY = -rawX * sensitivity; break;
                 case -90: gravityX = -rawY * sensitivity; gravityY = rawX * sensitivity; break;
@@ -692,13 +762,12 @@
             const beta = event.beta;
             const gamma = event.gamma;
             
-            // Update debug info
             debugOrientBeta.textContent = beta.toFixed(3);
             debugOrientGamma.textContent = gamma.toFixed(3);
 
             const DEG_TO_RAD = Math.PI / 180;
-            const tiltX = Math.sin(gamma * DEG_TO_RAD) * gravity;
-            const tiltY = Math.sin(beta * DEG_TO_RAD) * gravity;
+            const tiltX = Math.sin(gamma * DEG_TO_RAD) * config.gravity;
+            const tiltY = Math.sin(beta * DEG_TO_RAD) * config.gravity;
             switch (window.orientation) {
                 case 90: gravityX = tiltY; gravityY = -tiltX; break;
                 case -90: gravityX = -tiltY; gravityY = tiltX; break;
@@ -723,7 +792,7 @@
                 if (source === 'fixed') {
                     gravityLabel.childNodes[0].nodeValue = "Gravity ";
                     gravityX = 0;
-                    gravityY = gravity;
+                    gravityY = config.gravity;
                     debugStatus.textContent = "Fixed (Slider)";
                     debugGravityX.textContent = gravityX.toFixed(3);
                     debugGravityY.textContent = gravityY.toFixed(3);
@@ -736,6 +805,16 @@
         }
         
         function requestAndStartMotion(source, sourceSelector) {
+            if (!window.isSecureContext) {
+                alert('Motion controls require a secure (HTTPS) connection. Please host this file on a secure server.');
+                debugStatus.textContent = "Blocked: Insecure context";
+                if (sourceSelector) {
+                    sourceSelector.value = 'fixed';
+                    sourceSelector.dispatchEvent(new Event('change'));
+                }
+                return;
+            }
+
             const addListeners = () => {
                 if (source === 'motion') {
                     window.addEventListener('devicemotion', handleMotionEvent);
@@ -768,13 +847,20 @@
             }
         }
         
+        // START: MODIFIED FUNCTION with touch detection
         function initializeMotionAsDefault() {
             const sourceSelector = document.getElementById('gravitySource');
             const motionPrompt = document.getElementById('motion-prompt');
 
-            const hasMotionSupport = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') || ('ondevicemotion' in window);
+            if (!window.isSecureContext) {
+                debugStatus.textContent = "Motion API requires HTTPS";
+                return;
+            }
+            
+            const hasApiSupport = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') || ('ondevicemotion' in window);
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-            if (hasMotionSupport) {
+            if (hasApiSupport && isTouchDevice) {
                 debugStatus.textContent = 'Motion support detected.';
                 motionPrompt.classList.remove('hidden');
                 motionPrompt.addEventListener('click', () => {
@@ -782,10 +868,13 @@
                     sourceSelector.value = 'motion';
                     sourceSelector.dispatchEvent(new Event('change'));
                 }, { once: true });
+            } else if (hasApiSupport && !isTouchDevice) {
+                 debugStatus.textContent = 'Motion API found, but not a touch device.';
             } else {
-                 debugStatus.textContent = 'No motion support detected.';
+                 debugStatus.textContent = 'No motion support found on this device.';
             }
         }
+        // END: MODIFIED FUNCTION
         
         function updateOrientationDebug() {
             debugOrientation.textContent = window.orientation || 0;
@@ -803,23 +892,23 @@
             const numFeetValueDisplay = document.getElementById('numFeetValue');
 
             selector.addEventListener('change', e => {
-                creatureShape = e.target.value;
+                config.creatureShape = e.target.value;
                 letterInputContainer.style.display = 'none';
                 densityControlDiv.style.display = 'block';
 
-                if (creatureShape === 'grid') {
+                if (config.creatureShape === 'grid') {
                     densityLabel.childNodes[0].nodeValue = "Points / Side ";
                     densitySlider.min = 3;
                     densitySlider.max = 15;
                     if(parseInt(densitySlider.value) > 15) densitySlider.value = 15;
-                } else if (creatureShape === 'letter') {
+                } else if (config.creatureShape === 'letter') {
                     densityLabel.childNodes[0].nodeValue = "Sampling Density ";
                     densitySlider.min = 2;
                     densitySlider.max = 18;
                     letterInputContainer.style.display = 'block';
-                } else if (creatureShape === 'bug') {
+                } else if (config.creatureShape === 'bug') {
                     densityControlDiv.style.display = 'none';
-                    numFeet = 6;
+                    config.numFeet = 6;
                     numFeetSlider.value = 6;
                     numFeetValueDisplay.textContent = 6;
                 } else {
@@ -829,32 +918,38 @@
                     if(parseInt(densitySlider.value) < 5) densitySlider.value = 5;
                 }
                 densityValue.textContent = densitySlider.value;
-                pointDensity = parseInt(slider.value);
+                config.pointDensity = parseInt(densitySlider.value);
+                saveConfig();
                 init();
             });
-            letterInput.addEventListener('input', () => { init(); });
+            letterInput.addEventListener('input', (e) => { 
+                config.letterInput = e.target.value.toUpperCase() || 'A';
+                saveConfig();
+                init(); 
+            });
         }
 
-        function setupGaitSelector() { const selector = document.getElementById('gaitPattern'); const seekingFeetControl = document.getElementById('seekingFeetControl'); const waveDelayControl = document.getElementById('waveDelayControl'); const updateGaitControls = () => { gaitPattern = selector.value; seekingFeetControl.style.display = (gaitPattern === 'sequential') ? 'block' : 'none'; waveDelayControl.style.display = (gaitPattern === 'sidewinder') ? 'block' : 'none'; }; selector.addEventListener('change', () => { updateGaitControls(); init(); }); updateGaitControls(); }
+        function setupGaitSelector() { const selector = document.getElementById('gaitPattern'); const seekingFeetControl = document.getElementById('seekingFeetControl'); const waveDelayControl = document.getElementById('waveDelayControl'); const updateGaitControls = () => { config.gaitPattern = selector.value; seekingFeetControl.style.display = (config.gaitPattern === 'sequential') ? 'block' : 'none'; waveDelayControl.style.display = (config.gaitPattern === 'sidewinder') ? 'block' : 'none'; }; selector.addEventListener('change', () => { updateGaitControls(); saveConfig(); init(); }); updateGaitControls(); }
 
         function setupTendrilControls() {
-            setupSlider('numTendrils', 'numTendrilsValue', (val) => { numTendrils = val; }, false, true);
-            setupSlider('tendrilDensity', 'tendrilDensityValue', (val) => { tendrilDensity = val; }, true, true);
-            setupSlider('tendrilLength', 'tendrilLengthValue', (val) => { tendrilLength = val; }, false, true);
-            setupSlider('tendrilQuality', 'tendrilQualityValue', (val) => { tendrilQuality = val; }, true, true);
-            setupSlider('tendrilStiffness', 'tendrilStiffnessValue', (val) => { tendrilStiffness = val; });
+            setupSlider('numTendrils', 'numTendrilsValue', (val) => { config.numTendrils = val; }, false, true);
+            setupSlider('tendrilDensity', 'tendrilDensityValue', (val) => { config.tendrilDensity = val; }, true, true);
+            setupSlider('tendrilLength', 'tendrilLengthValue', (val) => { config.tendrilLength = val; }, false, true);
+            setupSlider('tendrilQuality', 'tendrilQualityValue', (val) => { config.tendrilQuality = val; }, true, true);
+            setupSlider('tendrilStiffness', 'tendrilStiffnessValue', (val) => { config.tendrilStiffness = val; });
             const variationSlider = document.getElementById('tendrilLengthVariation');
             const variationDisplay = document.getElementById('tendrilLengthVariationValue');
             variationSlider.addEventListener('input', (e) => {
                 const value = parseFloat(e.target.value);
-                tendrilLengthVariation = value;
+                config.tendrilLengthVariation = value;
                 variationDisplay.textContent = (value * 100).toFixed(0) + '%';
+                saveConfig();
                 init();
             });
-            setupCheckbox('feetOnTendrils', (val) => { placeFeetOnTendrils = val; }, true);
+            setupCheckbox('feetOnTendrils', (val) => { config.placeFeetOnTendrils = val; }, true);
             const modeSelector = document.getElementById('tendrilPlacementMode'); const countContainer = document.getElementById('tendrilCountContainer'); const densityContainer = document.getElementById('tendrilDensityContainer');
-            const updateTendrilMode = () => { tendrilPlacementMode = modeSelector.value; countContainer.style.display = (tendrilPlacementMode === 'count') ? 'block' : 'none'; densityContainer.style.display = (tendrilPlacementMode === 'density') ? 'block' : 'none'; };
-            modeSelector.addEventListener('change', () => { updateTendrilMode(); init(); });
+            const updateTendrilMode = () => { config.tendrilPlacementMode = modeSelector.value; countContainer.style.display = (config.tendrilPlacementMode === 'count') ? 'block' : 'none'; densityContainer.style.display = (config.tendrilPlacementMode === 'density') ? 'block' : 'none'; };
+            modeSelector.addEventListener('change', () => { updateTendrilMode(); saveConfig(); init(); });
             updateTendrilMode();
         }
 
@@ -865,15 +960,15 @@
             const letterSelector = document.getElementById('letterChoice');
 
             const updateAppearanceMode = () => {
-                drawMode = modeSelector.value;
-                pointContainer.style.display = (drawMode === 'point') ? 'block' : 'none';
-                letterContainer.style.display = (drawMode === 'letter') ? 'block' : 'none';
+                config.drawMode = modeSelector.value;
+                pointContainer.style.display = (config.drawMode === 'point') ? 'block' : 'none';
+                letterContainer.style.display = (config.drawMode === 'letter') ? 'block' : 'none';
             };
 
-            modeSelector.addEventListener('change', updateAppearanceMode);
-            letterSelector.addEventListener('change', e => { letterToDraw = e.target.value; });
+            modeSelector.addEventListener('change', () => { updateAppearanceMode(); saveConfig(); });
+            letterSelector.addEventListener('change', e => { config.letterToDraw = e.target.value; saveConfig(); });
 
-            setupSlider('pointSize', 'pointSizeValue', (val) => { pointBaseSize = val; }, true);
+            setupSlider('pointSize', 'pointSizeValue', (val) => { config.pointBaseSize = val; }, true);
 
             updateAppearanceMode();
         }
@@ -894,36 +989,40 @@
             init();
         }
 
-        setupSlider('stiffness', 'stiffnessValue', (val) => { springStiffness = val; });
-        setupSlider('damping', 'dampingValue', (val) => { damping = val; }, true);
-        setupSlider('restLength', 'restLengthValue', (val) => { restLengthFactor = val; });
+        loadConfig();
+
+        setupSlider('stiffness', 'stiffnessValue', (val) => { config.springStiffness = val; });
+        setupSlider('dampingFactor', 'dampingFactorValue', (val) => { config.dampingFactor = val; }, true);
+        setupSlider('restLength', 'restLengthValue', (val) => { config.restLengthFactor = val; });
         setupSlider('gravity', 'gravityValue', (val) => {
-             gravity = val;
+             config.gravity = val;
              if (document.getElementById('gravitySource').value === 'fixed') {
-                gravityY = gravity;
+                gravityY = config.gravity;
                 gravityX = 0;
                 debugGravityX.textContent = gravityX.toFixed(3);
                 debugGravityY.textContent = gravityY.toFixed(3);
              }
         });
-        setupSlider('shiverIntensity', 'shiverIntensityValue', (val) => { shiverIntensityFactor = val; });
-        setupSlider('shiverPropagation', 'shiverPropagationValue', (val) => { shiverPropagationFactor = val; });
-        setupSlider('footCoordination', 'footCoordinationValue', (val) => { footCoordinationFactor = val; });
-        setupSlider('targetAttraction', 'targetAttractionValue', (val) => { targetAttraction = val; });
-        setupSlider('stepCooldown', 'stepCooldownValue', (val) => { stepCooldown = val; }, false);
-        setupSlider('stepDuration', 'stepDurationValue', (val) => { stepDuration = val; }, false);
-        setupSlider('stepHeight', 'stepHeightValue', (val) => { stepHeight = val; }, false);
-        setupSlider('wobbleStrength', 'wobbleStrengthValue', (val) => { wobbleStrength = val; }, false);
-        setupSlider('pointDensity', 'pointDensityValue', (val) => { pointDensity = val; }, false, true);
-        setupSlider('numFeet', 'numFeetValue', (val) => { numFeet = val; }, false, true);
-        setupSlider('numSeekingFeet', 'numSeekingFeetValue', (val) => { numSeekingFeet = val; }, false, true);
-        setupSlider('waveDelay', 'waveDelayValue', (val) => { waveDelay = val; }, false);
-        setupSlider('rigidCoreRadius', 'rigidCoreRadiusValue', (val) => { rigidCoreRadius = val; }, false, true);
-        setupSlider('rigidSectionStiffness', 'rigidSectionStiffnessValue', (val) => { rigidSectionStiffness = val; }, true, true);
+        setupSlider('shiverIntensity', 'shiverIntensityValue', (val) => { config.shiverIntensityFactor = val; });
+        setupSlider('shiverPropagation', 'shiverPropagationValue', (val) => { config.shiverPropagationFactor = val; });
+        setupSlider('footCoordination', 'footCoordinationValue', (val) => { config.footCoordinationFactor = val; });
+        setupSlider('targetAttraction', 'targetAttractionValue', (val) => { config.targetAttraction = val; });
+        setupSlider('stepCooldown', 'stepCooldownValue', (val) => { config.stepCooldown = val; }, false);
+        setupSlider('stepDuration', 'stepDurationValue', (val) => { config.stepDuration = val; }, false);
+        setupSlider('stepHeight', 'stepHeightValue', (val) => { config.stepHeight = val; }, false);
+        setupSlider('wobbleStrength', 'wobbleStrengthValue', (val) => { config.wobbleStrength = val; }, false);
+        setupSlider('pointDensity', 'pointDensityValue', (val) => { config.pointDensity = val; }, false, true);
+        setupSlider('numFeet', 'numFeetValue', (val) => { config.numFeet = val; }, false, true);
+        setupSlider('numSeekingFeet', 'numSeekingFeetValue', (val) => { config.numSeekingFeet = val; }, false, true);
+        setupSlider('waveDelay', 'waveDelayValue', (val) => { config.waveDelay = val; }, false);
+        setupSlider('rigidCoreRadius', 'rigidCoreRadiusValue', (val) => { config.rigidCoreRadius = val; }, false, true);
+        setupSlider('rigidSectionStiffness', 'rigidSectionStiffnessValue', (val) => { config.rigidSectionStiffness = val; }, true, true);
 
-        setupCheckbox('enableRigidCore', (val) => { enableRigidCore = val; }, true, [document.getElementById('rigidityControlsContainer')]);
-        setupCheckbox('enableTendrils', (val) => { enableTendrils = val; }, true, [document.getElementById('tendrilControlsContainer')]);
-        setupCheckbox('randomPlacement', (val) => { useRandomPlacement = val; }, true);
+        setupCheckbox('enableRigidCore', (val) => { config.enableRigidCore = val; }, true, [document.getElementById('rigidityControlsContainer')]);
+        setupCheckbox('enableTendrils', (val) => { config.enableTendrils = val; }, true, [document.getElementById('tendrilControlsContainer')]);
+        setupCheckbox('randomPlacement', (val) => { config.useRandomPlacement = val; }, true);
+
+        applyConfigToUI();
 
         setupShapeSelector();
         setupGaitSelector();
@@ -931,6 +1030,7 @@
         setupAppearanceControls();
         setupToggleControlsButton();
         setupGravityControls();
+        setupResetButton();
 
         window.addEventListener('resize', handleResize);
         window.addEventListener('orientationchange', updateOrientationDebug);
