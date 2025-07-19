@@ -59,12 +59,16 @@
             border: none;
         }
 
+        /* START: MODIFIED STYLE */
         .main-content {
             display: flex;
             justify-content: center;
             align-items: flex-start;
             width: 100%;
+            position: relative; /* Establishes a stacking context */
+            z-index: 8;      /* Higher than the footer's z-index */
         }
+        /* END: MODIFIED STYLE */
         .controls {
             background: rgba(255, 255, 255, 0.7);
             border: 1px solid rgba(0,0,0,0.1);
@@ -343,6 +347,17 @@
                     <label for="dampingFactor">Damping <span id="dampingFactorValue" class="value-display">0.082</span></label>
                     <input type="range" id="dampingFactor" min="0.001" max="0.1" step="0.001" value="0.082" />
                 </div>
+                 <div>
+                    <label for="shiverIntensity">Shiver Intensity <span id="shiverIntensityValue" class="value-display">0.50</span></label>
+                    <input type="range" id="shiverIntensity" min="-3.0" max="3.0" step="0.01" value="0.5" />
+                </div>
+                 <div>
+                    <label for="shiverPropagation">Shiver Propagation <span id="shiverPropagationValue" class="value-display">0.85</span></label>
+                    <input type="range" id="shiverPropagation" min="0" max="0.9" step="0.01" value="0.85" />
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>Gravity & Sensors</h3>
                 <div>
                     <label for="gravitySource">Gravity Source</label>
                     <select id="gravitySource">
@@ -354,14 +369,6 @@
                 <div>
                     <label for="gravity" id="gravityLabel">Gravity <span id="gravityValue" class="value-display">0.03</span></label>
                     <input type="range" id="gravity" min="-0.5" max="0.5" step="0.01" value="0.03" />
-                </div>
-                 <div>
-                    <label for="shiverIntensity">Shiver Intensity <span id="shiverIntensityValue" class="value-display">0.50</span></label>
-                    <input type="range" id="shiverIntensity" min="-3.0" max="3.0" step="0.01" value="0.5" />
-                </div>
-                 <div>
-                    <label for="shiverPropagation">Shiver Propagation <span id="shiverPropagationValue" class="value-display">0.85</span></label>
-                    <input type="range" id="shiverPropagation" min="0" max="0.9" step="0.01" value="0.85" />
                 </div>
                 <div>
                     <label>Gravity Direction</label>
@@ -544,10 +551,8 @@
         function setupResetButton() {
             const resetButton = document.getElementById('reset-settings-btn');
             resetButton.addEventListener('click', () => {
-                if(confirm('Are you sure you want to reset all settings to their defaults?')) {
-                    localStorage.removeItem('ivraie-config');
-                    location.reload();
-                }
+                localStorage.removeItem('ivraie-config');
+                location.reload();
             });
         }
 
@@ -748,10 +753,23 @@
             
             const sensitivity = config.gravity / 9.8;
             switch (window.orientation) {
-                case 90: gravityX = rawY * sensitivity; gravityY = -rawX * sensitivity; break;
-                case -90: gravityX = -rawY * sensitivity; gravityY = rawX * sensitivity; break;
-                case 180: gravityX = -rawX * sensitivity; gravityY = -rawY * sensitivity; break;
-                case 0: default: gravityX = rawX * sensitivity; gravityY = rawY * sensitivity; break;
+                case 90:  // Landscape, right side down
+                    gravityX = rawY * sensitivity;
+                    gravityY = rawX * sensitivity;
+                    break;
+                case -90: // Landscape, left side down
+                    gravityX = -rawY * sensitivity;
+                    gravityY = -rawX * sensitivity;
+                    break;
+                case 180: // Upside-down portrait
+                    gravityX = -rawX * sensitivity;
+                    gravityY = rawY * sensitivity;
+                    break;
+                case 0:   // Portrait
+                default:
+                    gravityX = rawX * sensitivity;
+                    gravityY = -rawY * sensitivity;
+                    break;
             }
             debugGravityX.textContent = gravityX.toFixed(3);
             debugGravityY.textContent = gravityY.toFixed(3);
@@ -766,13 +784,27 @@
             debugOrientGamma.textContent = gamma.toFixed(3);
 
             const DEG_TO_RAD = Math.PI / 180;
-            const tiltX = Math.sin(gamma * DEG_TO_RAD) * config.gravity;
-            const tiltY = Math.sin(beta * DEG_TO_RAD) * config.gravity;
+            const tiltX = Math.sin(gamma * DEG_TO_RAD) * config.gravity; // Side-to-side
+            const tiltY = Math.sin(beta * DEG_TO_RAD) * config.gravity;  // Front-to-back
+
             switch (window.orientation) {
-                case 90: gravityX = tiltY; gravityY = -tiltX; break;
-                case -90: gravityX = -tiltY; gravityY = tiltX; break;
-                case 180: gravityX = -tiltX; gravityY = -tiltY; break;
-                case 0: default: gravityX = tiltX; gravityY = tiltY; break;
+                case 90:  // Landscape, right side down
+                    gravityX = tiltY;
+                    gravityY = tiltX;
+                    break;
+                case -90: // Landscape, left side down
+                    gravityX = -tiltY;
+                    gravityY = -tiltX;
+                    break;
+                case 180: // Upside-down portrait
+                    gravityX = -tiltX;
+                    gravityY = -tiltY;
+                    break;
+                case 0:   // Portrait
+                default:
+                    gravityX = tiltX;
+                    gravityY = tiltY;
+                    break;
             }
             debugGravityX.textContent = gravityX.toFixed(3);
             debugGravityY.textContent = gravityY.toFixed(3);
@@ -847,7 +879,6 @@
             }
         }
         
-        // START: MODIFIED FUNCTION with touch detection
         function initializeMotionAsDefault() {
             const sourceSelector = document.getElementById('gravitySource');
             const motionPrompt = document.getElementById('motion-prompt');
@@ -874,7 +905,6 @@
                  debugStatus.textContent = 'No motion support found on this device.';
             }
         }
-        // END: MODIFIED FUNCTION
         
         function updateOrientationDebug() {
             debugOrientation.textContent = window.orientation || 0;
