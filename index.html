@@ -754,22 +754,19 @@
                 ctx.beginPath();
 
                 if (p.isFoot) {
+                    let footRadius;
                     if (p.footState === FOOT_STATES.SEEKING) {
-                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-                        ctx.lineWidth = 2.5;
-                        const seekingRadius = config.pointBaseSize + 6;
-                        ctx.arc(p.x, p.y, seekingRadius, 0, Math.PI * 2);
-                        ctx.stroke();
+                        footRadius = config.pointBaseSize + 6;
                     } else {
-                        ctx.fillStyle = '#000000';
-                        const fixedRadius = config.pointBaseSize + 2;
-                        ctx.arc(p.x, p.y, fixedRadius, 0, Math.PI * 2);
-                        ctx.fill();
+                        footRadius = config.pointBaseSize + 2;
                     }
+                    ctx.fillStyle = '#000000';
+                    ctx.arc(p.x, p.y, footRadius, 0, Math.PI * 2);
+                    ctx.fill();
                 } else {
                     const intensity = p.pulseMagnitude;
                     const gray = Math.floor(180 * (1 - intensity));
-                    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+                    ctx.fillStyle = `rgba(${gray},${gray},${gray}, 0.8)`;
                     const radiusMultiplier = 1 + (intensity * config.shiverIntensityFactor * 3.0);
 
                     if (config.drawMode === 'point') {
