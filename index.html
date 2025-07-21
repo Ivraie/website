@@ -41,6 +41,12 @@
             color: rgba(0, 0, 0, 1);
             font-weight: lighter;
             letter-spacing: 0.05em;
+            pointer-events: auto; /* Make the title clickable */
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+        #title-container h1:hover {
+            color: rgba(0, 0, 0, 0.7);
         }
 
         #toggleControlsBtn {
@@ -59,7 +65,6 @@
             border: none;
         }
 
-        /* START: MODIFIED STYLE */
         .main-content {
             display: flex;
             justify-content: center;
@@ -68,7 +73,6 @@
             position: relative; /* Establishes a stacking context */
             z-index: 8;      /* Higher than the footer's z-index */
         }
-        /* END: MODIFIED STYLE */
         .controls {
             background: rgba(255, 255, 255, 0.7);
             border: 1px solid rgba(0,0,0,0.1);
@@ -225,8 +229,7 @@
                     <label for="creatureShape">Creature Shape</label>
                     <select id="creatureShape">
                         <option value="grid" selected>Grid</option>
-                        <option value="ring">Ring</option>
-                        <option value="star">Star</option>
+                        <option value="cross">Cross</option>
                         <option value="letter">Letter</option>
                         <option value="bug">Bug</option>
                     </select>
@@ -265,32 +268,9 @@
                     <label for="pointSize">Point Size <span id="pointSizeValue" class="value-display">1.3</span></label>
                     <input type="range" id="pointSize" min="1" max="15" step="0.1" value="1.3" />
                 </div>
-                <div id="letterChoiceContainer" style="display: none;">
-                    <label for="letterChoice">Choose Letter</label>
-                    <select id="letterChoice">
-                        <option value="i" selected>i</option>
-                        <option value="v">v</option>
-                        <option value="r">r</option>
-                        <option value="a">a</option>
-                        <option value="e">e</option>
-                    </select>
-                </div>
-            </div>
-            <div class="control-group">
-                <h3>Rigidity</h3>
-                 <div>
-                    <input type="checkbox" id="enableRigidCore" />
-                    <label for="enableRigidCore" class="checkbox-label">Enable Rigid Core</label>
-                </div>
-                <div id="rigidityControlsContainer">
-                    <div>
-                        <label for="rigidCoreRadius">Rigid Core Radius <span id="rigidCoreRadiusValue" class="value-display">50</span></label>
-                        <input type="range" id="rigidCoreRadius" min="10" max="200" step="1" value="50" />
-                    </div>
-                     <div>
-                        <label for="rigidSectionStiffness">Rigid Stiffness <span id="rigidSectionStiffnessValue" class="value-display">0.80</span></label>
-                        <input type="range" id="rigidSectionStiffness" min="0.1" max="1.0" step="0.01" value="0.8" />
-                    </div>
+                <div id="letterSizeContainer" style="display: none;">
+                    <label for="letterSize">Letter Size <span id="letterSizeValue" class="value-display">10</span></label>
+                    <input type="range" id="letterSize" min="5" max="50" step="1" value="10" />
                 </div>
             </div>
             <div class="control-group">
@@ -438,6 +418,9 @@
                     </label>
                 </div>
                 <div style="margin-top: 15px;">
+                    <button id="randomize-btn" class="control-button">Randomize</button>
+                </div>
+                <div style="margin-top: 15px;">
                     <button id="reset-settings-btn" class="control-button">Reset to Defaults</button>
                 </div>
             </div>
@@ -480,10 +463,7 @@
             useRandomPlacement: false,
             drawMode: 'point',
             pointBaseSize: 1.3,
-            letterToDraw: 'i',
-            enableRigidCore: false,
-            rigidCoreRadius: 50,
-            rigidSectionStiffness: 0.8,
+            letterBaseSize: 10,
             enableTendrils: true,
             tendrilPlacementMode: 'count',
             numTendrils: 10,
@@ -511,6 +491,7 @@
 
         const FOOT_STATES = { FIXED: 0, SEEKING: 1, SETTLING: 2 };
         const HIGH_DENSITY_THRESHOLD = 200;
+        const DRAW_LETTERS = ['i', 'v', 'r', 'a', 'i', 'e'];
 
         function saveConfig() {
             try {
@@ -555,12 +536,79 @@
                 location.reload();
             });
         }
+        
+        function randomizeConfig() {
+            const getRandomFloat = (min, max) => Math.random() * (max - min) + min;
+            const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            const getRandomBool = () => Math.random() < 0.5;
+            const getRandomFromList = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            config.creatureShape = getRandomFromList(['grid', 'cross', 'letter', 'bug']);
+            config.restLengthFactor = getRandomFloat(0.5, 1.2);
+            config.useRandomPlacement = getRandomBool();
+            config.drawMode = getRandomFromList(['point', 'letter']);
+            config.pointBaseSize = getRandomFloat(1, 5);
+            config.letterBaseSize = getRandomInt(8, 30);
+            config.enableTendrils = getRandomBool();
+            config.tendrilPlacementMode = getRandomFromList(['count', 'density']);
+            config.numTendrils = getRandomInt(5, 80);
+            config.tendrilDensity = getRandomFloat(0.05, 0.5);
+            config.tendrilLength = getRandomInt(3, 20);
+            config.tendrilQuality = getRandomFloat(0.2, 1.0);
+            config.tendrilLengthVariation = getRandomFloat(0, 1.0);
+            config.tendrilStiffness = getRandomFloat(0.01, 0.3);
+            config.placeFeetOnTendrils = getRandomBool();
+            config.springStiffness = getRandomFloat(0.05, 0.3);
+            config.dampingFactor = getRandomFloat(0.01, 0.1);
+            config.shiverIntensityFactor = getRandomFloat(-2.0, 2.0);
+            config.shiverPropagationFactor = getRandomFloat(0.1, 0.9);
+            config.gaitPattern = getRandomFromList(['sequential', 'paired', 'sidewinder']);
+            config.numSeekingFeet = getRandomInt(1, 4);
+            config.waveDelay = getRandomInt(1, 15);
+            config.footCoordinationFactor = getRandomFloat(0, 1.0);
+            config.stepCooldown = getRandomInt(5, 60);
+            config.targetAttraction = getRandomFloat(0.02, 0.15);
+            config.stepDuration = getRandomInt(80, 250);
+            config.stepHeight = getRandomInt(15, 70);
+            config.wobbleStrength = getRandomInt(0, 40);
+
+            applyConfigToUI();
+            saveConfig();
+            init();
+        }
+
+        function setupRandomizeButton() {
+            const randomizeButton = document.getElementById('randomize-btn');
+            randomizeButton.addEventListener('click', randomizeConfig);
+        }
+
+        function setupTitleClick() {
+            const titleElement = document.querySelector('#title-container h1');
+            if (titleElement) {
+                titleElement.addEventListener('click', randomizeConfig);
+            }
+        }
 
         function activateFoot(foot) { if (foot && foot.footState === FOOT_STATES.FIXED) { const randomTarget = foot.getRandomEdgeTarget(); const coordinatedTarget = foot.getCoordinatedTarget(); const finalX = randomTarget.x * (1 - config.footCoordinationFactor) + coordinatedTarget.x * config.footCoordinationFactor; const finalY = randomTarget.y * (1 - config.footCoordinationFactor) + coordinatedTarget.y * config.footCoordinationFactor; foot.targetPos = { x: finalX, y: finalY }; foot.footState = FOOT_STATES.SEEKING; foot.stepStartTime = time; return true; } return false; }
         function processGaitQueue() { if (gaitActivationQueue.length === 0) return; for (let i = gaitActivationQueue.length - 1; i >= 0; i--) { const item = gaitActivationQueue[i]; item.delay--; if (item.delay <= 0) { activateFoot(item.foot); gaitActivationQueue.splice(i, 1); } } }
         function wakeNextMovers(triggeringFoot = null) { switch (config.gaitPattern) { case 'paired': if (footPairs.length === 0) return; for (let i = 0; i < footPairs.length; i++) { const pairIndex = (nextPairToWake + i) % footPairs.length; const pair = footPairs[pairIndex]; if (pair.every(foot => foot.footState === FOOT_STATES.FIXED)) { for (const foot of pair) activateFoot(foot); nextPairToWake = (pairIndex + 1) % footPairs.length; return; } } break; case 'sidewinder': if (feet.length === 0 || gaitActivationQueue.length > 0) return; let centerX = 0; for (const p of points) centerX += p.x; centerX /= points.length; const triggerSide = triggeringFoot ? (triggeringFoot.x < centerX ? 'left' : 'right') : 'right'; const sideToWake = triggerSide === 'left' ? 'right' : 'left'; let feetToWake = feet.filter(foot => { const footSide = foot.x < centerX ? 'left' : 'right'; return footSide === sideToWake && foot.footState === FOOT_STATES.FIXED; }); if (feetToWake.length === 0) { feetToWake = feet.filter(foot => foot.footState === FOOT_STATES.FIXED); } feetToWake.sort((a, b) => a.y - b.y); for (let i = 0; i < feetToWake.length; i++) { gaitActivationQueue.push({ foot: feetToWake[i], delay: i * config.waveDelay }); } break; case 'sequential': default: if (feet.length === 0) return; for (let i = 0; i < feet.length; i++) { nextFootToWake = (nextFootToWake + 1) % feet.length; if (activateFoot(feet[nextFootToWake])) break; } break; } }
         class SpatialHashGrid { constructor(bounds, cellSize) { this.bounds = bounds; this.cellSize = cellSize; this.cols = Math.ceil(bounds.width / cellSize); this.rows = Math.ceil(bounds.height / cellSize); this.grid = new Map(); } _getKey(x, y) { return `${x}|${y}`; } insert(point, index) { const cx = Math.floor(point.x / this.cellSize); const cy = Math.floor(point.y / this.cellSize); const key = this._getKey(cx, cy); if (!this.grid.has(key)) { this.grid.set(key, []); } this.grid.get(key).push({ point, index }); } query(point, radius) { const nearby = []; const r = radius / this.cellSize; const cx = Math.floor(point.x / this.cellSize); const cy = Math.floor(point.y / this.cellSize); for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) { for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) { const key = this._getKey(x, y); if (this.grid.has(key)) { nearby.push(...this.grid.get(key)); } } } return nearby; } }
-        class Point { constructor(x, y, isFoot = false) { this.x = this.oldX = x; this.y = this.oldY = y; this.isFoot = isFoot; this.isHair = false; this.footState = isFoot ? FOOT_STATES.FIXED : null; this.targetPos = { x, y }; this.searchPhase = Math.random() * Math.PI * 2; this.mass = 1; this.stepStartTime = 0; this.settleStartTime = 0; this.pulseMagnitude = 0; } update() { if (this.isFoot) this.updateFoot(); else this.updateBody(); }
+        class Point {
+            constructor(x, y, isFoot = false) {
+                this.x = this.oldX = x;
+                this.y = this.oldY = y;
+                this.isFoot = isFoot;
+                this.isHair = false;
+                this.footState = isFoot ? FOOT_STATES.FIXED : null;
+                this.targetPos = { x, y };
+                this.searchPhase = Math.random() * Math.PI * 2;
+                this.mass = 1;
+                this.stepStartTime = 0;
+                this.settleStartTime = 0;
+                this.pulseMagnitude = 0;
+                this.letter = DRAW_LETTERS[Math.floor(Math.random() * DRAW_LETTERS.length)];
+            }
+            update() { if (this.isFoot) this.updateFoot(); else this.updateBody(); }
             updateBody() {
                 const velocityRetention = 1.0 - config.dampingFactor;
                 const vX = (this.x - this.oldX) * velocityRetention;
@@ -571,10 +619,31 @@
                 this.y += vY + gravityY;
             }
             updateFoot() { switch (this.footState) { case FOOT_STATES.FIXED: this.x = this.targetPos.x; this.y = this.targetPos.y; break; case FOOT_STATES.SEEKING: let progress = (time - this.stepStartTime) / config.stepDuration; if (progress > 1) { this.setEdgeTarget(); this.stepStartTime = time; progress = 0; } const wobbleX = Math.sin(time * 0.02 + this.searchPhase) * config.wobbleStrength; const wobbleY = Math.cos(time * 0.015 + this.searchPhase) * config.wobbleStrength; const lift = Math.sin(progress * Math.PI) * config.stepHeight; this.x += (this.targetPos.x - this.x) * config.targetAttraction + wobbleX; this.y += (this.targetPos.y - this.y) * config.targetAttraction - lift + wobbleY + gravityY; this.x += gravityX; if (this.x <= 1 || this.x >= canvas.width - 1 || this.y <= 1 || this.y >= canvas.height - 1) { this.footState = FOOT_STATES.SETTLING; this.settleStartTime = time; this.targetPos.x = Math.max(0, Math.min(canvas.width, this.x)); this.targetPos.y = Math.max(0, Math.min(canvas.height, this.y)); this.pulseMagnitude = 1.0; } break; case FOOT_STATES.SETTLING: this.x = this.targetPos.x; this.y = this.targetPos.y; if (time > this.settleStartTime + config.stepCooldown) { this.footState = FOOT_STATES.FIXED; wakeNextMovers(this); } break; } } applyForce(fx, fy) { if (this.footState === FOOT_STATES.FIXED || this.footState === FOOT_STATES.SETTLING) return; this.x += fx / this.mass; this.y += fy / this.mass; } getRandomEdgeTarget() { const edge = Math.floor(Math.random() * 4); switch (edge) { case 0: return { x: Math.random() * canvas.width, y: 0 }; case 1: return { x: canvas.width, y: Math.random() * canvas.height }; case 2: return { x: Math.random() * canvas.width, y: canvas.height }; case 3: return { x: 0, y: Math.random() * canvas.height }; } } getCoordinatedTarget() { let centerX = 0, centerY = 0; for(const p of points) { centerX += p.x; centerY += p.y; } centerX /= points.length; centerY /= points.length; const vectorX = this.targetPos.x - centerX; const vectorY = this.targetPos.y - centerY; const oppositeX = centerX - vectorX; const oppositeY = centerY - vectorY; let bestDist = Infinity; let bestPoint = {x:0, y:0}; for(let x = 0; x <= canvas.width; x+= 50) { for(const p of [{x:x, y:0}, {x:x, y:canvas.height}]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if(d < bestDist) { bestDist = d; bestPoint = p; } } } for(let y = 0; y <= canvas.height; y+= 50) { for(const p of [{x:0, y:y}, {x:canvas.width, y:y}]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if(d < bestDist) { bestDist = d; bestPoint = p; } } } return bestPoint; } setEdgeTarget() { this.targetPos = this.getRandomEdgeTarget(); } }
-        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; this.isRigid = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; const contraction = 1.0 - (averagePulse * config.shiverIntensityFactor); const currentRestLength = this.baseRestLength * config.restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; let stiffness = config.springStiffness; if (this.isHair) { stiffness = config.tendrilStiffness; } else if (this.isRigid) { stiffness = config.rigidSectionStiffness; } const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
+        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; const contraction = 1.0 - (averagePulse * config.shiverIntensityFactor); const currentRestLength = this.baseRestLength * config.restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; const stiffness = this.isHair ? config.tendrilStiffness : config.springStiffness; const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
         function createGrid(density) { const bodySize = Math.min(canvas.width, canvas.height) * 0.6; const spacing = (density > 1) ? bodySize / (density - 1) : bodySize; const startX = (canvas.width - bodySize) / 2; const startY = (canvas.height - bodySize) / 2; for (let y = 0; y < density; y++) { for (let x = 0; x < density; x++) { points.push(new Point(startX + x * spacing, startY + y * spacing)); } } for (let y = 0; y < density; y++) { for (let x = 0; x < density; x++) { const i = y * density + x; if (x < density - 1) springs.push(new Spring(points[i], points[i + 1], spacing)); if (y < density - 1) springs.push(new Spring(points[i], points[i + density], spacing)); }} const perimeterRing = []; if (density > 1) { for (let i = 0; i < density; i++) perimeterRing.push(points[i]); for (let i = 1; i < density; i++) perimeterRing.push(points[i * density + (density - 1)]); for (let i = density - 2; i >= 0; i--) perimeterRing.push(points[(density - 1) * density + i]); for (let i = density - 2; i > 0; i--) perimeterRing.push(points[i * density]); } else if (points.length > 0) { perimeterRing.push(points[0]); } return { perimeter: perimeterRing }; }
-        function createRing(numPoints) { const bodySize = Math.min(canvas.width, canvas.height) * 0.4; const radius = bodySize; const centerX = canvas.width / 2; const centerY = canvas.height / 2; for (let i = 0; i < numPoints; i++) { const angle = (i / numPoints) * Math.PI * 2; points.push(new Point(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle))); } const avgDist = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y); return { perimeter: points, springThreshold: avgDist * 2.5 }; }
-        function createStar(numPoints) { if (numPoints % 2 !== 0) numPoints++; if (numPoints < 6) numPoints = 6; const bodySize = Math.min(canvas.width, canvas.height) * 0.4; const outerRadius = bodySize; const innerRadius = bodySize / 2; const centerX = canvas.width / 2; const centerY = canvas.height / 2; for (let i = 0; i < numPoints; i++) { const radius = (i % 2 === 0) ? outerRadius : innerRadius; const angle = (i / numPoints) * Math.PI * 2; points.push(new Point(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle))); } const avgDist = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y); return { perimeter: points, springThreshold: avgDist * 2.5 }; }
+        function createCross(density) {
+            if (density % 2 === 0) density++;
+            if (density < 5) density = 5;
+            const bodySize = Math.min(canvas.width, canvas.height) * 0.6;
+            const spacing = bodySize / (density - 1);
+            const startX = (canvas.width - bodySize) / 2;
+            const startY = (canvas.height - bodySize) / 2;
+            
+            const armWidth = Math.max(1, Math.floor(density / 3));
+            const armStart = Math.floor(density / 2) - Math.floor(armWidth / 2);
+            const armEnd = armStart + armWidth -1;
+
+            for (let y = 0; y < density; y++) {
+                for (let x = 0; x < density; x++) {
+                    const isVerticalArm = x >= armStart && x <= armEnd;
+                    const isHorizontalArm = y >= armStart && y <= armEnd;
+                    if(isVerticalArm || isHorizontalArm) {
+                        points.push(new Point(startX + x * spacing, startY + y * spacing));
+                    }
+                }
+            }
+            return { perimeter: points, springThreshold: spacing * 1.5 };
+        }
         function createLetter(character, samplingDensity) { const offscreenCanvas = document.createElement('canvas'); const offscreenCtx = offscreenCanvas.getContext('2d'); const fontSize = 200; const canvasSize = 250; offscreenCanvas.width = canvasSize; offscreenCanvas.height = canvasSize; offscreenCtx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`; offscreenCtx.textAlign = 'center'; offscreenCtx.textBaseline = 'middle'; offscreenCtx.fillText(character, canvasSize / 2, canvasSize / 2); const imageData = offscreenCtx.getImageData(0, 0, canvasSize, canvasSize); const samplingStep = Math.max(1, 20 - samplingDensity); const rawPoints = []; for (let y = 0; y < canvasSize; y += samplingStep) { for (let x = 0; x < canvasSize; x += samplingStep) { if (imageData.data[(y * canvasSize + x) * 4 + 3] > 128) { rawPoints.push({ x, y }); } }} if (rawPoints.length === 0) return { perimeter: [], springThreshold: 0 }; let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; for(const p of rawPoints) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); } const letterWidth = maxX - minX; const letterHeight = maxY - minY; const centerX = minX + letterWidth / 2; const centerY = minY + letterHeight / 2; const bodySize = Math.min(canvas.width, canvas.height) * 0.7; const scale = bodySize / Math.max(letterWidth, letterHeight); for(const p of rawPoints) { const scaledX = (p.x - centerX) * scale + (canvas.width / 2); const scaledY = (p.y - centerY) * scale + (canvas.height / 2); points.push(new Point(scaledX, scaledY)); } return { perimeter: points, springThreshold: samplingStep * scale * 1.5 }; }
         function createBug() {
             points = []; springs = [];
@@ -609,8 +678,7 @@
             points = []; springs = []; feet = []; time = 0; footPairs = []; gaitActivationQueue = [];
             let perimeterRing = []; let shapeData;
             switch (config.creatureShape) {
-                case 'ring': shapeData = createRing(config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
-                case 'star': shapeData = createStar(config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
+                case 'cross': shapeData = createCross(config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
                 case 'letter': shapeData = createLetter(config.letterInput, config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
                 case 'bug': shapeData = createBug(); perimeterRing = shapeData.perimeter; break;
                 default: shapeData = createGrid(config.pointDensity); perimeterRing = shapeData.perimeter; break;
@@ -635,8 +703,7 @@
                     }
                 }
             }
-            if (config.enableRigidCore) { let centerX = 0, centerY = 0, bodyPointCount = 0; for (const p of points) { if (!p.isHair) { centerX += p.x; centerY += p.y; bodyPointCount++; } } if (bodyPointCount > 0) { centerX /= bodyPointCount; centerY /= bodyPointCount; for (const s of springs) { if (!s.isHair) { const d1 = Math.hypot(s.p1.x - centerX, s.p1.y - centerY); const d2 = Math.hypot(s.p2.x - centerX, s.p2.y - centerY); if (d1 < config.rigidCoreRadius && d2 < config.rigidCoreRadius) { s.isRigid = true; } } } } }
-
+            
             let footPlacementPool;
             if (config.creatureShape === 'bug' && shapeData.legTips && shapeData.legTips.length > 0) { footPlacementPool = shapeData.legTips; }
             else if (config.placeFeetOnTendrils && tendrilTips.length > 0) { footPlacementPool = tendrilTips; }
@@ -696,27 +763,33 @@
                 const baseLineWidth = Math.max(0.2, 2.8 - (points.length / 25));
                 for (const s of springs) {
                     if (s.isHair) continue;
-                    if (s.isRigid) { ctx.strokeStyle = '#000000'; ctx.lineWidth = baseLineWidth + 1; }
-                    else { const intensity = (s.p1.pulseMagnitude + s.p2.pulseMagnitude) / 2; ctx.lineWidth = baseLineWidth + (intensity * (baseLineWidth * 3.5)); const gray = Math.floor(180 * (1 - intensity)); ctx.strokeStyle = `rgb(${gray}, ${gray}, ${gray})`; }
+                    const intensity = (s.p1.pulseMagnitude + s.p2.pulseMagnitude) / 2; 
+                    ctx.lineWidth = baseLineWidth + (intensity * (baseLineWidth * 3.5)); 
+                    const gray = Math.floor(180 * (1 - intensity)); 
+                    ctx.strokeStyle = `rgb(${gray}, ${gray}, ${gray})`;
                     ctx.beginPath(); ctx.moveTo(s.p1.x, s.p1.y); ctx.lineTo(s.p2.x, s.p2.y); ctx.stroke();
                 }
             }
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)'; ctx.lineWidth = 1; ctx.beginPath();
             for (const s of springs) { if (s.isHair) { ctx.moveTo(s.p1.x, s.p1.y); ctx.lineTo(s.p2.x, s.p2.y); } } ctx.stroke();
-
-            const baseBodyRadius = config.pointBaseSize;
-            const baseFootRadius = baseBodyRadius + 4.0;
-
+            
             for (const p of points) {
                 if (p.isHair) continue;
                 ctx.beginPath();
 
                 if (p.isFoot) {
-                    if (p.footState === FOOT_STATES.FIXED) { ctx.fillStyle = '#d62828'; }
-                    else if (p.footState === FOOT_STATES.SEEKING) { ctx.fillStyle = '#f77f00'; }
-                    else { ctx.fillStyle = '#003049'; }
-                    ctx.arc(p.x, p.y, baseFootRadius, 0, Math.PI * 2);
-                    ctx.fill();
+                    if (p.footState === FOOT_STATES.SEEKING) {
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+                        ctx.lineWidth = 2.5;
+                        const seekingRadius = config.pointBaseSize + 6;
+                        ctx.arc(p.x, p.y, seekingRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = '#000000';
+                        const fixedRadius = config.pointBaseSize + 2;
+                        ctx.arc(p.x, p.y, fixedRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 } else {
                     const intensity = p.pulseMagnitude;
                     const gray = Math.floor(180 * (1 - intensity));
@@ -724,21 +797,21 @@
                     const radiusMultiplier = 1 + (intensity * config.shiverIntensityFactor * 3.0);
 
                     if (config.drawMode === 'point') {
-                        const currentRadius = Math.max(0.1, baseBodyRadius * radiusMultiplier);
+                        const currentRadius = Math.max(0.1, config.pointBaseSize * radiusMultiplier);
                         ctx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
                         ctx.fill();
                     } else if (config.drawMode === 'letter') {
-                        const fontSize = Math.max(1, (baseBodyRadius * 3) * radiusMultiplier);
-                        ctx.font = `bold ${fontSize}px sans-serif`;
+                        const fontSize = Math.max(1, config.letterBaseSize * radiusMultiplier);
+                        ctx.font = `lighter ${fontSize}px sans-serif`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(config.letterToDraw, p.x, p.y);
+                        ctx.fillText(p.letter, p.x, p.y);
                     }
                 }
             }
         }
         function animate() { frameCount++; const currentTime = performance.now(); const deltaTime = currentTime - lastFpsUpdateTime; if (deltaTime > 1000) { fps = Math.round((frameCount * 1000) / deltaTime); if (fpsCounterElement) { fpsCounterElement.textContent = fps; } frameCount = 0; lastFpsUpdateTime = currentTime; } update(); draw(); drawGravityIndicator(); requestAnimationFrame(animate); }
-        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'dampingFactor') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = isFloat ? value.toFixed(precision) : value; } saveConfig(); if (requiresReset) { init(); } }); }
+        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { if (isFloat) { const precision = (id === 'dampingFactor') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = value.toFixed(precision); } else { display.textContent = value; } } saveConfig(); if (requiresReset) { init(); } }); }
         function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); saveConfig(); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
 
         function handleMotionEvent(event) {
@@ -941,11 +1014,10 @@
                     config.numFeet = 6;
                     numFeetSlider.value = 6;
                     numFeetValueDisplay.textContent = 6;
-                } else {
-                    densityLabel.childNodes[0].nodeValue = "Total Points ";
+                } else if (config.creatureShape === 'cross') {
+                    densityLabel.childNodes[0].nodeValue = "Arm Length ";
                     densitySlider.min = 5;
-                    densitySlider.max = 30;
-                    if(parseInt(densitySlider.value) < 5) densitySlider.value = 5;
+                    densitySlider.max = 19;
                 }
                 densityValue.textContent = densitySlider.value;
                 config.pointDensity = parseInt(densitySlider.value);
@@ -986,8 +1058,7 @@
         function setupAppearanceControls() {
             const modeSelector = document.getElementById('drawMode');
             const pointContainer = document.getElementById('pointSizeContainer');
-            const letterContainer = document.getElementById('letterChoiceContainer');
-            const letterSelector = document.getElementById('letterChoice');
+            const letterContainer = document.getElementById('letterSizeContainer');
 
             const updateAppearanceMode = () => {
                 config.drawMode = modeSelector.value;
@@ -996,10 +1067,8 @@
             };
 
             modeSelector.addEventListener('change', () => { updateAppearanceMode(); saveConfig(); });
-            letterSelector.addEventListener('change', e => { config.letterToDraw = e.target.value; saveConfig(); });
-
             setupSlider('pointSize', 'pointSizeValue', (val) => { config.pointBaseSize = val; }, true);
-
+            setupSlider('letterSize', 'letterSizeValue', (val) => { config.letterBaseSize = val; }, false);
             updateAppearanceMode();
         }
 
@@ -1045,10 +1114,7 @@
         setupSlider('numFeet', 'numFeetValue', (val) => { config.numFeet = val; }, false, true);
         setupSlider('numSeekingFeet', 'numSeekingFeetValue', (val) => { config.numSeekingFeet = val; }, false, true);
         setupSlider('waveDelay', 'waveDelayValue', (val) => { config.waveDelay = val; }, false);
-        setupSlider('rigidCoreRadius', 'rigidCoreRadiusValue', (val) => { config.rigidCoreRadius = val; }, false, true);
-        setupSlider('rigidSectionStiffness', 'rigidSectionStiffnessValue', (val) => { config.rigidSectionStiffness = val; }, true, true);
 
-        setupCheckbox('enableRigidCore', (val) => { config.enableRigidCore = val; }, true, [document.getElementById('rigidityControlsContainer')]);
         setupCheckbox('enableTendrils', (val) => { config.enableTendrils = val; }, true, [document.getElementById('tendrilControlsContainer')]);
         setupCheckbox('randomPlacement', (val) => { config.useRandomPlacement = val; }, true);
 
@@ -1061,6 +1127,8 @@
         setupToggleControlsButton();
         setupGravityControls();
         setupResetButton();
+        setupRandomizeButton();
+        setupTitleClick();
 
         window.addEventListener('resize', handleResize);
         window.addEventListener('orientationchange', updateOrientationDebug);
