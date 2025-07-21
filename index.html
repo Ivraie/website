@@ -48,6 +48,22 @@
         #title-container h1:hover {
             color: rgba(0, 0, 0, 0.7);
         }
+        
+        /* START: ADDED ANIMATION STYLES */
+        @keyframes flash {
+            0% {
+                color: #ffffff;
+                text-shadow: 0 0 15px rgba(0,0,0,0.4);
+            }
+            100% {
+                color: rgba(0, 0, 0, 1);
+                text-shadow: none;
+            }
+        }
+        #title-container h1.flashing {
+            animation: flash 1s ease-out;
+        }
+        /* END: ADDED ANIMATION STYLES */
 
         #toggleControlsBtn {
             position: fixed;
@@ -206,6 +222,8 @@
                     <select id="creatureShape">
                         <option value="grid" selected>Grid</option>
                         <option value="cross">Cross</option>
+                        <option value="daddy">Daddy Long Legs</option>
+                        <option value="hairybug">Hairy Legs Bug</option>
                         <option value="letter">Letter</option>
                         <option value="bug">Bug</option>
                     </select>
@@ -219,7 +237,7 @@
                     <input type="range" id="pointDensity" min="3" max="20" step="1" value="13" />
                 </div>
                 <div>
-                    <label for="numFeet">Number of Feet <span id="numFeetValue" class="value-display">2</span></label>
+                    <label for="numFeet" id="numFeetLabel">Number of Feet <span id="numFeetValue" class="value-display">2</span></label>
                     <input type="range" id="numFeet" min="2" max="16" step="1" value="2" />
                 </div>
                 <div>
@@ -242,11 +260,15 @@
                 </div>
                 <div id="pointSizeContainer">
                     <label for="pointSize">Point Size <span id="pointSizeValue" class="value-display">1.3</span></label>
-                    <input type="range" id="pointSize" min="1" max="15" step="0.1" value="1.3" />
+                    <input type="range" id="pointSize" min="1" max="4" step="0.1" value="1.3" />
                 </div>
                 <div id="letterSizeContainer" style="display: none;">
                     <label for="letterSize">Letter Size <span id="letterSizeValue" class="value-display">10</span></label>
                     <input type="range" id="letterSize" min="5" max="50" step="1" value="10" />
+                </div>
+                <div>
+                    <label for="footSize">Foot Size <span id="footSizeValue" class="value-display">4.0</span></label>
+                    <input type="range" id="footSize" min="1" max="5" step="0.1" value="4.0" />
                 </div>
             </div>
             <div class="control-group">
@@ -440,6 +462,7 @@
             drawMode: 'point',
             pointBaseSize: 1.3,
             letterBaseSize: 10,
+            footSize: 4.0,
             enableTendrils: true,
             tendrilPlacementMode: 'count',
             numTendrils: 10,
@@ -519,12 +542,13 @@
             const getRandomBool = () => Math.random() < 0.5;
             const getRandomFromList = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-            config.creatureShape = getRandomFromList(['grid', 'cross', 'letter', 'bug']);
+            config.creatureShape = getRandomFromList(['grid', 'cross', 'daddy', 'hairybug', 'letter', 'bug']);
             config.restLengthFactor = getRandomFloat(0.5, 1.2);
             config.useRandomPlacement = getRandomBool();
             config.drawMode = getRandomFromList(['point', 'letter']);
-            config.pointBaseSize = getRandomFloat(1, 5);
+            config.pointBaseSize = getRandomFloat(1, 4);
             config.letterBaseSize = getRandomInt(8, 30);
+            config.footSize = getRandomFloat(1, 5);
             config.enableTendrils = getRandomBool();
             config.tendrilPlacementMode = getRandomFromList(['count', 'density']);
             config.numTendrils = getRandomInt(5, 80);
@@ -561,7 +585,13 @@
         function setupTitleClick() {
             const titleElement = document.querySelector('#title-container h1');
             if (titleElement) {
-                titleElement.addEventListener('click', randomizeConfig);
+                titleElement.addEventListener('click', () => {
+                    titleElement.classList.add('flashing');
+                    randomizeConfig();
+                });
+                titleElement.addEventListener('animationend', () => {
+                    titleElement.classList.remove('flashing');
+                });
             }
         }
 
@@ -620,6 +650,50 @@
             }
             return { perimeter: points, springThreshold: spacing * 1.5 };
         }
+        function createDaddyLongLegs() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const bodyRadius = 20;
+            const numBodyPoints = config.pointDensity;
+            const legLength = Math.min(canvas.width, canvas.height) * 0.35;
+            const numLegSegments = 10;
+            
+            const bodyPoints = [];
+            for (let i = 0; i < numBodyPoints; i++) {
+                const angle = (i / numBodyPoints) * Math.PI * 2;
+                const p = new Point(centerX + bodyRadius * Math.cos(angle), centerY + bodyRadius * Math.sin(angle));
+                bodyPoints.push(p);
+                points.push(p);
+            }
+
+            for (let i = 0; i < numBodyPoints; i++) {
+                springs.push(new Spring(bodyPoints[i], bodyPoints[(i + 1) % numBodyPoints], bodyRadius * 2 * Math.PI / numBodyPoints));
+                springs.push(new Spring(bodyPoints[i], bodyPoints[(i + Math.floor(numBodyPoints/2)) % numBodyPoints], bodyRadius * 2));
+            }
+
+            const legTips = [];
+            for (let i = 0; i < config.numFeet; i++) {
+                const attachPoint = bodyPoints[i % numBodyPoints];
+                let prevPoint = attachPoint;
+                const angle = (i / config.numFeet) * Math.PI * 2 + (Math.PI / config.numFeet);
+                const segmentLength = legLength / numLegSegments;
+
+                for (let j = 1; j <= numLegSegments; j++) {
+                    const newPoint = new Point(
+                        attachPoint.x + Math.cos(angle) * j * segmentLength,
+                        attachPoint.y + Math.sin(angle) * j * segmentLength
+                    );
+                    points.push(newPoint);
+                    springs.push(new Spring(prevPoint, newPoint, segmentLength));
+                    prevPoint = newPoint;
+
+                    if (j === numLegSegments) {
+                        legTips.push(newPoint);
+                    }
+                }
+            }
+            return { perimeter: bodyPoints, legTips: legTips };
+        }
         function createLetter(character, samplingDensity) { const offscreenCanvas = document.createElement('canvas'); const offscreenCtx = offscreenCanvas.getContext('2d'); const fontSize = 200; const canvasSize = 250; offscreenCanvas.width = canvasSize; offscreenCanvas.height = canvasSize; offscreenCtx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`; offscreenCtx.textAlign = 'center'; offscreenCtx.textBaseline = 'middle'; offscreenCtx.fillText(character, canvasSize / 2, canvasSize / 2); const imageData = offscreenCtx.getImageData(0, 0, canvasSize, canvasSize); const samplingStep = Math.max(1, 20 - samplingDensity); const rawPoints = []; for (let y = 0; y < canvasSize; y += samplingStep) { for (let x = 0; x < canvasSize; x += samplingStep) { if (imageData.data[(y * canvasSize + x) * 4 + 3] > 128) { rawPoints.push({ x, y }); } }} if (rawPoints.length === 0) return { perimeter: [], springThreshold: 0 }; let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; for(const p of rawPoints) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); } const letterWidth = maxX - minX; const letterHeight = maxY - minY; const centerX = minX + letterWidth / 2; const centerY = minY + letterHeight / 2; const bodySize = Math.min(canvas.width, canvas.height) * 0.7; const scale = bodySize / Math.max(letterWidth, letterHeight); for(const p of rawPoints) { const scaledX = (p.x - centerX) * scale + (canvas.width / 2); const scaledY = (p.y - centerY) * scale + (canvas.height / 2); points.push(new Point(scaledX, scaledY)); } return { perimeter: points, springThreshold: samplingStep * scale * 1.5 }; }
         function createBug() {
             points = []; springs = [];
@@ -649,18 +723,122 @@
             const perimeter = [...topSpine, ...bottomSpine.reverse(), ...legTips, ...facePoints];
             return { perimeter: perimeter, legTips: legTips };
         }
-        function createSpringsFromProximity(threshold) { if (points.length < 2) return; const grid = new SpatialHashGrid({ width: canvas.width, height: canvas.height }, threshold * 1.5); for (let i = 0; i < points.length; i++) { grid.insert(points[i], i); } for (let i = 0; i < points.length; i++) { const p1 = points[i]; const nearby = grid.query(p1, threshold); for (const item of nearby) { const p2 = item.point; const j = item.index; if (i >= j) continue; const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y); if (dist < threshold) { springs.push(new Spring(p1, p2, dist)); } } } }
+        function createHairyLegsBug() {
+            points = []; springs = [];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            const bodyRadius = 40;
+            const bodyPoints = [];
+            bodyPoints.push(new Point(centerX, centerY));
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                bodyPoints.push(new Point(centerX + bodyRadius * Math.cos(angle), centerY + bodyRadius * Math.sin(angle)));
+            }
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                bodyPoints.push(new Point(centerX + bodyRadius/2 * Math.cos(angle), centerY + bodyRadius/2 * Math.sin(angle)));
+            }
+            points.push(...bodyPoints);
+            createSpringsFromProximity(bodyRadius * 1.1, bodyPoints);
+
+            const addHairs = (parentPoint, directionVector) => {
+                if (!config.enableTendrils) return;
+                const numHairsPerJoint = 4;
+                const hairSpreadAngle = Math.PI * 0.8;
+                const baseAngle = Math.atan2(directionVector.y, directionVector.x);
+
+                for (let i = 0; i < numHairsPerJoint; i++) {
+                    let prevHairPoint = parentPoint;
+                    const angleOffset = (i / (numHairsPerJoint - 1) - 0.5) * hairSpreadAngle;
+                    const hairAngle = baseAngle + Math.PI / 2 + angleOffset;
+                    
+                    const hairSegmentLength = 4;
+                    const maxSegmentCount = Math.max(1, Math.floor(config.tendrilLength * config.tendrilQuality));
+                    const minSegmentCount = Math.max(1, Math.floor(maxSegmentCount * (1 - config.tendrilLengthVariation)));
+                    const lengthRange = maxSegmentCount - minSegmentCount;
+                    const thisHairLength = minSegmentCount + Math.floor(Math.random() * (lengthRange + 1));
+
+                    for (let k = 0; k < thisHairLength; k++) {
+                        const newHairPoint = new Point(prevHairPoint.x + Math.cos(hairAngle) * hairSegmentLength, prevHairPoint.y + Math.sin(hairAngle) * hairSegmentLength);
+                        newHairPoint.isHair = true;
+                        points.push(newHairPoint);
+                        const newSpring = new Spring(prevHairPoint, newHairPoint, hairSegmentLength);
+                        newSpring.isHair = true;
+                        springs.push(newSpring);
+                        prevHairPoint = newHairPoint;
+                    }
+                }
+            };
+            
+            const legTips = [];
+            const numLegs = 6;
+            const legLength = 100;
+            const numLegSegments = 4;
+            const segmentLength = legLength / numLegSegments;
+            const legAttachmentPoints = bodyPoints.slice(1, 13); 
+            const legAttachmentIndices = [0, 2, 4, 6, 8, 10];
+
+            for (let i = 0; i < numLegs; i++) {
+                const attachPoint = legAttachmentPoints[legAttachmentIndices[i]];
+                let prevPoint = attachPoint;
+                const angle = Math.atan2(attachPoint.y - centerY, attachPoint.x - centerX);
+                const legChain = [];
+
+                for (let j = 1; j <= numLegSegments; j++) {
+                    const newPoint = new Point(
+                        attachPoint.x + Math.cos(angle) * j * segmentLength,
+                        attachPoint.y + Math.sin(angle) * j * segmentLength
+                    );
+                    points.push(newPoint);
+                    springs.push(new Spring(prevPoint, newPoint, segmentLength));
+                    legChain.push(newPoint);
+                    prevPoint = newPoint;
+
+                    if (j === numLegSegments) {
+                        legTips.push(newPoint);
+                    }
+                }
+                
+                for (let k = 0; k < legChain.length - 1; k++) {
+                    const legPoint = legChain[k];
+                    const nextLegPoint = legChain[k+1];
+                    const legVector = { x: nextLegPoint.x - legPoint.x, y: nextLegPoint.y - legPoint.y };
+                    addHairs(legPoint, legVector);
+                }
+            }
+
+            return { perimeter: bodyPoints, legTips: legTips };
+        }
+        function createSpringsFromProximity(threshold, pointSubset = points) { 
+            if (pointSubset.length < 2) return; 
+            const grid = new SpatialHashGrid({ width: canvas.width, height: canvas.height }, threshold * 1.5); 
+            for (let i = 0; i < pointSubset.length; i++) { grid.insert(pointSubset[i], i); } 
+            for (let i = 0; i < pointSubset.length; i++) { 
+                const p1 = pointSubset[i]; 
+                const nearby = grid.query(p1, threshold); 
+                for (const item of nearby) { 
+                    const p2 = item.point; 
+                    const j = item.index; 
+                    if (i >= j) continue; 
+                    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y); 
+                    if (dist < threshold) { springs.push(new Spring(p1, p2, dist)); } 
+                } 
+            } 
+        }
         function init() {
             points = []; springs = []; feet = []; time = 0; footPairs = []; gaitActivationQueue = [];
             let perimeterRing = []; let shapeData;
             switch (config.creatureShape) {
                 case 'cross': shapeData = createCross(config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
+                case 'daddy': shapeData = createDaddyLongLegs(); perimeterRing = shapeData.perimeter; break;
+                case 'hairybug': shapeData = createHairyLegsBug(); perimeterRing = shapeData.perimeter; break;
                 case 'letter': shapeData = createLetter(config.letterInput, config.pointDensity); perimeterRing = shapeData.perimeter; createSpringsFromProximity(shapeData.springThreshold); break;
                 case 'bug': shapeData = createBug(); perimeterRing = shapeData.perimeter; break;
                 default: shapeData = createGrid(config.pointDensity); perimeterRing = shapeData.perimeter; break;
             }
             const tendrilTips = [];
-            if (config.enableTendrils && perimeterRing.length > 0) {
+            if (config.enableTendrils && perimeterRing.length > 0 && config.creatureShape !== 'hairybug') {
                 const hairSegmentLength = 5; let actualNumTendrils = 0;
                 if (config.tendrilPlacementMode === 'density') { actualNumTendrils = Math.floor(perimeterRing.length * config.tendrilDensity); } else { actualNumTendrils = config.numTendrils; }
                 actualNumTendrils = Math.min(actualNumTendrils, perimeterRing.length);
@@ -680,12 +858,16 @@
                 }
             }
             
-            let footPlacementPool;
-            if (config.creatureShape === 'bug' && shapeData.legTips && shapeData.legTips.length > 0) { footPlacementPool = shapeData.legTips; }
-            else if (config.placeFeetOnTendrils && tendrilTips.length > 0) { footPlacementPool = tendrilTips; }
-            else { footPlacementPool = perimeterRing.filter(p => !p.isFoot); }
+            let footPlacementPool = (shapeData && shapeData.legTips) ? shapeData.legTips : [];
+            if (config.placeFeetOnTendrils && tendrilTips.length > 0) { 
+                footPlacementPool = footPlacementPool.concat(tendrilTips);
+            }
+            if (footPlacementPool.length === 0) {
+                footPlacementPool = perimeterRing.filter(p => !p.isFoot);
+            }
 
-            const actualNumFeet = Math.min(config.numFeet, footPlacementPool.length);
+            const actualNumFeet = ['daddy', 'bug', 'hairybug'].includes(config.creatureShape) ? shapeData.legTips.length : Math.min(config.numFeet, footPlacementPool.length);
+
             if (actualNumFeet > 0) { if (config.useRandomPlacement) { const shuffledPool = [...footPlacementPool].sort(() => 0.5 - Math.random()); for (let i = 0; i < actualNumFeet; i++) { shuffledPool[i].isFoot = true; feet.push(shuffledPool[i]); } } else { for (let i = 0; i < actualNumFeet; i++) { const index = Math.floor(i * (footPlacementPool.length / actualNumFeet)); footPlacementPool[index].isFoot = true; feet.push(footPlacementPool[index]); } } }
             if (feet.length > 0) { feet.sort((a, b) => a.x - b.x); let start = 0, end = feet.length - 1; while (start <= end) { if (start === end) { footPairs.push([feet[start]]); } else { footPairs.push([feet[start], feet[end]]); } start++; end--; } nextPairToWake = 0; for(const foot of feet) { foot.footState = FOOT_STATES.FIXED; foot.setEdgeTarget(); foot.x = foot.targetPos.x; foot.y = foot.targetPos.y; } const seekersToStart = config.gaitPattern === 'sequential' ? config.numSeekingFeet : 1; for(let i=0; i<seekersToStart; i++) { wakeNextMovers(); } }
         }
@@ -754,14 +936,14 @@
                 ctx.beginPath();
 
                 if (p.isFoot) {
-                    let footRadius;
-                    if (p.footState === FOOT_STATES.SEEKING) {
-                        footRadius = config.pointBaseSize + 6;
-                    } else {
-                        footRadius = config.pointBaseSize + 2;
-                    }
+                    const baseFootRadius = config.footSize;
+                    const seekingRadius = config.footSize + 4.0;
                     ctx.fillStyle = '#000000';
-                    ctx.arc(p.x, p.y, footRadius, 0, Math.PI * 2);
+                    if (p.footState === FOOT_STATES.SEEKING) {
+                        ctx.arc(p.x, p.y, seekingRadius, 0, Math.PI * 2);
+                    } else {
+                        ctx.arc(p.x, p.y, baseFootRadius, 0, Math.PI * 2);
+                    }
                     ctx.fill();
                 } else {
                     const intensity = p.pulseMagnitude;
@@ -784,7 +966,7 @@
             }
         }
         function animate() { frameCount++; const currentTime = performance.now(); const deltaTime = currentTime - lastFpsUpdateTime; if (deltaTime > 1000) { fps = Math.round((frameCount * 1000) / deltaTime); if (fpsCounterElement) { fpsCounterElement.textContent = fps; } frameCount = 0; lastFpsUpdateTime = currentTime; } update(); draw(); drawGravityIndicator(); requestAnimationFrame(animate); }
-        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { if (isFloat) { const precision = (id === 'dampingFactor') ? 3 : (id === 'pointSize' ? 1 : 2); display.textContent = value.toFixed(precision); } else { display.textContent = value; } } saveConfig(); if (requiresReset) { init(); } }); }
+        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { if (isFloat) { const precision = (id === 'dampingFactor') ? 3 : (id === 'pointSize' || id === 'footSize' ? 1 : 2); display.textContent = value.toFixed(precision); } else { display.textContent = value; } } saveConfig(); if (requiresReset) { init(); } }); }
         function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); saveConfig(); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
 
         function handleMotionEvent(event) {
@@ -960,12 +1142,14 @@
             const letterInputContainer = document.getElementById('letterInputContainer');
             const letterInput = document.getElementById('letterInput');
             const numFeetSlider = document.getElementById('numFeet');
+            const numFeetLabel = document.getElementById('numFeetLabel');
             const numFeetValueDisplay = document.getElementById('numFeetValue');
 
             selector.addEventListener('change', e => {
                 config.creatureShape = e.target.value;
                 letterInputContainer.style.display = 'none';
                 densityControlDiv.style.display = 'block';
+                numFeetLabel.childNodes[0].nodeValue = "Number of Feet ";
 
                 if (config.creatureShape === 'grid') {
                     densityLabel.childNodes[0].nodeValue = "Points / Side ";
@@ -977,11 +1161,22 @@
                     densitySlider.min = 2;
                     densitySlider.max = 18;
                     letterInputContainer.style.display = 'block';
-                } else if (config.creatureShape === 'bug') {
+                } else if (config.creatureShape === 'bug' || config.creatureShape === 'hairybug') {
                     densityControlDiv.style.display = 'none';
+                    numFeetLabel.childNodes[0].nodeValue = "Number of Legs ";
                     config.numFeet = 6;
-                    numFeetSlider.value = 6;
-                    numFeetValueDisplay.textContent = 6;
+                    numFeetSlider.value = config.numFeet;
+                    numFeetValueDisplay.textContent = config.numFeet;
+                } else if (config.creatureShape === 'daddy') {
+                    densityLabel.childNodes[0].nodeValue = "Body Points ";
+                    densitySlider.min = 5;
+                    densitySlider.max = 20;
+                    if (config.pointDensity < 5) config.pointDensity = 8;
+                    densitySlider.value = config.pointDensity;
+                    numFeetLabel.childNodes[0].nodeValue = "Number of Legs ";
+                    if (config.numFeet < 4) config.numFeet = 8;
+                    numFeetSlider.value = config.numFeet;
+                    numFeetValueDisplay.textContent = config.numFeet;
                 } else if (config.creatureShape === 'cross') {
                     densityLabel.childNodes[0].nodeValue = "Arm Length ";
                     densitySlider.min = 5;
@@ -1037,6 +1232,7 @@
             modeSelector.addEventListener('change', () => { updateAppearanceMode(); saveConfig(); });
             setupSlider('pointSize', 'pointSizeValue', (val) => { config.pointBaseSize = val; }, true);
             setupSlider('letterSize', 'letterSizeValue', (val) => { config.letterBaseSize = val; }, false);
+            setupSlider('footSize', 'footSizeValue', (val) => { config.footSize = val; }, true);
             updateAppearanceMode();
         }
 
