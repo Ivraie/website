@@ -76,6 +76,18 @@
             color: rgba(0, 0, 0, 0.6);
         }
 
+        #eraseBtn {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 60px;
+            height: 60px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 9;
+        }
+
         #toggleControlsBtn {
             position: fixed;
             top: 20px;
@@ -300,6 +312,7 @@
 </head>
 
 <body>
+    <button id="eraseBtn" title="Erase all imprints"></button>
     <button id="toggleControlsBtn" title="Toggle Controls">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px">
             <rect x="10" y="1" width="4" height="22" rx="1" />
@@ -353,7 +366,7 @@
                 <div id="pruneThresholdContainer">
                     <div class="sub-control">
                         <label for="minPointsPerFoot">Min Points Per Foot <span id="minPointsPerFootValue"
-                                class="value-display">1</span></label>
+                                class="value-display">20</span></label>
                         <input type="range" id="minPointsPerFoot" min="1" max="50" step="1" value="20" />
                     </div>
                 </div>
@@ -435,6 +448,14 @@
                         <option value="a">a</option>
                         <option value="e">e</option>
                     </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>Printing</h3>
+                <div>
+                    <label for="printInterval">Continuous Print Interval (ms) <span id="printIntervalValue"
+                            class="value-display">250</span></label>
+                    <input type="range" id="printInterval" min="50" max="1000" step="10" value="250" />
                 </div>
             </div>
             <div class="control-group">
@@ -719,6 +740,9 @@
         let gravityX = 0;
         let gravityY = gravity;
 
+        let printIntervalMs = 250;
+        let continuousPrintIntervalId = null;
+
         let timeSinceEmpty = null;
         let timeSinceLastAutoAdd = null;
         let isInitializingFill = false;
@@ -745,12 +769,13 @@
             incrementSteps() { this.stepsTaken++; }
             die() {
                 if (this.isDead) return;
-
-                this.draw(backgroundCtx, true);
-
+                this.printToBackground();
                 this.isDead = true;
                 this.deathTime = time;
                 for (const foot of this.feet) { foot.footState = FOOT_STATES.FIXED; }
+            }
+            printToBackground() {
+                this.draw(backgroundCtx, true);
             }
             hasFaded() { return this.isDead && deathEffect === 'fade' && (time - this.deathTime) > FADE_DURATION; }
             activateFoot(foot) {
@@ -997,7 +1022,7 @@
         function init() {
             creatures = [];
             isInitializingFill = false;
-            resetHistory(); // Also clear history on full init
+            resetHistory();
             if (autoMode === 'top-up') {
                 isInitializingFill = true;
                 timeSinceLastAutoAdd = time;
@@ -1139,6 +1164,14 @@
         function setupAppearanceControls() { const e = document.getElementById("drawMode"), t = document.getElementById("pointSizeContainer"), n = document.getElementById("letterChoiceContainer"), i = document.getElementById("letterChoice"), a = () => { drawMode = e.value, t.style.display = "point" === drawMode ? "block" : "none", n.style.display = "letter" === drawMode ? "block" : "none" }; e.addEventListener("change", a), i.addEventListener("change", e => { letterToDraw = e.target.value }), setupSlider("pointSize", "pointSizeValue", e => { pointBaseSize = e }, !0), a() }
         function setupToggleControlsButton() { const e = document.getElementById("toggleControlsBtn"), t = document.querySelector(".controls"); e && t && e.addEventListener("click", () => { t.classList.toggle("hidden") }) }
 
+        function printAllCreatures() {
+            for (const creature of creatures) {
+                if (!creature.isDead) {
+                    creature.printToBackground();
+                }
+            }
+        }
+
         function setupInteractionHandlers() {
             const addBtn = document.getElementById("addCreatureBtn");
             const titleH1 = document.querySelector('#title-container h1');
@@ -1148,17 +1181,40 @@
             }
 
             if (titleH1) {
-                // Clicking the title now clears the history of imprints.
-                titleH1.addEventListener('click', resetHistory);
+                const startPrinting = (e) => {
+                    e.preventDefault();
+                    if (continuousPrintIntervalId !== null) return;
+                    printAllCreatures();
+                    continuousPrintIntervalId = setInterval(printAllCreatures, printIntervalMs);
+                };
+                const stopPrinting = () => {
+                    if (continuousPrintIntervalId !== null) {
+                        clearInterval(continuousPrintIntervalId);
+                        continuousPrintIntervalId = null;
+                    }
+                };
+
+                titleH1.addEventListener('mousedown', startPrinting);
+                titleH1.addEventListener('touchstart', startPrinting);
+
+                window.addEventListener('mouseup', stopPrinting);
+                window.addEventListener('touchend', stopPrinting);
+                titleH1.addEventListener('mouseleave', stopPrinting);
             }
 
-            // Pressing Spacebar still adds a new creature.
             document.addEventListener("keydown", function (e) {
                 if (e.code === "Space" && !e.target.closest("input, select, button")) {
                     e.preventDefault();
                     addCreature();
                 }
             });
+        }
+
+        function setupEraseButton() {
+            const btn = document.getElementById('eraseBtn');
+            if (btn) {
+                btn.addEventListener('click', resetHistory);
+            }
         }
 
         function handleCopyParameters() { const params = { creatureShape, pointDensity, numFeet, restLengthFactor, useRandomPlacement, damping, springStiffness, gravity, shiverIntensityFactor, shiverPropagationFactor, numSeekingFeet, footCoordinationFactor, stepCooldown, stepDuration, stepHeight, wobbleStrength, targetAttraction, gaitPattern, enableTendrils, numTendrils, tendrilLength, tendrilStiffness, placeFeetOnTendrils, tendrilPlacementMode, tendrilDensity, tendrilQuality, tendrilLengthVariation, enableRigidCore, rigidCoreRadius, rigidSectionStiffness, drawMode, pointBaseSize, letterToDraw, maxLineThickness, autoAddDelaySeconds, autoMode, enableBreathing, breathingRate, breathingAmplitude, breathingOffset, pruneUnfootedPoints, enableAging, agingMode, lifespanSeconds, maxFootsteps, deathEffect, enableCreatureLimit, maxCreatures, enablePointLimit, maxPoints, letterInput: document.getElementById('letterInput').value }; const paramsString = JSON.stringify(params, null, 2); navigator.clipboard.writeText(paramsString).then(() => { const btn = document.getElementById('copyParamsBtn'); if (btn) { const originalText = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = originalText; }, 1500); } }).catch(err => { console.error('Failed to copy parameters: ', err); }); console.log("Current Parameters:", params); }
@@ -1232,6 +1288,8 @@
         setupSlider('autoAddDelay', 'autoAddDelayValue', (val) => { autoAddDelaySeconds = val; }, true);
         setupSlider('minShade', 'minShadeValue', (val) => { minShade = val; }, true);
         setupSlider('minPointsPerFoot', 'minPointsPerFootValue', (val) => { minPointsPerFoot = val; }, false, true);
+        setupSlider('printInterval', 'printIntervalValue', (val) => { printIntervalMs = val; }, false);
+
 
         setupCheckbox('enableRigidCore', (val) => { enableRigidCore = val; }, true, [document.getElementById('rigidityControlsContainer')]);
         setupCheckbox('enableTendrils', (val) => { enableTendrils = val; }, true, [document.getElementById('tendrilControlsContainer')]);
@@ -1247,6 +1305,7 @@
         setupAppearanceControls();
         setupToggleControlsButton();
         setupInteractionHandlers();
+        setupEraseButton();
         setupBreathingControls();
         setupAgingControls();
         setupPopulationControls();
