@@ -534,7 +534,6 @@
                     <label for="gravitySource">Gravity Source</label>
                     <select id="gravitySource">
                         <option value="fixed" selected>Fixed (Slider)</option>
-                        <option value="motion">Device Motion</option>
                         <option value="orientation">Device Orientation</option>
                     </select>
                 </div>
@@ -988,12 +987,17 @@
         function updateCreatureCountDisplay() { const d = document.getElementById('currentCreaturesValue'); if (d) d.textContent = creatures.length; }
         function updateAddButtonState() { const b = document.getElementById('addCreatureBtn'); if (!b) return; b.disabled = (enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints); }
         function addCreature() { if ((enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints)) return; const char = document.getElementById('letterInput').value || '+'; creatures.push(new Creature(creatureShape, char)); if (enablePointLimit && getCurrentTotalPoints() > maxPoints) { creatures.pop(); } updateAddButtonState(); updateCurrentPointsDisplay(); updateCreatureCountDisplay(); }
-        function init() {
-            creatures = [];
-            isInitializingFill = false;
+
+        function resetHistory() {
             if (backgroundCtx) {
                 backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
             }
+        }
+
+        function init() {
+            creatures = [];
+            isInitializingFill = false;
+            resetHistory(); // Also clear history on full init
             if (autoMode === 'top-up') {
                 isInitializingFill = true;
                 timeSinceLastAutoAdd = time;
@@ -1037,50 +1041,81 @@
             gctx.restore();
         }
 
-        function handleMotionEvent(event) {
-            if (event.accelerationIncludingGravity.x === null || event.accelerationIncludingGravity.y === null) return;
-            const rawX = event.accelerationIncludingGravity.x;
-            const rawY = event.accelerationIncludingGravity.y;
-            const sensitivity = gravity / 9.8;
-            switch (window.orientation) {
-                case 90: gravityX = rawY * sensitivity; gravityY = rawX * sensitivity; break;
-                case -90: gravityX = -rawY * sensitivity; gravityY = -rawX * sensitivity; break;
-                case 180: gravityX = -rawX * sensitivity; gravityY = rawY * sensitivity; break;
-                default: gravityX = rawX * sensitivity; gravityY = -rawY * sensitivity; break;
-            }
-            debugGravityX.textContent = gravityX.toFixed(3);
-            debugGravityY.textContent = gravityY.toFixed(3);
-        }
-
         function handleOrientationEvent(event) {
             if (event.beta === null || event.gamma === null) return;
-            const beta = event.beta, gamma = event.gamma;
+            const beta = event.beta;
+            const gamma = event.gamma;
             const DEG_TO_RAD = Math.PI / 180;
+
             const tiltX = Math.sin(gamma * DEG_TO_RAD) * gravity;
             const tiltY = Math.sin(beta * DEG_TO_RAD) * gravity;
+
             switch (window.orientation) {
-                case 90: gravityX = tiltY; gravityY = tiltX; break;
-                case -90: gravityX = -tY; gravityY = -tX; break;
-                case 180: gravityX = -tX; gravityY = -tY; break;
-                default: gravityX = tiltX; gravityY = tiltY; break;
+                case 90:
+                    gravityX = -tiltY;
+                    gravityY = tiltX;
+                    break;
+                case -90:
+                    gravityX = tiltY;
+                    gravityY = -tiltX;
+                    break;
+                case 180:
+                    gravityX = tiltX;
+                    gravityY = tiltY;
+                    break;
+                default:
+                    gravityX = -tiltX;
+                    gravityY = -tiltY;
+                    break;
             }
+
             debugGravityX.textContent = gravityX.toFixed(3);
             debugGravityY.textContent = gravityY.toFixed(3);
         }
 
-        function requestAndStartMotion(source, sourceSelector) {
-            if (!window.isSecureContext) { alert('Motion controls require a secure (HTTPS) connection.'); debugStatus.textContent = "Blocked: Insecure"; if (sourceSelector) { sourceSelector.value = 'fixed'; sourceSelector.dispatchEvent(new Event('change')); } return; }
-            const addListeners = () => { if (source === 'motion') window.addEventListener('devicemotion', handleMotionEvent); else if (source === 'orientation') window.addEventListener('deviceorientation', handleOrientationEvent); };
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        function requestOrientationPermissions(sourceSelector) {
+            if (!window.isSecureContext) {
+                alert('Orientation controls require a secure (HTTPS) connection.');
+                debugStatus.textContent = "Blocked: Insecure";
+                if (sourceSelector) { sourceSelector.value = 'fixed'; sourceSelector.dispatchEvent(new Event('change')); }
+                return;
+            }
+
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 debugStatus.textContent = "Requesting permission...";
-                DeviceMotionEvent.requestPermission().then(pS => { debugStatus.textContent = 'Permission: ' + pS; if (pS === 'granted') { addListeners(); } else if (sourceSelector) { sourceSelector.value = 'fixed'; sourceSelector.dispatchEvent(new Event('change')); } }).catch(err => { debugStatus.textContent = 'Error: ' + err.message; console.error(err); });
-            } else { debugStatus.textContent = 'Adding listener directly...'; addListeners(); }
+                DeviceOrientationEvent.requestPermission().then(permissionState => {
+                    debugStatus.textContent = 'Permission: ' + permissionState;
+                    if (permissionState === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientationEvent);
+                    } else if (sourceSelector) {
+                        sourceSelector.value = 'fixed';
+                        sourceSelector.dispatchEvent(new Event('change'));
+                    }
+                }).catch(err => {
+                    debugStatus.textContent = 'Error: ' + err.message;
+                    console.error(err);
+                });
+            } else {
+                debugStatus.textContent = 'Adding listener directly...';
+                window.addEventListener('deviceorientation', handleOrientationEvent);
+            }
         }
 
-        function initializeMotionAsDefault() {
-            if (!window.isSecureContext) { debugStatus.textContent = "Motion API requires HTTPS"; return; }
-            const hasApiSupport = ('ontouchstart' in window) && ((typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') || ('ondevicemotion' in window));
-            if (hasApiSupport) { debugStatus.textContent = 'Touch device detected. Activating motion...'; const selector = document.getElementById('gravitySource'); selector.value = 'motion'; selector.dispatchEvent(new Event('change')); } else { debugStatus.textContent = 'No motion support found.'; }
+        function setDefaultGravitySource() {
+            const isMobile = 'ontouchstart' in window;
+            const orientationPermissionRequired = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+            const selector = document.getElementById('gravitySource');
+
+            if (isMobile && !orientationPermissionRequired) {
+                debugStatus.textContent = 'Orientation sensor detected. Activating.';
+                selector.value = 'orientation';
+                selector.dispatchEvent(new Event('change'));
+            } else {
+                const reason = orientationPermissionRequired ? 'needs permission' : 'desktop detected';
+                debugStatus.textContent = `Orientation ${reason}. Defaulting to slider.`;
+                selector.value = 'fixed';
+                selector.dispatchEvent(new Event('change'));
+            }
         }
 
         function updateOrientationDebug() { debugOrientation.textContent = window.orientation || 0; }
@@ -1103,7 +1138,29 @@
         function setupTendrilControls() { setupSlider("numTendrils", "numTendrilsValue", e => { numTendrils = e }, !1, !0), setupSlider("tendrilDensity", "tendrilDensityValue", e => { tendrilDensity = e }, !0, !0), setupSlider("tendrilLength", "tendrilLengthValue", e => { tendrilLength = e }, !1, !0), setupSlider("tendrilQuality", "tendrilQualityValue", e => { tendrilQuality = e }, !0, !0), setupSlider("tendrilStiffness", "tendrilStiffnessValue", e => { tendrilStiffness = e }); const e = document.getElementById("tendrilLengthVariation"), t = document.getElementById("tendrilLengthVariationValue"); e.addEventListener("input", n => { const i = parseFloat(n.target.value); tendrilLengthVariation = i, t.textContent = (100 * i).toFixed(0) + "%", init() }), setupCheckbox("feetOnTendrils", e => { placeFeetOnTendrils = e }, !0); const n = document.getElementById("tendrilPlacementMode"), i = document.getElementById("tendrilCountContainer"), a = document.getElementById("tendrilDensityContainer"), d = () => { tendrilPlacementMode = n.value, i.style.display = "count" === tendrilPlacementMode ? "block" : "none", a.style.display = "density" === tendrilPlacementMode ? "block" : "none" }; n.addEventListener("change", () => { d(), init() }), d() }
         function setupAppearanceControls() { const e = document.getElementById("drawMode"), t = document.getElementById("pointSizeContainer"), n = document.getElementById("letterChoiceContainer"), i = document.getElementById("letterChoice"), a = () => { drawMode = e.value, t.style.display = "point" === drawMode ? "block" : "none", n.style.display = "letter" === drawMode ? "block" : "none" }; e.addEventListener("change", a), i.addEventListener("change", e => { letterToDraw = e.target.value }), setupSlider("pointSize", "pointSizeValue", e => { pointBaseSize = e }, !0), a() }
         function setupToggleControlsButton() { const e = document.getElementById("toggleControlsBtn"), t = document.querySelector(".controls"); e && t && e.addEventListener("click", () => { t.classList.toggle("hidden") }) }
-        function setupAddCreatureButton() { const addBtn = document.getElementById("addCreatureBtn"), titleH1 = document.querySelector('#title-container h1'); if (addBtn) { addBtn.addEventListener("click", addCreature) } if (titleH1) { titleH1.addEventListener('click', addCreature) } document.addEventListener("keydown", function (e) { if (e.code === "Space" && !e.target.closest("input, select, button")) { e.preventDefault(); addCreature() } }) }
+
+        function setupInteractionHandlers() {
+            const addBtn = document.getElementById("addCreatureBtn");
+            const titleH1 = document.querySelector('#title-container h1');
+
+            if (addBtn) {
+                addBtn.addEventListener("click", addCreature);
+            }
+
+            if (titleH1) {
+                // Clicking the title now clears the history of imprints.
+                titleH1.addEventListener('click', resetHistory);
+            }
+
+            // Pressing Spacebar still adds a new creature.
+            document.addEventListener("keydown", function (e) {
+                if (e.code === "Space" && !e.target.closest("input, select, button")) {
+                    e.preventDefault();
+                    addCreature();
+                }
+            });
+        }
+
         function handleCopyParameters() { const params = { creatureShape, pointDensity, numFeet, restLengthFactor, useRandomPlacement, damping, springStiffness, gravity, shiverIntensityFactor, shiverPropagationFactor, numSeekingFeet, footCoordinationFactor, stepCooldown, stepDuration, stepHeight, wobbleStrength, targetAttraction, gaitPattern, enableTendrils, numTendrils, tendrilLength, tendrilStiffness, placeFeetOnTendrils, tendrilPlacementMode, tendrilDensity, tendrilQuality, tendrilLengthVariation, enableRigidCore, rigidCoreRadius, rigidSectionStiffness, drawMode, pointBaseSize, letterToDraw, maxLineThickness, autoAddDelaySeconds, autoMode, enableBreathing, breathingRate, breathingAmplitude, breathingOffset, pruneUnfootedPoints, enableAging, agingMode, lifespanSeconds, maxFootsteps, deathEffect, enableCreatureLimit, maxCreatures, enablePointLimit, maxPoints, letterInput: document.getElementById('letterInput').value }; const paramsString = JSON.stringify(params, null, 2); navigator.clipboard.writeText(paramsString).then(() => { const btn = document.getElementById('copyParamsBtn'); if (btn) { const originalText = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = originalText; }, 1500); } }).catch(err => { console.error('Failed to copy parameters: ', err); }); console.log("Current Parameters:", params); }
         function setupCopyButton() { const copyBtn = document.getElementById('copyParamsBtn'); if (copyBtn) { copyBtn.addEventListener('click', handleCopyParameters); } }
         function setupBreathingControls() { const e = document.getElementById("restLength"), t = document.getElementById("enableBreathing"), n = () => { enableBreathing = t.checked, e.disabled = enableBreathing, document.getElementById("breathingControlsContainer").style.display = enableBreathing ? "block" : "none", enableBreathing || (restLengthFactor = parseFloat(e.value)) }; t.addEventListener("change", n), setupSlider("breathingRate", "breathingRateValue", e => { breathingRate = e }, !0), setupSlider("breathingAmplitude", "breathingAmplitudeValue", e => { breathingAmplitude = e }, !0), setupSlider("breathingOffset", "breathingOffsetValue", e => { breathingOffset = e }, !0), n() }
@@ -1116,7 +1173,6 @@
             if (!sourceSelector || !gravityLabel) return;
 
             sourceSelector.addEventListener('change', (e) => {
-                window.removeEventListener('devicemotion', handleMotionEvent);
                 window.removeEventListener('deviceorientation', handleOrientationEvent);
 
                 const source = e.target.value;
@@ -1127,9 +1183,9 @@
                     debugStatus.textContent = "Fixed (Slider)";
                     debugGravityX.textContent = gravityX.toFixed(3);
                     debugGravityY.textContent = gravityY.toFixed(3);
-                } else {
+                } else if (source === 'orientation') {
                     gravityLabel.childNodes[0].nodeValue = "Gravity Sensitivity ";
-                    requestAndStartMotion(source, sourceSelector);
+                    requestOrientationPermissions(sourceSelector);
                 }
             });
         }
@@ -1190,7 +1246,7 @@
         setupTendrilControls();
         setupAppearanceControls();
         setupToggleControlsButton();
-        setupAddCreatureButton();
+        setupInteractionHandlers();
         setupBreathingControls();
         setupAgingControls();
         setupPopulationControls();
@@ -1202,7 +1258,7 @@
 
         handleResize();
         updateOrientationDebug();
-        initializeMotionAsDefault();
+        setDefaultGravitySource();
 
         animate();
     </script>
