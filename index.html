@@ -1075,22 +1075,23 @@
             const tiltX = Math.sin(gamma * DEG_TO_RAD) * gravity;
             const tiltY = Math.sin(beta * DEG_TO_RAD) * gravity;
 
+            // Corrected logic for natural gravity mapping
             switch (window.orientation) {
-                case 90:
+                case 90: // Landscape, home button right
                     gravityX = -tiltY;
                     gravityY = tiltX;
                     break;
-                case -90:
+                case -90: // Landscape, home button left
                     gravityX = tiltY;
                     gravityY = -tiltX;
                     break;
-                case 180:
-                    gravityX = tiltX;
-                    gravityY = tiltY;
-                    break;
-                default:
+                case 180: // Portrait, upside down
                     gravityX = -tiltX;
                     gravityY = -tiltY;
+                    break;
+                default: // 0, Portrait
+                    gravityX = tiltX;
+                    gravityY = tiltY;
                     break;
             }
 
