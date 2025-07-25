@@ -18,9 +18,9 @@
         }
 
         body {
-            background: transparent;
+            background: #f0f2f5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #1c1c2e;
+            color: #333;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -28,7 +28,6 @@
             padding: 20px;
             overflow-x: hidden;
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
-            /* Black tap highlight */
         }
 
         #canvas {
@@ -37,7 +36,6 @@
             left: 0;
             z-index: -2;
             background: transparent;
-            /* Main canvas is transparent */
         }
 
         #background-canvas {
@@ -45,7 +43,6 @@
             top: 0;
             left: 0;
             z-index: -3;
-            /* Positioned behind the main canvas */
             background: #ffffff;
         }
 
@@ -73,11 +70,31 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
-            /* Black tap highlight */
         }
 
         #title-container h1:hover {
             color: rgba(0, 0, 0, 0.6);
+        }
+
+        #randomizeShortcutBtn {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9;
+            pointer-events: auto;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: transparent;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+
+        #randomizeShortcutBtn:hover {
+            background-color: transparent;
         }
 
         #eraseBtn {
@@ -91,9 +108,7 @@
             cursor: pointer;
             z-index: 9;
             border-radius: 50%;
-            /* Makes the tap area round */
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
-            /* Black tap highlight */
         }
 
         #toggleControlsBtn {
@@ -103,27 +118,33 @@
             width: 50px;
             height: 50px;
             cursor: pointer;
-            z-index: 10;
+            z-index: 11;
             display: flex;
             align-items: center;
             justify-content: center;
             border: none;
-            color: white;
             border-radius: 50%;
-            background-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: #2d3436;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.5s ease;
         }
 
-        #toggleControlsBtn:hover {
-            background-color: white;
-            color: black;
+        #toggleControlsBtn:hover,
+        #toggleControlsBtn.is-visible {
+            opacity: 1;
+        }
+
+        #toggleControlsBtn.is-visible:hover {
+            background-color: #636e72;
         }
 
         #toggleControlsBtn svg {
+            fill: white;
             transition: transform 0.5s ease;
         }
 
-        #toggleControlsBtn:hover svg {
+        #toggleControlsBtn:hover svg,
+        #toggleControlsBtn.is-visible:hover svg {
             transform: rotate(90deg);
         }
 
@@ -132,18 +153,21 @@
             justify-content: flex-end;
             align-items: flex-start;
             width: 100%;
+            position: relative;
+            z-index: 10;
         }
 
         .controls {
             background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border-radius: 12px;
-            padding: 20px 25px;
+            padding: 25px 30px;
             width: 700px;
             column-count: 2;
-            column-gap: 25px;
+            column-gap: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
         }
 
         .controls.hidden {
@@ -151,45 +175,96 @@
         }
 
         .control-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             -webkit-column-break-inside: avoid;
             page-break-inside: avoid;
             break-inside: avoid;
         }
 
         .control-group h3 {
-            font-weight: normal;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin-bottom: 15px;
             margin-top: 5px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            padding-bottom: 5px;
+            border-bottom: 2px solid #000aa7;
+            padding-bottom: 8px;
+            color: #000aa7;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
         }
 
         label {
             display: block;
             margin-bottom: 8px;
             font-size: 0.9rem;
+            color: #333;
+        }
+
+        input[type="checkbox"] {
+            opacity: 0;
+            position: absolute;
+            width: 0;
+            height: 0;
         }
 
         .checkbox-label {
-            display: inline-block;
-            margin-left: 8px;
-            vertical-align: middle;
+            position: relative;
+            padding-left: 30px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            height: 22px;
+            -webkit-user-select: none;
+            user-select: none;
+            color: #333;
         }
 
-        input[type="checkbox"],
-        select {
-            vertical-align: middle;
+        .checkbox-label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            border: 2px solid #bdc3c7;
+            border-radius: 4px;
+            background-color: #fff;
+            transition: all 0.2s;
+        }
+
+        .checkbox-label::after {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 5px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg) scale(0);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        input[type="checkbox"]:checked+.checkbox-label::before {
+            border-color: #000aa7;
+            background-color: #000aa7;
+        }
+
+        input[type="checkbox"]:checked+.checkbox-label::after {
+            transform: rotate(45deg) scale(1);
         }
 
         input[type="range"] {
             width: 100%;
             -webkit-appearance: none;
             appearance: none;
-            height: 5px;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
+            height: 4px;
+            background: #dfe6e9;
+            border-radius: 2px;
             outline: none;
+            padding: 0;
+            margin: 15px 0;
         }
 
         input[type="range"]::-webkit-slider-thumb {
@@ -197,67 +272,109 @@
             appearance: none;
             width: 18px;
             height: 18px;
-            background: #000;
+            background: #000aa7;
             border-radius: 50%;
             cursor: pointer;
-            border: 2px solid #f4f4f9;
+            border: none;
+            margin-top: -7px;
         }
 
         input[type="range"]::-moz-range-thumb {
-            width: 15px;
-            height: 15px;
-            background: #000;
+            width: 18px;
+            height: 18px;
+            background: #000aa7;
             border-radius: 50%;
             cursor: pointer;
-            border: 2px solid #f4f4f9;
+            border: none;
         }
 
         select,
         input[type="text"] {
             width: 100%;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.02);
-            color: #1c1c2e;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
+            padding: 10px;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
             font-family: inherit;
+            font-size: 0.95rem;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input[type="text"] {
-            font-size: 1.2rem;
+        select:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #000aa7;
+            box-shadow: 0 0 0 1px #000aa7;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        #letterInput {
             text-align: center;
-            font-weight: bold;
-            text-transform: uppercase;
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: #1f2937;
+            cursor: pointer;
+            padding: 15px;
+        }
+
+        #letterInputContainer input {
+            height: 60px;
+        }
+
+        #letterInputContainer {
+            margin-top: 15px;
         }
 
         .value-display {
             float: right;
-            font-weight: bold;
-            color: #4a47a3;
+            font-weight: 500;
+            color: #000aa7;
         }
 
         .controls button {
             padding: 10px 15px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 20px;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
             box-sizing: border-box;
-            transition: opacity 0.3s, background-color 0.3s;
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
 
         .controls button:hover:not(:disabled) {
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: #e5e7eb;
+            border-color: #b9bec4;
+        }
+
+        .controls button:focus {
+            outline: none;
+            border-color: #000aa7;
+            box-shadow: 0 0 0 1px #000aa7;
         }
 
         .controls button:disabled {
-            opacity: 0.5;
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            border-color: #e5e7eb;
             cursor: not-allowed;
         }
 
         .sub-control {
             margin-top: 15px;
+            padding-left: 5px;
         }
 
         footer {
@@ -292,13 +409,13 @@
         }
 
         #debug-info {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 8px;
-            border-radius: 4px;
+            background: #f4f5f7;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 6px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 0.8rem;
-            line-height: 1.4;
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
 
         #debug-info p {
@@ -308,13 +425,33 @@
 
         #debug-info span {
             font-weight: bold;
-            color: #d62828;
+            color: #d63031;
         }
 
         #gravity-indicator-canvas {
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
             border-radius: 50%;
-            background: #fdfdfd;
+            background: #f4f5f7;
+            display: inline-block;
+        }
+
+        @media (orientation: landscape) {
+            #title-container h1 {
+                font-size: 8vw;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .main-content {
+                justify-content: center;
+            }
+
+            .controls {
+                width: 90vw;
+                max-width: 450px;
+                column-count: 1;
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -323,9 +460,9 @@
     <button id="eraseBtn" title="Erase all imprints"></button>
     <button id="toggleControlsBtn" title="Toggle Controls">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px">
-            <rect x="10" y="1" width="4" height="22" rx="1" />
-            <rect x="10" y="1" width="4" height="22" rx="1" transform="rotate(60 12 12)" />
-            <rect x="10" y="1" width="4" height="22" rx="1" transform="rotate(120 12 12)" />
+            <rect x="11" y="1" width="2" height="22" rx="1" />
+            <rect x="11" y="1" width="2" height="22" rx="1" transform="rotate(60 12 12)" />
+            <rect x="11" y="1" width="2" height="22" rx="1" transform="rotate(120 12 12)" />
         </svg>
     </button>
     <canvas id="background-canvas"></canvas>
@@ -333,6 +470,7 @@
     <div id="title-container">
         <h1>Ivraie</h1>
     </div>
+    <button id="randomizeShortcutBtn">Randomize</button>
 
     <main class="main-content">
         <div class="controls hidden">
@@ -363,7 +501,7 @@
                             class="value-display">0.88</span></label>
                     <input type="range" id="restLength" min="0.0" max="1.5" step="0.01" value="0.8828470773159127" />
                 </div>
-                <div>
+                <div class="sub-control">
                     <input type="checkbox" id="randomPlacement" checked />
                     <label for="randomPlacement" class="checkbox-label">Random Foot Placement</label>
                 </div>
@@ -381,7 +519,7 @@
             </div>
             <div class="control-group">
                 <h3>Population</h3>
-                <div>
+                <div class="sub-control">
                     <input type="checkbox" id="enableCreatureLimit" />
                     <label for="enableCreatureLimit" class="checkbox-label">Enable Creature Limit</label>
                 </div>
@@ -398,13 +536,13 @@
                     <input type="checkbox" id="enablePointLimit" checked />
                     <label for="enablePointLimit" class="checkbox-label">Enable Point Limit</label>
                 </div>
-                <div id="pointLimitContainer" style="display: none;">
+                <div id="pointLimitContainer" style="display: block;">
                     <div class="sub-control">
                         <label>Max Points <span id="maxPointsValue" class="value-display">400</span></label>
                         <input type="range" id="maxPoints" min="100" max="10000" step="100" value="400" />
                     </div>
                     <div class="sub-control">
-                        <label>Current Points <span id="currentPointsValue" class="value-display">0</span></label>
+                        <label>Current Points <span id="currentPointsValue" class="value-display">387</span></label>
                     </div>
                 </div>
                 <div class="sub-control">
@@ -481,7 +619,7 @@
             </div>
             <div class="control-group">
                 <h3>Tendrils</h3>
-                <div>
+                <div class="sub-control">
                     <input type="checkbox" id="enableTendrils" />
                     <label for="enableTendrils" class="checkbox-label">Enable Tendrils</label>
                 </div>
@@ -511,11 +649,11 @@
                                 class="value-display">0.10</span></label>
                         <input type="range" id="tendrilStiffness" min="0.01" max="0.5" step="0.01" value="0.1" />
                     </div>
-                    <div>
+                    <div class="sub-control">
                         <input type="checkbox" id="shiversOnTendrils" checked />
                         <label for="shiversOnTendrils" class="checkbox-label">Enable Shivers on Tendrils</label>
                     </div>
-                    <div>
+                    <div class="sub-control">
                         <input type="checkbox" id="feetOnTendrils" checked />
                         <label for="feetOnTendrils" class="checkbox-label">Place Feet on Tendrils</label>
                     </div>
@@ -571,15 +709,16 @@
                 <div id="debug-info-container" style="margin-top: 15px;">
                     <label>Debug Info</label>
                     <div id="debug-info">
-                        <p>Status: <span id="debug-status">--</span></p>
-                        <p>Orientation: <span id="debug-orientation">--</span></p>
-                        <p>Gravity X|Y: <span id="debug-gravity-x">--</span> | <span id="debug-gravity-y">--</span></p>
+                        <p>Status: <span id="debug-status">Fixed (Slider)</span></p>
+                        <p>Orientation: <span id="debug-orientation">0</span></p>
+                        <p>Gravity X|Y: <span id="debug-gravity-x">0.000</span> | <span
+                                id="debug-gravity-y">0.170</span></p>
                     </div>
                 </div>
             </div>
             <div class="control-group">
                 <h3>Birth & Death</h3>
-                <div>
+                <div class="sub-control">
                     <input type="checkbox" id="enableProgressiveAppearance" checked />
                     <label for="enableProgressiveAppearance" class="checkbox-label">Enable Progressive
                         Appearance</label>
@@ -595,7 +734,7 @@
                     <input type="checkbox" id="enableAging" checked />
                     <label for="enableAging" class="checkbox-label">Enable Aging</label>
                 </div>
-                <div id="agingControlsContainer" style="display: none;">
+                <div id="agingControlsContainer" style="display: block;">
                     <div class="sub-control">
                         <label for="agingMode">Aging Mode</label>
                         <select id="agingMode">
@@ -622,7 +761,7 @@
             </div>
             <div class="control-group">
                 <h3>Breathing Effect</h3>
-                <div>
+                <div class="sub-control">
                     <input type="checkbox" id="enableBreathing" checked />
                     <label for="enableBreathing" class="checkbox-label">Enable Breathing</label>
                 </div>
@@ -741,7 +880,7 @@
         let tendrilQuality = 1.0, tendrilLengthVariation = 0;
         let drawMode = 'point', pointBaseSize = 1.3, letterToDraw = 'i', maxLineThickness = 1.0, minShade = 0.0, imprintShade = 0.2;
         let autoAddDelaySeconds = 2.9, autoMode = 'top-up';
-        let enableBreathing = true, breathingRate = 0.007, breathingAmplitude = 0.04, breathingOffset = 0.92, breathingPhase = 0;
+        let enableBreathing = true, breathingRate = 0.007, breathingAmplitude = 0.04, breathingOffset = 0.92;
         let pruneUnfootedPoints = true, minPointsPerFoot = 20;
         let enableProgressiveAppearance = true, growthSpeed = 2;
         let enableAging = true, agingMode = 'time', lifespanSeconds = 25, maxFootsteps = 50, deathEffect = 'fade';
@@ -769,6 +908,8 @@
                 this.nextFootToWake = 0; this.nextPairToWake = 0;
                 this.character = character; this.shape = shape;
                 this.isDead = false; this.stepsTaken = 0;
+                this.breathingPhase = Math.random() * Math.PI * 2;
+                this.restLengthFactor = restLengthFactor;
                 if (enableAging) {
                     this.birthTime = time;
                     this.lifespan = (lifespanSeconds * 60) * (0.8 + Math.random() * 0.4);
@@ -899,6 +1040,10 @@
             }
             isOffscreen() { if (this.points.length === 0) return true; const buffer = 500; let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; for (const p of this.points) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); } return maxX < -buffer || minX > canvas.width + buffer || maxY < -buffer || minY > canvas.height + buffer; }
             update() {
+                if (enableBreathing && !this.isDead) {
+                    this.breathingPhase += breathingRate;
+                    this.restLengthFactor = breathingOffset + Math.sin(this.breathingPhase) * breathingAmplitude;
+                }
                 if (enableAging && !this.isDead) { let shouldDie = false; if (agingMode === 'time') { if (time - this.birthTime > this.lifespan) shouldDie = true; } else { if (this.stepsTaken >= this.maxSteps) shouldDie = true; } if (shouldDie) this.die(); }
                 this.processGaitQueue();
                 for (const p of this.points) p.update();
@@ -1069,7 +1214,7 @@
             setEdgeTarget() { this.targetPos = this.getRandomEdgeTarget(); }
         }
 
-        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; let contraction = 1.0 - (averagePulse * shiverIntensityFactor); const currentRestLength = this.baseRestLength * restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; let stiffness = springStiffness; if (this.isHair) { stiffness = tendrilStiffness; } const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
+        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; let contraction = 1.0 - (averagePulse * shiverIntensityFactor); const currentRestLength = this.baseRestLength * this.p1.creature.restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; let stiffness = springStiffness; if (this.isHair) { stiffness = tendrilStiffness; } const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
 
         function getCurrentTotalPoints() { return creatures.reduce((sum, creature) => sum + creature.points.length, 0); }
         function updateCurrentPointsDisplay() { const d = document.getElementById('currentPointsValue'); if (d) d.textContent = getCurrentTotalPoints(); }
@@ -1100,7 +1245,6 @@
 
         function update() {
             time++;
-            if (enableBreathing) { breathingPhase += breathingRate; const newRestLength = breathingOffset + Math.sin(breathingPhase) * breathingAmplitude; restLengthFactor = newRestLength; document.getElementById('restLength').value = newRestLength; document.getElementById('restLengthValue').textContent = newRestLength.toFixed(2); }
             const limitsReached = (enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints);
             if (isInitializingFill) { if (!limitsReached) { if (time - timeSinceLastAutoAdd > INIT_FILL_DELAY) { addCreature(); timeSinceLastAutoAdd = time; } } else { isInitializingFill = false; } }
             else { switch (autoMode) { case 'respawn': if (creatures.length === 0) { if (timeSinceEmpty === null) timeSinceEmpty = time; if (time - timeSinceEmpty > autoAddDelaySeconds * 60) { addCreature(); timeSinceEmpty = null; } } else { timeSinceEmpty = null; } break; case 'top-up': if (!limitsReached) { if (timeSinceLastAutoAdd === null) timeSinceLastAutoAdd = time; if (time - timeSinceLastAutoAdd > autoAddDelaySeconds * 60) { addCreature(); timeSinceLastAutoAdd = time; } } else { timeSinceLastAutoAdd = time; } break; } }
@@ -1124,7 +1268,9 @@
             const cX = w / 2, cY = h / 2, maxLen = (w / 2) * .8, maxG = 0.5;
             const normX = gravityX / mag, normY = gravityY / mag, len = (mag / maxG) * maxLen;
             const endX = cX + normX * len, endY = cY + normY * len, hL = 8, ang = Math.atan2(endY - cY, endX - cX);
-            gctx.strokeStyle = '#000'; gctx.fillStyle = '#000'; gctx.lineWidth = 2;
+            gctx.strokeStyle = '#000aa7';
+            gctx.fillStyle = '#000aa7';
+            gctx.lineWidth = 2;
             gctx.beginPath(); gctx.moveTo(cX, cY); gctx.lineTo(endX, endY); gctx.stroke();
             gctx.beginPath(); gctx.moveTo(endX, endY); gctx.lineTo(endX - hL * Math.cos(ang - Math.PI / 6), endY - hL * Math.sin(ang - Math.PI / 6)); gctx.lineTo(endX - hL * Math.cos(ang + Math.PI / 6), endY - hL * Math.sin(ang + Math.PI / 6)); gctx.closePath(); gctx.fill();
             gctx.restore();
@@ -1226,7 +1372,18 @@
         function setupGaitSelector() { const e = document.getElementById("gaitPattern"), t = document.getElementById("seekingFeetControl"), n = document.getElementById("waveDelayControl"), i = () => { gaitPattern = e.value, t.style.display = "sequential" === gaitPattern ? "block" : "none", n.style.display = "sidewinder" === gaitPattern ? "block" : "none" }; e.addEventListener("change", () => { i(), init() }), i() }
         function setupTendrilControls() { setupSlider("numTendrils", "numTendrilsValue", e => { numTendrils = e }, !1, !0), setupSlider("tendrilLength", "tendrilLengthValue", e => { tendrilLength = e }, !1, !0), setupSlider("tendrilQuality", "tendrilQualityValue", e => { tendrilQuality = e }, !0, !0), setupSlider("tendrilStiffness", "tendrilStiffnessValue", e => { tendrilStiffness = e }); const e = document.getElementById("tendrilLengthVariation"), t = document.getElementById("tendrilLengthVariationValue"); e.addEventListener("input", n => { const i = parseFloat(n.target.value); tendrilLengthVariation = i, t.textContent = (100 * i).toFixed(0) + "%", init() }), setupCheckbox("feetOnTendrils", e => { placeFeetOnTendrils = e }, true), setupCheckbox("shiversOnTendrils", e => { shiversOnTendrils = e }); }
         function setupAppearanceControls() { const e = document.getElementById("drawMode"), t = document.getElementById("pointSizeContainer"), n = document.getElementById("letterChoiceContainer"), i = document.getElementById("letterChoice"), a = () => { drawMode = e.value, t.style.display = "point" === drawMode ? "block" : "none", n.style.display = "letter" === drawMode ? "block" : "none" }; e.addEventListener("change", a), i.addEventListener("change", e => { letterToDraw = e.target.value }), setupSlider("pointSize", "pointSizeValue", e => { pointBaseSize = e }, !0), a() }
-        function setupToggleControlsButton() { const e = document.getElementById("toggleControlsBtn"), t = document.querySelector(".controls"); e && t && e.addEventListener("click", () => { t.classList.toggle("hidden") }) }
+
+        function setupToggleControlsButton() {
+            const toggleBtn = document.getElementById("toggleControlsBtn");
+            const controlsPanel = document.querySelector(".controls");
+
+            if (toggleBtn && controlsPanel) {
+                toggleBtn.addEventListener("click", () => {
+                    controlsPanel.classList.toggle("hidden");
+                    toggleBtn.classList.toggle("is-visible");
+                });
+            }
+        }
 
         function printAllCreatures() {
             for (const creature of creatures) {
@@ -1353,10 +1510,14 @@
             init();
         }
 
-        function setupRandomizeButton() {
-            const btn = document.getElementById('randomizeBtn');
-            if (btn) {
-                btn.addEventListener('click', randomizeAndRespawn);
+        function setupRandomizeButtons() {
+            const panelBtn = document.getElementById('randomizeBtn');
+            if (panelBtn) {
+                panelBtn.addEventListener('click', randomizeAndRespawn);
+            }
+            const shortcutBtn = document.getElementById('randomizeShortcutBtn');
+            if (shortcutBtn) {
+                shortcutBtn.addEventListener('click', randomizeAndRespawn);
             }
         }
 
@@ -1476,7 +1637,7 @@
         setupToggleControlsButton();
         setupInteractionHandlers();
         setupEraseButton();
-        setupRandomizeButton();
+        setupRandomizeButtons();
         setupBreathingControls();
         setupBirthControls();
         setupAgingControls();
