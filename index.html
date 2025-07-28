@@ -681,6 +681,11 @@
                     <input type="range" id="shiverPropagation" min="0" max="1.0" step="0.01" value="0.95" />
                 </div>
                 <div>
+                    <label for="shiverPropagationSpeed">Speed (slower < 1 < faster) <span
+                            id="shiverPropagationSpeedValue" class="value-display">1.00</span></label>
+                    <input type="range" id="shiverPropagationSpeed" min="-30" max="9" step="1" value="0" />
+                </div>
+                <div>
                     <label for="shiverDuration">Shiver Duration <span id="shiverDurationValue"
                             class="value-display">0.80</span></label>
                     <input type="range" id="shiverDuration" min="0.1" max="1.0" step="0.01" value="0.8" />
@@ -873,7 +878,7 @@
         let frameCount = 0, lastFpsUpdateTime = 0, fps = 0;
 
         let creatureShape = 'letter', pointDensity = 14, numFeet = 2, restLengthFactor = 0.8828470773159127, useRandomPlacement = true;
-        let damping = 0.1, springStiffness = 0.21, shiverIntensityFactor = 0.5, shiverPropagationFactor = 0.95, shiverEffectMultiplier = 1.0, shiverDurationFactor = 0.8;
+        let damping = 0.1, springStiffness = 0.21, shiverIntensityFactor = 0.5, shiverPropagationFactor = 0.95, shiverEffectMultiplier = 1.0, shiverDurationFactor = 0.8, shiverPropagationSpeed = 1.0;
         let numSeekingFeet = 2, footCoordinationFactor = 0.0, stepCooldown = 120, stepDuration = 300, stepHeight = 64, wobbleStrength = 36, targetAttraction = 0.05;
         let gaitPattern = 'sequential', waveDelay = 5;
         let enableTendrils = false, numTendrils = 5, tendrilLength = 5, tendrilStiffness = 0.1, placeFeetOnTendrils = true, shiversOnTendrils = true;
@@ -910,6 +915,7 @@
                 this.isDead = false; this.stepsTaken = 0;
                 this.breathingPhase = Math.random() * Math.PI * 2;
                 this.restLengthFactor = restLengthFactor;
+                this.propagationAccumulator = 0; // For fractional propagation speed
                 if (enableAging) {
                     this.birthTime = time;
                     this.lifespan = (lifespanSeconds * 60) * (0.8 + Math.random() * 0.4);
@@ -1048,32 +1054,55 @@
                 this.processGaitQueue();
                 for (const p of this.points) p.update();
                 for (const s of this.springs) s.update();
-                this.propagateInternalPulse();
+
+                // New propagation logic with accumulator for fractional speeds
+                this.propagationAccumulator += shiverPropagationSpeed;
+                const hopsThisFrame = Math.floor(this.propagationAccumulator);
+                if (hopsThisFrame > 0) {
+                    this.propagateInternalPulse(hopsThisFrame);
+                    this.propagationAccumulator -= hopsThisFrame;
+                }
             }
-            propagateInternalPulse() {
+            propagateInternalPulse(numHops) {
                 if (this.isDead) return;
+
                 const pulseLoss = shiverPropagationFactor;
                 const decayRate = 0.90 + (shiverDurationFactor * 0.09);
-                const newPulses = new Map();
-                for (const spring of this.springs) {
-                    if (!shiversOnTendrils && spring.isHair) {
-                        continue;
+
+                let hopBuffer = new Map();
+                this.points.forEach(p => hopBuffer.set(p, p.pulseMagnitude));
+
+                for (let i = 0; i < numHops; i++) {
+                    const newPulsesThisHop = new Map();
+                    for (const spring of this.springs) {
+                        if (!shiversOnTendrils && spring.isHair) continue;
+
+                        const p1 = spring.p1;
+                        const p2 = spring.p2;
+                        const mag1 = hopBuffer.get(p1);
+                        const mag2 = hopBuffer.get(p2);
+
+                        if (mag1 > mag2) {
+                            const current = newPulsesThisHop.get(p2) || 0;
+                            newPulsesThisHop.set(p2, Math.max(current, mag1 * pulseLoss));
+                        } else if (mag2 > mag1) {
+                            const current = newPulsesThisHop.get(p1) || 0;
+                            newPulsesThisHop.set(p1, Math.max(current, mag2 * pulseLoss));
+                        }
                     }
-                    const p1 = spring.p1;
-                    const p2 = spring.p2;
-                    if (p1.pulseMagnitude > p2.pulseMagnitude) {
-                        const current = newPulses.get(p2) || 0;
-                        newPulses.set(p2, Math.max(current, p1.pulseMagnitude * pulseLoss));
-                    } else if (p2.pulseMagnitude > p1.pulseMagnitude) {
-                        const current = newPulses.get(p1) || 0;
-                        newPulses.set(p1, Math.max(current, p2.pulseMagnitude * pulseLoss));
-                    }
+
+                    let changed = false;
+                    newPulsesThisHop.forEach((pulse, point) => {
+                        if (pulse > hopBuffer.get(point)) {
+                            hopBuffer.set(point, pulse);
+                            changed = true;
+                        }
+                    });
+                    if (!changed) break;
                 }
+
                 for (const point of this.points) {
-                    const newPulse = newPulses.get(point);
-                    if (newPulse) {
-                        point.pulseMagnitude = Math.max(point.pulseMagnitude, newPulse);
-                    }
+                    point.pulseMagnitude = hopBuffer.get(point);
                     point.pulseMagnitude *= decayRate;
                     if (point.pulseMagnitude < 0.01) point.pulseMagnitude = 0;
                 }
@@ -1369,7 +1398,6 @@
         function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'damping' || id === 'breathingRate') ? 3 : (id === 'pointSize' || id === 'maxLineThickness' || id === 'autoAddDelay' || id === 'gravity' || id === 'minShade' || id === 'shiverPropagation' || id === 'shiverEffect' || id === 'shiverDuration' || id === 'imprintShade') ? 2 : 1; display.textContent = isFloat ? value.toFixed(precision) : value; } if (requiresReset && id !== 'autoAddDelay') { init(); } }); }
         function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
 
-        // ** MODIFIED: Removed the init() call to allow different creature shapes to coexist **
         function setupShapeSelector() { const e = document.getElementById("creatureShape"), t = document.getElementById("pointDensityLabel").parentElement, n = document.getElementById("pointDensityLabel"), i = document.getElementById("pointDensityValue"), a = document.getElementById("pointDensity"), d = document.getElementById("letterInputContainer"), o = document.getElementById("letterInput"); e.addEventListener("change", c => { creatureShape = c.target.value, d.style.display = "none", t.style.display = "block", "grid" === creatureShape ? (n.childNodes[0].nodeValue = "Points / Side ", a.min = 3, a.max = 15, parseInt(a.value) > 15 && (a.value = 15)) : "letter" === creatureShape && (n.childNodes[0].nodeValue = "Sampling Density ", a.min = 2, a.max = 18, d.style.display = "block"), i.textContent = a.value, pointDensity = parseInt(a.value) }), o.addEventListener("input", () => { init() }) }
 
         function setupGaitSelector() { const e = document.getElementById("gaitPattern"), t = document.getElementById("seekingFeetControl"), n = document.getElementById("waveDelayControl"), i = () => { gaitPattern = e.value, t.style.display = "sequential" === gaitPattern ? "block" : "none", n.style.display = "sidewinder" === gaitPattern ? "block" : "none" }; e.addEventListener("change", () => { i(), init() }), i() }
@@ -1386,6 +1414,32 @@
                     toggleBtn.classList.toggle("is-visible");
                 });
             }
+        }
+
+        function setupPropagationSpeedControl() {
+            const slider = document.getElementById('shiverPropagationSpeed');
+            const display = document.getElementById('shiverPropagationSpeedValue');
+
+            function updateSpeed(sliderValue) {
+                const v = parseInt(sliderValue, 10);
+                let speed;
+                if (v >= 0) {
+                    speed = v + 1;
+                } else {
+                    speed = 1 / (Math.abs(v) + 1);
+                }
+                shiverPropagationSpeed = speed;
+                if (display) {
+                    display.textContent = speed.toFixed(2);
+                }
+            }
+
+            slider.addEventListener('input', e => {
+                updateSpeed(e.target.value);
+            });
+
+            // Set initial value
+            updateSpeed(slider.value);
         }
 
         function printAllCreatures() {
@@ -1447,11 +1501,7 @@
             const updateSlider = (id, value) => {
                 const slider = document.getElementById(id);
                 if (!slider) return;
-                const display = document.getElementById(id + 'Value');
                 slider.value = value;
-                if (display) {
-                    display.textContent = typeof value === 'number' && !Number.isInteger(value) ? value.toFixed(2) : value;
-                }
                 slider.dispatchEvent(new Event('input', { bubbles: true }));
             };
 
@@ -1485,6 +1535,7 @@
             updateSlider('damping', rand(0.05, 0.15, true));
             updateSlider('shiverIntensity', rand(-1.5, 1.5, true));
             updateSlider('shiverPropagation', rand(0.85, 1.0, true));
+            updateSlider('shiverPropagationSpeed', rand(-10, 5));
             updateSlider('shiverDuration', rand(0.5, 1.0, true));
 
             // Gait
@@ -1524,7 +1575,7 @@
             }
         }
 
-        function handleCopyParameters() { const params = { creatureShape, pointDensity, numFeet, restLengthFactor, useRandomPlacement, damping, springStiffness, gravity, shiverIntensityFactor, shiverPropagationFactor, shiverEffectMultiplier, shiverDurationFactor, numSeekingFeet, footCoordinationFactor, stepCooldown, stepDuration, stepHeight, wobbleStrength, targetAttraction, gaitPattern, enableTendrils, numTendrils, tendrilLength, tendrilStiffness, placeFeetOnTendrils, shiversOnTendrils, tendrilQuality, tendrilLengthVariation, drawMode, pointBaseSize, letterToDraw, maxLineThickness, autoAddDelaySeconds, autoMode, enableBreathing, breathingRate, breathingAmplitude, breathingOffset, pruneUnfootedPoints, enableProgressiveAppearance, growthSpeed, enableAging, agingMode, lifespanSeconds, maxFootsteps, deathEffect, enableCreatureLimit, maxCreatures, enablePointLimit, maxPoints, letterInput: document.getElementById('letterInput').value, imprintShade }; const paramsString = JSON.stringify(params, null, 2); navigator.clipboard.writeText(paramsString).then(() => { const btn = document.getElementById('copyParamsBtn'); if (btn) { const originalText = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = originalText; }, 1500); } }).catch(err => { console.error('Failed to copy parameters: ', err); }); console.log("Current Parameters:", params); }
+        function handleCopyParameters() { const params = { creatureShape, pointDensity, numFeet, restLengthFactor, useRandomPlacement, damping, springStiffness, gravity, shiverIntensityFactor, shiverPropagationFactor, shiverPropagationSpeed, shiverEffectMultiplier, shiverDurationFactor, numSeekingFeet, footCoordinationFactor, stepCooldown, stepDuration, stepHeight, wobbleStrength, targetAttraction, gaitPattern, enableTendrils, numTendrils, tendrilLength, tendrilStiffness, placeFeetOnTendrils, shiversOnTendrils, tendrilQuality, tendrilLengthVariation, drawMode, pointBaseSize, letterToDraw, maxLineThickness, autoAddDelaySeconds, autoMode, enableBreathing, breathingRate, breathingAmplitude, breathingOffset, pruneUnfootedPoints, enableProgressiveAppearance, growthSpeed, enableAging, agingMode, lifespanSeconds, maxFootsteps, deathEffect, enableCreatureLimit, maxCreatures, enablePointLimit, maxPoints, letterInput: document.getElementById('letterInput').value, imprintShade, shiverPropagationSpeedSlider: document.getElementById('shiverPropagationSpeed').value }; const paramsString = JSON.stringify(params, null, 2); navigator.clipboard.writeText(paramsString).then(() => { const btn = document.getElementById('copyParamsBtn'); if (btn) { const originalText = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = originalText; }, 1500); } }).catch(err => { console.error('Failed to copy parameters: ', err); }); console.log("Current Parameters:", params); }
         function setupCopyButton() { const copyBtn = document.getElementById('copyParamsBtn'); if (copyBtn) { copyBtn.addEventListener('click', handleCopyParameters); } }
 
         function setupBirthControls() {
@@ -1588,6 +1639,8 @@
             init();
         }
 
+        // --- Setup All Controls ---
+
         setupSlider('stiffness', 'stiffnessValue', (val) => { springStiffness = val; });
         setupSlider('damping', 'dampingValue', (val) => { damping = val; }, true);
         setupSlider('restLength', 'restLengthValue', (val) => { restLengthFactor = val; });
@@ -1603,6 +1656,9 @@
         setupSlider('shiverIntensity', 'shiverIntensityValue', (val) => { shiverIntensityFactor = val; });
         setupSlider('shiverEffect', 'shiverEffectValue', (val) => { shiverEffectMultiplier = val; }, true);
         setupSlider('shiverPropagation', 'shiverPropagationValue', (val) => { shiverPropagationFactor = val; }, true);
+
+        setupPropagationSpeedControl(); // Use custom handler for this slider
+
         setupSlider('shiverDuration', 'shiverDurationValue', (val) => { shiverDurationFactor = val; }, true);
         setupSlider('footCoordination', 'footCoordinationValue', (val) => { footCoordinationFactor = val; });
         setupSlider('targetAttraction', 'targetAttractionValue', (val) => { targetAttraction = val; });
