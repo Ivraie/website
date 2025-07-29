@@ -485,21 +485,21 @@
                 </div>
                 <div id="letterInputContainer" style="display: block;">
                     <label for="letterInput">Enter a Character</label>
-                    <input type="text" id="letterInput" value="+" maxlength="1" />
+                    <input type="text" id="letterInput" value="@" maxlength="1" />
                 </div>
                 <div>
                     <label for="pointDensity" id="pointDensityLabel">Sampling Density <span id="pointDensityValue"
-                            class="value-display">14</span></label>
-                    <input type="range" id="pointDensity" min="3" max="20" step="1" value="14" />
+                            class="value-display">16</span></label>
+                    <input type="range" id="pointDensity" min="3" max="20" step="1" value="16" />
                 </div>
                 <div>
-                    <label for="numFeet">Number of Feet <span id="numFeetValue" class="value-display">2</span></label>
-                    <input type="range" id="numFeet" min="2" max="16" step="1" value="2" />
+                    <label for="numFeet">Number of Feet <span id="numFeetValue" class="value-display">16</span></label>
+                    <input type="range" id="numFeet" min="2" max="16" step="1" value="16" />
                 </div>
                 <div>
                     <label for="restLength">Rest Length <span id="restLengthValue"
-                            class="value-display">0.88</span></label>
-                    <input type="range" id="restLength" min="0.0" max="1.5" step="0.01" value="0.8828470773159127" />
+                            class="value-display">0.94</span></label>
+                    <input type="range" id="restLength" min="0.0" max="1.5" step="0.01" value="0.94" />
                 </div>
                 <div class="sub-control">
                     <input type="checkbox" id="randomPlacement" checked />
@@ -538,11 +538,11 @@
                 </div>
                 <div id="pointLimitContainer" style="display: block;">
                     <div class="sub-control">
-                        <label>Max Points <span id="maxPointsValue" class="value-display">400</span></label>
-                        <input type="range" id="maxPoints" min="100" max="10000" step="100" value="400" />
+                        <label>Max Points <span id="maxPointsValue" class="value-display">1100</span></label>
+                        <input type="range" id="maxPoints" min="100" max="10000" step="100" value="1100" />
                     </div>
                     <div class="sub-control">
-                        <label>Current Points <span id="currentPointsValue" class="value-display">387</span></label>
+                        <label>Current Points <span id="currentPointsValue" class="value-display">0</span></label>
                     </div>
                 </div>
                 <div class="sub-control">
@@ -575,13 +575,18 @@
                     </select>
                 </div>
                 <div id="pointSizeContainer">
-                    <label for="pointSize">Point Size <span id="pointSizeValue" class="value-display">1.3</span></label>
-                    <input type="range" id="pointSize" min="1" max="15" step="0.1" value="1.3" />
+                    <label for="pointSize">Point Size <span id="pointSizeValue" class="value-display">1.8</span></label>
+                    <input type="range" id="pointSize" min="1" max="15" step="0.1" value="1.8" />
+                </div>
+                <div class="sub-control">
+                    <label for="pointSizeVariation">Size Variation <span id="pointSizeVariationValue"
+                            class="value-display">70%</span></label>
+                    <input type="range" id="pointSizeVariation" min="0.0" max="1.0" step="0.01" value="0.7" />
                 </div>
                 <div>
                     <label for="maxLineThickness">Max Line Thickness <span id="maxLineThicknessValue"
-                            class="value-display">1.0</span></label>
-                    <input type="range" id="maxLineThickness" min="1.0" max="15.0" step="0.1" value="1.0" />
+                            class="value-display">1.3</span></label>
+                    <input type="range" id="maxLineThickness" min="1.0" max="15.0" step="0.1" value="1.3" />
                 </div>
                 <div class="sub-control">
                     <label for="minShade">Minimum Shade <span id="minShadeValue"
@@ -626,13 +631,13 @@
                 <div id="tendrilControlsContainer">
                     <div id="tendrilCountContainer">
                         <label for="numTendrils">Number of Tendrils <span id="numTendrilsValue"
-                                class="value-display">5</span></label>
-                        <input type="range" id="numTendrils" min="1" max="5" step="1" value="5" />
+                                class="value-display">2</span></label>
+                        <input type="range" id="numTendrils" min="1" max="5" step="1" value="2" />
                     </div>
                     <div>
                         <label for="tendrilLength">Tendril Length <span id="tendrilLengthValue"
-                                class="value-display">5</span></label>
-                        <input type="range" id="tendrilLength" min="2" max="30" step="1" value="5" />
+                                class="value-display">10</span></label>
+                        <input type="range" id="tendrilLength" min="2" max="30" step="1" value="10" />
                     </div>
                     <div>
                         <label for="tendrilQuality">Tendril Quality <span id="tendrilQualityValue"
@@ -646,8 +651,8 @@
                     </div>
                     <div>
                         <label for="tendrilStiffness">Tendril Stiffness <span id="tendrilStiffnessValue"
-                                class="value-display">0.10</span></label>
-                        <input type="range" id="tendrilStiffness" min="0.01" max="0.5" step="0.01" value="0.1" />
+                                class="value-display">0.19</span></label>
+                        <input type="range" id="tendrilStiffness" min="0.01" max="0.5" step="0.01" value="0.19" />
                     </div>
                     <div class="sub-control">
                         <input type="checkbox" id="shiversOnTendrils" checked />
@@ -663,32 +668,32 @@
                 <h3>Motion Physics</h3>
                 <div>
                     <label for="stiffness">Body Stiffness <span id="stiffnessValue"
-                            class="value-display">0.21</span></label>
-                    <input type="range" id="stiffness" min="0.01" max="0.3" step="0.01" value="0.21" />
+                            class="value-display">0.15</span></label>
+                    <input type="range" id="stiffness" min="0.01" max="0.3" step="0.01" value="0.15" />
                 </div>
                 <div>
-                    <label for="damping">Damping <span id="dampingValue" class="value-display">0.100</span></label>
-                    <input type="range" id="damping" min="0.001" max="0.2" step="0.001" value="0.1" />
+                    <label for="damping">Damping <span id="dampingValue" class="value-display">0.141</span></label>
+                    <input type="range" id="damping" min="0.001" max="0.2" step="0.001" value="0.141" />
                 </div>
                 <div>
                     <label for="shiverIntensity">Shiver Contraction <span id="shiverIntensityValue"
-                            class="value-display">0.50</span></label>
-                    <input type="range" id="shiverIntensity" min="-3.0" max="3.0" step="0.01" value="0.5" />
+                            class="value-display">0.20</span></label>
+                    <input type="range" id="shiverIntensity" min="-3.0" max="3.0" step="0.01" value="0.2" />
                 </div>
                 <div>
                     <label for="shiverPropagation">Shiver Propagation <span id="shiverPropagationValue"
-                            class="value-display">0.95</span></label>
-                    <input type="range" id="shiverPropagation" min="0" max="1.0" step="0.01" value="0.95" />
+                            class="value-display">0.89</span></label>
+                    <input type="range" id="shiverPropagation" min="0" max="1.0" step="0.01" value="0.89" />
                 </div>
                 <div>
                     <label for="shiverPropagationSpeed">Speed (slower < 1 < faster) <span
-                            id="shiverPropagationSpeedValue" class="value-display">1.00</span></label>
-                    <input type="range" id="shiverPropagationSpeed" min="-30" max="9" step="1" value="0" />
+                            id="shiverPropagationSpeedValue" class="value-display">5.00</span></label>
+                    <input type="range" id="shiverPropagationSpeed" min="-30" max="9" step="1" value="4" />
                 </div>
                 <div>
                     <label for="shiverDuration">Shiver Duration <span id="shiverDurationValue"
-                            class="value-display">0.80</span></label>
-                    <input type="range" id="shiverDuration" min="0.1" max="1.0" step="0.01" value="0.8" />
+                            class="value-display">0.73</span></label>
+                    <input type="range" id="shiverDuration" min="0.1" max="1.0" step="0.01" value="0.73" />
                 </div>
             </div>
             <div class="control-group">
@@ -748,8 +753,8 @@
                         </select>
                     </div>
                     <div id="lifespanContainer" class="sub-control">
-                        <label>Lifespan (s) <span id="lifespanValue" class="value-display">25</span></label>
-                        <input type="range" id="lifespan" min="1" max="120" step="1" value="25" />
+                        <label>Lifespan (s) <span id="lifespanValue" class="value-display">11</span></label>
+                        <input type="range" id="lifespan" min="1" max="120" step="1" value="11" />
                     </div>
                     <div id="maxStepsContainer" class="sub-control" style="display: none;">
                         <label>Max Footsteps <span id="maxStepsValue" class="value-display">50</span></label>
@@ -773,18 +778,18 @@
                 <div id="breathingControlsContainer">
                     <div>
                         <label for="breathingRate">Breathing Rate <span id="breathingRateValue"
-                                class="value-display">0.007</span></label>
-                        <input type="range" id="breathingRate" min="0.001" max="0.1" step="0.001" value="0.007" />
+                                class="value-display">0.009</span></label>
+                        <input type="range" id="breathingRate" min="0.001" max="0.1" step="0.001" value="0.009" />
                     </div>
                     <div>
                         <label for="breathingAmplitude">Amplitude <span id="breathingAmplitudeValue"
-                                class="value-display">0.04</span></label>
-                        <input type="range" id="breathingAmplitude" min="0" max="0.5" step="0.01" value="0.04" />
+                                class="value-display">0.08</span></label>
+                        <input type="range" id="breathingAmplitude" min="0" max="0.5" step="0.01" value="0.08" />
                     </div>
                     <div>
                         <label for="breathingOffset">Base Rest Length <span id="breathingOffsetValue"
-                                class="value-display">0.92</span></label>
-                        <input type="range" id="breathingOffset" min="0.5" max="1.5" step="0.01" value="0.92" />
+                                class="value-display">0.90</span></label>
+                        <input type="range" id="breathingOffset" min="0.5" max="1.5" step="0.01" value="0.9" />
                     </div>
                 </div>
             </div>
@@ -800,8 +805,8 @@
                 </div>
                 <div id="seekingFeetControl">
                     <label for="numSeekingFeet">Seeking Feet (Sequential) <span id="numSeekingFeetValue"
-                            class="value-display">2</span></label>
-                    <input type="range" id="numSeekingFeet" min="1" max="6" step="1" value="2" />
+                            class="value-display">3</span></label>
+                    <input type="range" id="numSeekingFeet" min="1" max="6" step="1" value="3" />
                 </div>
                 <div id="waveDelayControl" style="display: none;">
                     <label for="waveDelay">Wave Delay (frames) <span id="waveDelayValue"
@@ -815,8 +820,8 @@
                 </div>
                 <div>
                     <label for="stepCooldown">Step Cooldown (frames) <span id="stepCooldownValue"
-                            class="value-display">120</span></label>
-                    <input type="range" id="stepCooldown" min="0" max="120" step="1" value="120" />
+                            class="value-display">5</span></label>
+                    <input type="range" id="stepCooldown" min="0" max="120" step="1" value="5" />
                 </div>
                 <div>
                     <label for="targetAttraction">Target Attraction <span id="targetAttractionValue"
@@ -825,18 +830,18 @@
                 </div>
                 <div>
                     <label for="stepDuration">Step Duration <span id="stepDurationValue"
-                            class="value-display">300</span></label>
-                    <input type="range" id="stepDuration" min="50" max="300" step="10" value="300" />
+                            class="value-display">50</span></label>
+                    <input type="range" id="stepDuration" min="50" max="300" step="10" value="50" />
                 </div>
                 <div>
                     <label for="stepHeight">Step Height <span id="stepHeightValue"
-                            class="value-display">64</span></label>
-                    <input type="range" id="stepHeight" min="10" max="80" step="1" value="64" />
+                            class="value-display">74</span></label>
+                    <input type="range" id="stepHeight" min="10" max="80" step="1" value="74" />
                 </div>
                 <div>
                     <label for="wobbleStrength">Seek Wobble <span id="wobbleStrengthValue"
-                            class="value-display">36</span></label>
-                    <input type="range" id="wobbleStrength" min="0" max="50" step="1" value="36" />
+                            class="value-display">32</span></label>
+                    <input type="range" id="wobbleStrength" min="0" max="50" step="1" value="32" />
                 </div>
             </div>
             <div class="control-group">
@@ -875,21 +880,65 @@
 
         let creatures = [];
         let time = 0;
-        let frameCount = 0, lastFpsUpdateTime = 0, fps = 0;
+        let frameCount = 0,
+            lastFpsUpdateTime = 0,
+            fps = 0;
 
-        let creatureShape = 'letter', pointDensity = 14, numFeet = 2, restLengthFactor = 0.8828470773159127, useRandomPlacement = true;
-        let damping = 0.1, springStiffness = 0.21, shiverIntensityFactor = 0.5, shiverPropagationFactor = 0.95, shiverEffectMultiplier = 1.0, shiverDurationFactor = 0.8, shiverPropagationSpeed = 1.0;
-        let numSeekingFeet = 2, footCoordinationFactor = 0.0, stepCooldown = 120, stepDuration = 300, stepHeight = 64, wobbleStrength = 36, targetAttraction = 0.05;
-        let gaitPattern = 'sequential', waveDelay = 5;
-        let enableTendrils = false, numTendrils = 5, tendrilLength = 5, tendrilStiffness = 0.1, placeFeetOnTendrils = true, shiversOnTendrils = true;
-        let tendrilQuality = 1.0, tendrilLengthVariation = 0;
-        let drawMode = 'point', pointBaseSize = 1.3, letterToDraw = 'i', maxLineThickness = 1.0, minShade = 0.0, imprintShade = 0.2;
-        let autoAddDelaySeconds = 2.9, autoMode = 'top-up';
-        let enableBreathing = true, breathingRate = 0.007, breathingAmplitude = 0.04, breathingOffset = 0.92;
-        let pruneUnfootedPoints = true, minPointsPerFoot = 20;
-        let enableProgressiveAppearance = true, growthSpeed = 2;
-        let enableAging = true, agingMode = 'time', lifespanSeconds = 25, maxFootsteps = 50, deathEffect = 'fade';
-        let enableCreatureLimit = false, maxCreatures = 31, enablePointLimit = true, maxPoints = 400;
+        let creatureShape = 'letter',
+            pointDensity = 16,
+            numFeet = 16,
+            restLengthFactor = 0.94,
+            useRandomPlacement = true;
+        let damping = 0.141,
+            springStiffness = 0.15,
+            shiverIntensityFactor = 0.2,
+            shiverPropagationFactor = 0.89,
+            shiverEffectMultiplier = 1.0,
+            shiverDurationFactor = 0.73,
+            shiverPropagationSpeed = 5.0;
+        let numSeekingFeet = 3,
+            footCoordinationFactor = 0.0,
+            stepCooldown = 5,
+            stepDuration = 50,
+            stepHeight = 74,
+            wobbleStrength = 32,
+            targetAttraction = 0.05;
+        let gaitPattern = 'sequential',
+            waveDelay = 5;
+        let enableTendrils = false,
+            numTendrils = 2,
+            tendrilLength = 10,
+            tendrilStiffness = 0.19,
+            placeFeetOnTendrils = true,
+            shiversOnTendrils = true;
+        let tendrilQuality = 1.0,
+            tendrilLengthVariation = 0;
+        let drawMode = 'point',
+            pointBaseSize = 1.8,
+            letterToDraw = 'i',
+            maxLineThickness = 1.3,
+            minShade = 0.0,
+            imprintShade = 0.2;
+        let pointSizeVariation = 0.7;
+        let autoAddDelaySeconds = 2.9,
+            autoMode = 'top-up';
+        let enableBreathing = true,
+            breathingRate = 0.009,
+            breathingAmplitude = 0.08,
+            breathingOffset = 0.9;
+        let pruneUnfootedPoints = true,
+            minPointsPerFoot = 20;
+        let enableProgressiveAppearance = true,
+            growthSpeed = 2;
+        let enableAging = true,
+            agingMode = 'time',
+            lifespanSeconds = 11,
+            maxFootsteps = 50,
+            deathEffect = 'fade';
+        let enableCreatureLimit = false,
+            maxCreatures = 31,
+            enablePointLimit = true,
+            maxPoints = 1100;
 
         let gravity = 0.17;
         let gravityX = 0;
@@ -903,16 +952,26 @@
         let isInitializingFill = false;
         const INIT_FILL_DELAY = 30;
 
-        const FOOT_STATES = { FIXED: 0, SEEKING: 1, SETTLING: 2 };
+        const FOOT_STATES = {
+            FIXED: 0,
+            SEEKING: 1,
+            SETTLING: 2
+        };
         const FADE_DURATION = 180;
 
         class Creature {
             constructor(shape, character = 'A') {
-                this.points = []; this.springs = []; this.feet = [];
-                this.footPairs = []; this.gaitActivationQueue = [];
-                this.nextFootToWake = 0; this.nextPairToWake = 0;
-                this.character = character; this.shape = shape;
-                this.isDead = false; this.stepsTaken = 0;
+                this.points = [];
+                this.springs = [];
+                this.feet = [];
+                this.footPairs = [];
+                this.gaitActivationQueue = [];
+                this.nextFootToWake = 0;
+                this.nextPairToWake = 0;
+                this.character = character;
+                this.shape = shape;
+                this.isDead = false;
+                this.stepsTaken = 0;
                 this.breathingPhase = Math.random() * Math.PI * 2;
                 this.restLengthFactor = restLengthFactor;
                 this.propagationAccumulator = 0; // For fractional propagation speed
@@ -924,18 +983,24 @@
                 }
                 this.init();
             }
-            incrementSteps() { this.stepsTaken++; }
+            incrementSteps() {
+                this.stepsTaken++;
+            }
             die() {
                 if (this.isDead) return;
                 this.printToBackground();
                 this.isDead = true;
                 this.deathTime = time;
-                for (const foot of this.feet) { foot.footState = FOOT_STATES.FIXED; }
+                for (const foot of this.feet) {
+                    foot.footState = FOOT_STATES.FIXED;
+                }
             }
             printToBackground() {
                 this.draw(backgroundCtx, true);
             }
-            hasFaded() { return this.isDead && deathEffect === 'fade' && (time - this.deathTime) > FADE_DURATION; }
+            hasFaded() {
+                return this.isDead && deathEffect === 'fade' && (time - this.deathTime) > FADE_DURATION;
+            }
             activateFoot(foot) {
                 if (this.isDead) return false;
                 if (foot && foot.footState === FOOT_STATES.FIXED) {
@@ -943,30 +1008,158 @@
                     const coordinatedTarget = foot.getCoordinatedTarget();
                     const finalX = randomTarget.x * (1 - footCoordinationFactor) + coordinatedTarget.x * footCoordinationFactor;
                     const finalY = randomTarget.y * (1 - footCoordinationFactor) + coordinatedTarget.y * footCoordinationFactor;
-                    foot.targetPos = { x: finalX, y: finalY };
+                    foot.targetPos = {
+                        x: finalX,
+                        y: finalY
+                    };
                     foot.footState = FOOT_STATES.SEEKING;
                     foot.stepStartTime = time;
                     return true;
-                } return false;
+                }
+                return false;
             }
             processGaitQueue() {
                 if (this.isDead || this.gaitActivationQueue.length === 0) return;
                 for (let i = this.gaitActivationQueue.length - 1; i >= 0; i--) {
-                    const item = this.gaitActivationQueue[i]; item.delay--;
-                    if (item.delay <= 0) { this.activateFoot(item.foot); this.gaitActivationQueue.splice(i, 1); }
+                    const item = this.gaitActivationQueue[i];
+                    item.delay--;
+                    if (item.delay <= 0) {
+                        this.activateFoot(item.foot);
+                        this.gaitActivationQueue.splice(i, 1);
+                    }
                 }
             }
             wakeNextMovers(triggeringFoot = null) {
                 if (this.isDead) return;
                 switch (gaitPattern) {
-                    case 'paired': if (this.footPairs.length === 0) return; for (let i = 0; i < this.footPairs.length; i++) { const pairIndex = (this.nextPairToWake + i) % this.footPairs.length; const pair = this.footPairs[pairIndex]; if (pair.every(foot => foot.footState === FOOT_STATES.FIXED)) { for (const foot of pair) this.activateFoot(foot); this.nextPairToWake = (pairIndex + 1) % this.footPairs.length; return; } } break;
-                    case 'sidewinder': if (this.feet.length === 0 || this.gaitActivationQueue.length > 0) return; let centerX = 0; for (const p of this.points) centerX += p.x; centerX /= this.points.length; const triggerSide = triggeringFoot ? (triggeringFoot.x < centerX ? 'left' : 'right') : 'right'; const sideToWake = triggerSide === 'left' ? 'right' : 'left'; let feetToWake = this.feet.filter(foot => { const footSide = foot.x < centerX ? 'left' : 'right'; return footSide === sideToWake && foot.footState === FOOT_STATES.FIXED; }); if (feetToWake.length === 0) { feetToWake = this.feet.filter(foot => foot.footState === FOOT_STATES.FIXED); } feetToWake.sort((a, b) => a.y - b.y); for (let i = 0; i < feetToWake.length; i++) { this.gaitActivationQueue.push({ foot: feetToWake[i], delay: i * waveDelay }); } break;
-                    default: if (this.feet.length === 0) return; for (let i = 0; i < this.feet.length; i++) { this.nextFootToWake = (this.nextFootToWake + 1) % this.feet.length; if (this.activateFoot(this.feet[this.nextFootToWake])) break; } break;
+                    case 'paired':
+                        if (this.footPairs.length === 0) return;
+                        for (let i = 0; i < this.footPairs.length; i++) {
+                            const pairIndex = (this.nextPairToWake + i) % this.footPairs.length;
+                            const pair = this.footPairs[pairIndex];
+                            if (pair.every(foot => foot.footState === FOOT_STATES.FIXED)) {
+                                for (const foot of pair) this.activateFoot(foot);
+                                this.nextPairToWake = (pairIndex + 1) % this.footPairs.length;
+                                return;
+                            }
+                        }
+                        break;
+                    case 'sidewinder':
+                        if (this.feet.length === 0 || this.gaitActivationQueue.length > 0) return;
+                        let centerX = 0;
+                        for (const p of this.points) centerX += p.x;
+                        centerX /= this.points.length;
+                        const triggerSide = triggeringFoot ? (triggeringFoot.x < centerX ? 'left' : 'right') : 'right';
+                        const sideToWake = triggerSide === 'left' ? 'right' : 'left';
+                        let feetToWake = this.feet.filter(foot => {
+                            const footSide = foot.x < centerX ? 'left' : 'right';
+                            return footSide === sideToWake && foot.footState === FOOT_STATES.FIXED;
+                        });
+                        if (feetToWake.length === 0) {
+                            feetToWake = this.feet.filter(foot => foot.footState === FOOT_STATES.FIXED);
+                        }
+                        feetToWake.sort((a, b) => a.y - b.y);
+                        for (let i = 0; i < feetToWake.length; i++) {
+                            this.gaitActivationQueue.push({
+                                foot: feetToWake[i],
+                                delay: i * waveDelay
+                            });
+                        }
+                        break;
+                    default:
+                        if (this.feet.length === 0) return;
+                        for (let i = 0; i < this.feet.length; i++) {
+                            this.nextFootToWake = (this.nextFootToWake + 1) % this.feet.length;
+                            if (this.activateFoot(this.feet[this.nextFootToWake])) break;
+                        }
+                        break;
                 }
             }
-            createGrid(d) { const s = Math.min(canvas.width, canvas.height) * .6, t = d > 1 ? s / (d - 1) : s, e = (canvas.width - s) / 2 + Math.random() * 200 - 100, i = (canvas.height - s) / 2 + Math.random() * 200 - 100; for (let h = 0; h < d; h++)for (let n = 0; n < d; n++)this.points.push(new Point(e + n * t, i + h * t, this)); for (let h = 0; h < d; h++)for (let n = 0; n < d; n++) { const r = h * d + n; n < d - 1 && this.springs.push(new Spring(this.points[r], this.points[r + 1], t)), h < d - 1 && this.springs.push(new Spring(this.points[r], this.points[r + d], t)) } const o = []; if (d > 1) { for (let s = 0; s < d; s++)o.push(this.points[s]); for (let s = 1; s < d; s++)o.push(this.points[s * d + d - 1]); for (let s = d - 2; s >= 0; s--)o.push(this.points[(d - 1) * d + s]); for (let s = d - 2; s > 0; s--)o.push(this.points[s * d]) } else this.points.length > 0 && o.push(this.points[0]); return { perimeter: o } }
-            createLetter(t, e) { const i = document.createElement("canvas"), h = i.getContext("2d"), n = 200, s = 250; i.width = s, i.height = s, h.font = `bold ${n}px 'Segoe UI', sans-serif`, h.textAlign = "center", h.textBaseline = "middle", h.fillText(t, s / 2, s / 2); const r = h.getImageData(0, 0, s, s), o = Math.max(1, 20 - e), p = []; for (let t = 0; t < s; t += o)for (let e = 0; e < s; e += o)r.data[(t * s + e) * 4 + 3] > 128 && p.push({ x: e, y: t }); if (0 === p.length) return { perimeter: [], springThreshold: 0 }; let a = Infinity, l = Infinity, d = -Infinity, c = -Infinity; for (const t of p) a = Math.min(a, t.x), l = Math.min(l, t.y), d = Math.max(d, t.x), c = Math.max(c, t.y); const g = d - a, u = c - l, m = a + g / 2, f = l + u / 2, v = Math.min(canvas.width, canvas.height) * .7, w = v / Math.max(g, u); for (const t of p) { const e = (t.x - m) * w + canvas.width / 2 + Math.random() * 200 - 100, i = (t.y - f) * w + canvas.height / 2 + Math.random() * 200 - 100; this.points.push(new Point(e, i, this)) } return { perimeter: this.points, springThreshold: o * w * 1.5 } }
-            createSpringsFromProximity(threshold) { if (this.points.length < 2) return; const grid = new SpatialHashGrid({ width: canvas.width, height: canvas.height }, threshold * 1.5); for (let i = 0; i < this.points.length; i++) { grid.insert(this.points[i], i); } for (let i = 0; i < this.points.length; i++) { const p1 = this.points[i]; const nearby = grid.query(p1, threshold); for (const item of nearby) { const p2 = item.point; const j = item.index; if (i >= j) continue; const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y); if (dist < threshold) { this.springs.push(new Spring(p1, p2, dist)); } } } }
+            createGrid(d) {
+                const s = Math.min(canvas.width, canvas.height) * .6,
+                    t = d > 1 ? s / (d - 1) : s,
+                    e = (canvas.width - s) / 2 + Math.random() * 200 - 100,
+                    i = (canvas.height - s) / 2 + Math.random() * 200 - 100;
+                for (let h = 0; h < d; h++)
+                    for (let n = 0; n < d; n++) this.points.push(new Point(e + n * t, i + h * t, this));
+                for (let h = 0; h < d; h++)
+                    for (let n = 0; n < d; n++) {
+                        const r = h * d + n;
+                        n < d - 1 && this.springs.push(new Spring(this.points[r], this.points[r + 1], t)), h < d - 1 && this.springs.push(new Spring(this.points[r], this.points[r + d], t))
+                    }
+                const o = [];
+                if (d > 1) {
+                    for (let s = 0; s < d; s++) o.push(this.points[s]);
+                    for (let s = 1; s < d; s++) o.push(this.points[s * d + d - 1]);
+                    for (let s = d - 2; s >= 0; s--) o.push(this.points[(d - 1) * d + s]);
+                    for (let s = d - 2; s > 0; s--) o.push(this.points[s * d])
+                } else this.points.length > 0 && o.push(this.points[0]);
+                return {
+                    perimeter: o
+                }
+            }
+            createLetter(t, e) {
+                const i = document.createElement("canvas"),
+                    h = i.getContext("2d"),
+                    n = 200,
+                    s = 250;
+                i.width = s, i.height = s, h.font = `bold ${n}px 'Segoe UI', sans-serif`, h.textAlign = "center", h.textBaseline = "middle", h.fillText(t, s / 2, s / 2);
+                const r = h.getImageData(0, 0, s, s),
+                    o = Math.max(1, 20 - e),
+                    p = [];
+                for (let t = 0; t < s; t += o)
+                    for (let e = 0; e < s; e += o) r.data[(t * s + e) * 4 + 3] > 128 && p.push({
+                        x: e,
+                        y: t
+                    });
+                if (0 === p.length) return {
+                    perimeter: [],
+                    springThreshold: 0
+                };
+                let a = Infinity,
+                    l = Infinity,
+                    d = -Infinity,
+                    c = -Infinity;
+                for (const t of p) a = Math.min(a, t.x), l = Math.min(l, t.y), d = Math.max(d, t.x), c = Math.max(c, t.y);
+                const g = d - a,
+                    u = c - l,
+                    m = a + g / 2,
+                    f = l + u / 2,
+                    v = Math.min(canvas.width, canvas.height) * .7,
+                    w = v / Math.max(g, u);
+                for (const t of p) {
+                    const e = (t.x - m) * w + canvas.width / 2 + Math.random() * 200 - 100,
+                        i = (t.y - f) * w + canvas.height / 2 + Math.random() * 200 - 100;
+                    this.points.push(new Point(e, i, this))
+                }
+                return {
+                    perimeter: this.points,
+                    springThreshold: o * w * 1.5
+                }
+            }
+            createSpringsFromProximity(threshold) {
+                if (this.points.length < 2) return;
+                const grid = new SpatialHashGrid({
+                    width: canvas.width,
+                    height: canvas.height
+                }, threshold * 1.5);
+                for (let i = 0; i < this.points.length; i++) {
+                    grid.insert(this.points[i], i);
+                }
+                for (let i = 0; i < this.points.length; i++) {
+                    const p1 = this.points[i];
+                    const nearby = grid.query(p1, threshold);
+                    for (const item of nearby) {
+                        const p2 = item.point;
+                        const j = item.index;
+                        if (i >= j) continue;
+                        const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                        if (dist < threshold) {
+                            this.springs.push(new Spring(p1, p2, dist));
+                        }
+                    }
+                }
+            }
             prunePointsNotConnectedToFeet() {
                 if (!pruneUnfootedPoints || this.feet.length === 0 || this.points.length === 0) return;
 
@@ -1010,11 +1203,104 @@
                 this.springs = this.springs.filter(s => pointsToKeep.has(s.p1) && pointsToKeep.has(s.p2));
             }
             init() {
-                this.points = []; this.springs = []; this.feet = []; this.footPairs = []; this.gaitActivationQueue = []; let perimeterRing = []; let shapeData; switch (this.shape) { case 'letter': shapeData = this.createLetter(this.character, pointDensity); perimeterRing = shapeData.perimeter; this.createSpringsFromProximity(shapeData.springThreshold); break; default: shapeData = this.createGrid(pointDensity); perimeterRing = shapeData.perimeter; break; } const tendrilTips = []; if (enableTendrils && perimeterRing.length > 0) { const hairSegmentLength = 5; let actualNumTendrils = 0; actualNumTendrils = numTendrils; actualNumTendrils = Math.min(actualNumTendrils, perimeterRing.length); const shuffledPerimeter = [...perimeterRing].sort(() => 0.5 - Math.random()); const maxSegmentCount = Math.max(2, Math.floor(tendrilLength * tendrilQuality)); const minSegmentCount = Math.max(2, Math.floor(maxSegmentCount * (1 - tendrilLengthVariation))); for (let i = 0; i < actualNumTendrils; i++) { const parentPoint = shuffledPerimeter[i]; let prevPoint = parentPoint; const lengthRange = maxSegmentCount - minSegmentCount; const thisTendrilLength = minSegmentCount + Math.floor(Math.random() * (lengthRange + 1)); for (let j = 0; j < thisTendrilLength; j++) { const newPoint = new Point(prevPoint.x, prevPoint.y + hairSegmentLength, this); newPoint.isHair = true; this.points.push(newPoint); const newSpring = new Spring(prevPoint, newPoint, hairSegmentLength); newSpring.isHair = true; this.springs.push(newSpring); prevPoint = newPoint; if (j === thisTendrilLength - 1) { tendrilTips.push(newPoint); } } } } let footPlacementPool; if (this.shape === 'bug' && shapeData.legTips && shapeData.legTips.length > 0) { footPlacementPool = shapeData.legTips; } else if (placeFeetOnTendrils && tendrilTips.length > 0) { footPlacementPool = tendrilTips; } else { footPlacementPool = perimeterRing.filter(p => !p.isFoot && this.points.includes(p)); } const actualNumFeet = Math.min(numFeet, footPlacementPool.length); if (actualNumFeet > 0) { if (useRandomPlacement) { const shuffledPool = [...footPlacementPool].sort(() => 0.5 - Math.random()); for (let i = 0; i < actualNumFeet; i++) { shuffledPool[i].isFoot = true; this.feet.push(shuffledPool[i]); } } else { for (let i = 0; i < actualNumFeet; i++) { const index = Math.floor(i * (footPlacementPool.length / actualNumFeet)); footPlacementPool[index].isFoot = true; this.feet.push(footPlacementPool[index]); } } }
+                this.points = [];
+                this.springs = [];
+                this.feet = [];
+                this.footPairs = [];
+                this.gaitActivationQueue = [];
+                let perimeterRing = [];
+                let shapeData;
+                switch (this.shape) {
+                    case 'letter':
+                        shapeData = this.createLetter(this.character, pointDensity);
+                        perimeterRing = shapeData.perimeter;
+                        this.createSpringsFromProximity(shapeData.springThreshold);
+                        break;
+                    default:
+                        shapeData = this.createGrid(pointDensity);
+                        perimeterRing = shapeData.perimeter;
+                        break;
+                }
+                const tendrilTips = [];
+                if (enableTendrils && perimeterRing.length > 0) {
+                    const hairSegmentLength = 5;
+                    let actualNumTendrils = 0;
+                    actualNumTendrils = numTendrils;
+                    actualNumTendrils = Math.min(actualNumTendrils, perimeterRing.length);
+                    const shuffledPerimeter = [...perimeterRing].sort(() => 0.5 - Math.random());
+                    const maxSegmentCount = Math.max(2, Math.floor(tendrilLength * tendrilQuality));
+                    const minSegmentCount = Math.max(2, Math.floor(maxSegmentCount * (1 - tendrilLengthVariation)));
+                    for (let i = 0; i < actualNumTendrils; i++) {
+                        const parentPoint = shuffledPerimeter[i];
+                        let prevPoint = parentPoint;
+                        const lengthRange = maxSegmentCount - minSegmentCount;
+                        const thisTendrilLength = minSegmentCount + Math.floor(Math.random() * (lengthRange + 1));
+                        for (let j = 0; j < thisTendrilLength; j++) {
+                            const newPoint = new Point(prevPoint.x, prevPoint.y + hairSegmentLength, this);
+                            newPoint.isHair = true;
+                            this.points.push(newPoint);
+                            const newSpring = new Spring(prevPoint, newPoint, hairSegmentLength);
+                            newSpring.isHair = true;
+                            this.springs.push(newSpring);
+                            prevPoint = newPoint;
+                            if (j === thisTendrilLength - 1) {
+                                tendrilTips.push(newPoint);
+                            }
+                        }
+                    }
+                }
+                let footPlacementPool;
+                if (this.shape === 'bug' && shapeData.legTips && shapeData.legTips.length > 0) {
+                    footPlacementPool = shapeData.legTips;
+                } else if (placeFeetOnTendrils && tendrilTips.length > 0) {
+                    footPlacementPool = tendrilTips;
+                } else {
+                    footPlacementPool = perimeterRing.filter(p => !p.isFoot && this.points.includes(p));
+                }
+                const actualNumFeet = Math.min(numFeet, footPlacementPool.length);
+                if (actualNumFeet > 0) {
+                    if (useRandomPlacement) {
+                        const shuffledPool = [...footPlacementPool].sort(() => 0.5 - Math.random());
+                        for (let i = 0; i < actualNumFeet; i++) {
+                            shuffledPool[i].isFoot = true;
+                            this.feet.push(shuffledPool[i]);
+                        }
+                    } else {
+                        for (let i = 0; i < actualNumFeet; i++) {
+                            const index = Math.floor(i * (footPlacementPool.length / actualNumFeet));
+                            footPlacementPool[index].isFoot = true;
+                            this.feet.push(footPlacementPool[index]);
+                        }
+                    }
+                }
 
                 this.prunePointsNotConnectedToFeet();
 
-                if (this.feet.length > 0) { this.feet.sort((a, b) => a.x - b.x); let start = 0, end = this.feet.length - 1; while (start <= end) { if (start === end) { this.footPairs.push([this.feet[start]]); } else { this.footPairs.push([this.feet[start], this.feet[end]]); } start++; end--; } this.nextPairToWake = 0; for (const foot of this.feet) { foot.footState = FOOT_STATES.FIXED; foot.setEdgeTarget(); foot.x = foot.targetPos.x; foot.y = foot.targetPos.y; } const seekersToStart = gaitPattern === 'sequential' ? numSeekingFeet : 1; for (let i = 0; i < seekersToStart; i++) { this.wakeNextMovers(); } }
+                if (this.feet.length > 0) {
+                    this.feet.sort((a, b) => a.x - b.x);
+                    let start = 0,
+                        end = this.feet.length - 1;
+                    while (start <= end) {
+                        if (start === end) {
+                            this.footPairs.push([this.feet[start]]);
+                        } else {
+                            this.footPairs.push([this.feet[start], this.feet[end]]);
+                        }
+                        start++;
+                        end--;
+                    }
+                    this.nextPairToWake = 0;
+                    for (const foot of this.feet) {
+                        foot.footState = FOOT_STATES.FIXED;
+                        foot.setEdgeTarget();
+                        foot.x = foot.targetPos.x;
+                        foot.y = foot.targetPos.y;
+                    }
+                    const seekersToStart = gaitPattern === 'sequential' ? numSeekingFeet : 1;
+                    for (let i = 0; i < seekersToStart; i++) {
+                        this.wakeNextMovers();
+                    }
+                }
 
                 if (enableProgressiveAppearance && this.feet.length > 0) {
                     const adj = new Map();
@@ -1024,38 +1310,70 @@
                         adj.get(s.p2).push(s.p1);
                     });
 
-                    const queue = [{ point: this.feet[0], depth: 0 }];
+                    const queue = [{
+                        point: this.feet[0],
+                        depth: 0
+                    }];
                     const visited = new Set([this.feet[0]]);
                     this.feet[0].birthTime = time;
                     let head = 0;
 
                     while (head < queue.length) {
-                        const { point, depth } = queue[head++];
+                        const {
+                            point,
+                            depth
+                        } = queue[head++];
                         point.birthTime = time + depth * growthSpeed;
                         const neighbors = adj.get(point) || [];
                         for (const neighbor of neighbors) {
                             if (!visited.has(neighbor)) {
                                 visited.add(neighbor);
-                                queue.push({ point: neighbor, depth: depth + 1 });
+                                queue.push({
+                                    point: neighbor,
+                                    depth: depth + 1
+                                });
                             }
                         }
                     }
                 } else {
-                    for (const p of this.points) { p.birthTime = time; }
+                    for (const p of this.points) {
+                        p.birthTime = time;
+                    }
                 }
             }
-            isOffscreen() { if (this.points.length === 0) return true; const buffer = 500; let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; for (const p of this.points) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); } return maxX < -buffer || minX > canvas.width + buffer || maxY < -buffer || minY > canvas.height + buffer; }
+            isOffscreen() {
+                if (this.points.length === 0) return true;
+                const buffer = 500;
+                let minX = Infinity,
+                    minY = Infinity,
+                    maxX = -Infinity,
+                    maxY = -Infinity;
+                for (const p of this.points) {
+                    minX = Math.min(minX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x);
+                    maxY = Math.max(maxY, p.y);
+                }
+                return maxX < -buffer || minX > canvas.width + buffer || maxY < -buffer || minY > canvas.height + buffer;
+            }
             update() {
                 if (enableBreathing && !this.isDead) {
                     this.breathingPhase += breathingRate;
                     this.restLengthFactor = breathingOffset + Math.sin(this.breathingPhase) * breathingAmplitude;
                 }
-                if (enableAging && !this.isDead) { let shouldDie = false; if (agingMode === 'time') { if (time - this.birthTime > this.lifespan) shouldDie = true; } else { if (this.stepsTaken >= this.maxSteps) shouldDie = true; } if (shouldDie) this.die(); }
+                if (enableAging && !this.isDead) {
+                    let shouldDie = false;
+                    if (agingMode === 'time') {
+                        if (time - this.birthTime > this.lifespan) shouldDie = true;
+                    } else {
+                        if (this.stepsTaken >= this.maxSteps) shouldDie = true;
+                    }
+                    if (shouldDie) this.die();
+                }
                 this.processGaitQueue();
                 for (const p of this.points) p.update();
                 for (const s of this.springs) s.update();
 
-                // New propagation logic with accumulator for fractional speeds
                 this.propagationAccumulator += shiverPropagationSpeed;
                 const hopsThisFrame = Math.floor(this.propagationAccumulator);
                 if (hopsThisFrame > 0) {
@@ -1107,86 +1425,197 @@
                     if (point.pulseMagnitude < 0.01) point.pulseMagnitude = 0;
                 }
             }
+
+            // --- THIS IS THE NEW, OPTIMIZED DRAW METHOD ---
             draw(targetCtx, isImprint = false) {
                 let fadeAlpha = 1.0;
                 if (!isImprint && this.isDead && deathEffect === 'fade') {
                     fadeAlpha = Math.max(0, 1.0 - (time - this.deathTime) / FADE_DURATION);
+                    if (fadeAlpha <= 0.01) return; // Don't bother drawing if it's invisible
                 }
 
-                const baseLineWidth = Math.max(0.2, 2.8 - (this.points.length / 25));
-
-                for (const s of this.springs) {
-                    if (s.isHair || time < s.p1.birthTime || time < s.p2.birthTime) continue;
-                    targetCtx.beginPath();
-
-                    const baseIntensity = (s.p1.pulseMagnitude + s.p2.pulseMagnitude) / 2;
-                    const shadeIntensity = Math.min(1.0, Math.max(minShade, baseIntensity * shiverEffectMultiplier));
-                    const gray = Math.floor(80 * (1 - shadeIntensity));
-
-                    if (isImprint) {
-                        targetCtx.strokeStyle = `rgba(${gray}, ${gray}, ${gray}, ${imprintShade})`;
-                        targetCtx.lineWidth = Math.min(baseLineWidth + ((baseIntensity * shiverEffectMultiplier) * (baseLineWidth * 3.5)), maxLineThickness);
-                    } else {
-                        targetCtx.lineWidth = Math.min(baseLineWidth + ((baseIntensity * shiverEffectMultiplier) * (baseLineWidth * 3.5)), maxLineThickness);
-                        targetCtx.strokeStyle = `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
-                    }
-                    targetCtx.moveTo(s.p1.x, s.p1.y);
-                    targetCtx.lineTo(s.p2.x, s.p2.y);
-                    targetCtx.stroke();
-                }
-
-                targetCtx.strokeStyle = isImprint ? `rgba(20, 20, 40, ${imprintShade * 0.75})` : `rgba(0, 0, 0, ${0.5 * fadeAlpha})`;
-                targetCtx.lineWidth = 1;
-                targetCtx.beginPath();
-                for (const s of this.springs) {
-                    if (s.isHair && time >= s.p1.birthTime && time >= s.p2.birthTime) {
-                        targetCtx.moveTo(s.p1.x, s.p1.y);
-                        targetCtx.lineTo(s.p2.x, s.p2.y);
-                    }
-                }
-                targetCtx.stroke();
+                // --- BATCHING DATA STRUCTURES ---
+                const springBatches = new Map();
+                const pointBatches = new Map();
+                const letterBatches = new Map();
+                const footBatch = [];
+                const tendrilBatch = [];
 
                 const baseBodyRadius = pointBaseSize;
                 const baseFootRadius = baseBodyRadius + 2.0;
 
+                // --- 1. GATHER & SORT ALL DRAWABLE ELEMENTS (NO DRAWING) ---
+
+                // Gather springs into batches based on their style
+                for (const s of this.springs) {
+                    if (time < s.p1.birthTime || time < s.p2.birthTime) continue;
+
+                    if (s.isHair) {
+                        tendrilBatch.push(s);
+                        continue;
+                    }
+
+                    const baseIntensity = (s.p1.pulseMagnitude + s.p2.pulseMagnitude) / 2;
+                    const shadeIntensity = Math.min(1.0, Math.max(minShade, baseIntensity * shiverEffectMultiplier));
+
+                    // Quantize the shade into 20 levels to create a style key.
+                    const styleKey = Math.floor(shadeIntensity * 20);
+
+                    if (!springBatches.has(styleKey)) {
+                        springBatches.set(styleKey, []);
+                    }
+                    springBatches.get(styleKey).push(s);
+                }
+
+                // Gather points into batches
                 for (const p of this.points) {
                     if (p.isHair || time < p.birthTime) continue;
-                    targetCtx.beginPath();
-
-                    const baseIntensity = p.pulseMagnitude;
-                    const shadeIntensity = Math.min(1.0, Math.max(minShade, baseIntensity * shiverEffectMultiplier));
-                    const gray = Math.floor(180 * (1 - shadeIntensity));
-                    const radiusMultiplier = 1 + (baseIntensity * shiverEffectMultiplier * 0.5);
 
                     if (p.isFoot) {
-                        const footColor = isImprint ? `rgba(20, 20, 40, ${imprintShade})` : `rgba(0, 0, 0, ${fadeAlpha})`;
-                        targetCtx.fillStyle = footColor;
-                        targetCtx.arc(p.x, p.y, baseFootRadius, 0, Math.PI * 2);
-                        targetCtx.fill();
+                        footBatch.push(p);
                     } else {
-                        const finalColor = isImprint ? `rgba(${gray}, ${gray}, ${gray}, ${imprintShade})` : `rgba(${gray},${gray},${gray}, ${fadeAlpha})`;
-                        targetCtx.fillStyle = finalColor;
+                        const baseIntensity = p.pulseMagnitude;
+                        const shadeIntensity = Math.min(1.0, Math.max(minShade, baseIntensity * shiverEffectMultiplier));
+                        const radiusMultiplier = 1 + (baseIntensity * shiverEffectMultiplier * 0.5);
+
+                        const variation = 1.0 + (p.sizeRandomizer * pointSizeVariation);
 
                         if (drawMode === 'point') {
-                            const currentRadius = Math.max(0.1, baseBodyRadius * radiusMultiplier);
-                            targetCtx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
-                            targetCtx.fill();
+                            const finalRadius = Math.max(0.1, baseBodyRadius * radiusMultiplier * variation);
+                            // Quantize by shade
+                            const styleKey = Math.floor(shadeIntensity * 20);
+                            if (!pointBatches.has(styleKey)) pointBatches.set(styleKey, []);
+                            pointBatches.get(styleKey).push({
+                                point: p,
+                                radius: finalRadius
+                            });
                         } else if (drawMode === 'letter') {
-                            const fontSize = Math.max(1, (baseBodyRadius * 3) * radiusMultiplier);
-                            targetCtx.font = `bold ${fontSize}px sans-serif`;
-                            targetCtx.textAlign = 'center';
-                            targetCtx.textBaseline = 'middle';
-                            const oldAlpha = targetCtx.globalAlpha;
-                            targetCtx.globalAlpha = isImprint ? 1.0 : fadeAlpha;
-                            targetCtx.fillText(letterToDraw, p.x, p.y);
-                            targetCtx.globalAlpha = oldAlpha;
+                            const fontSize = Math.max(1, (baseBodyRadius * 3) * radiusMultiplier * variation);
+                            // Quantize by shade AND font size for optimal batching
+                            const styleKey = `${Math.floor(shadeIntensity * 20)}_${Math.round(fontSize)}`;
+                            if (!letterBatches.has(styleKey)) letterBatches.set(styleKey, []);
+                            letterBatches.get(styleKey).push(p);
                         }
                     }
+                }
+
+
+                // --- 2. RENDER THE BATCHES EFFICIENTLY ---
+
+                // Render tendrils (already efficient, but now using the batch)
+                if (tendrilBatch.length > 0) {
+                    targetCtx.strokeStyle = isImprint ? `rgba(20, 20, 40, ${imprintShade * 0.75})` : `rgba(0, 0, 0, ${0.5 * fadeAlpha})`;
+                    targetCtx.lineWidth = 1;
+                    targetCtx.beginPath();
+                    for (const s of tendrilBatch) {
+                        targetCtx.moveTo(s.p1.x, s.p1.y);
+                        targetCtx.lineTo(s.p2.x, s.p2.y);
+                    }
+                    targetCtx.stroke();
+                }
+
+                // Render body springs from batches
+                const baseLineWidth = Math.max(0.2, 2.8 - (this.points.length / 25));
+                springBatches.forEach((springsInBatch, styleKey) => {
+                    const shadeIntensity = styleKey / 20; // De-quantize
+                    const gray = Math.floor(80 * (1 - shadeIntensity));
+                    const lineWidth = Math.min(baseLineWidth + (shadeIntensity * (baseLineWidth * 3.5)), maxLineThickness);
+
+                    targetCtx.strokeStyle = isImprint ? `rgba(${gray}, ${gray}, ${gray}, ${imprintShade})` : `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
+                    targetCtx.lineWidth = lineWidth;
+
+                    targetCtx.beginPath();
+                    for (const s of springsInBatch) {
+                        targetCtx.moveTo(s.p1.x, s.p1.y);
+                        targetCtx.lineTo(s.p2.x, s.p2.y);
+                    }
+                    targetCtx.stroke();
+                });
+
+                // Render body points (point mode) from batches
+                pointBatches.forEach((pointsInBatch, styleKey) => {
+                    const shadeIntensity = styleKey / 20;
+                    const gray = Math.floor(180 * (1 - shadeIntensity));
+                    targetCtx.fillStyle = isImprint ? `rgba(${gray}, ${gray}, ${gray}, ${imprintShade})` : `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
+
+                    targetCtx.beginPath();
+                    for (const item of pointsInBatch) {
+                        targetCtx.moveTo(item.point.x + item.radius, item.point.y); // moveTo is faster than setting x,y in arc
+                        targetCtx.arc(item.point.x, item.point.y, item.radius, 0, Math.PI * 2);
+                    }
+                    targetCtx.fill();
+                });
+
+                // Render body points (letter mode) from batches
+                letterBatches.forEach((pointsInBatch, styleKey) => {
+                    const [shadeKey, fontSizeKey] = styleKey.split('_');
+                    const shadeIntensity = parseInt(shadeKey, 10) / 20;
+                    const gray = Math.floor(180 * (1 - shadeIntensity));
+
+                    targetCtx.fillStyle = isImprint ? `rgba(${gray}, ${gray}, ${gray}, ${imprintShade})` : `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
+                    targetCtx.font = `bold ${fontSizeKey}px sans-serif`;
+
+                    // Set these once per batch
+                    targetCtx.textAlign = 'center';
+                    targetCtx.textBaseline = 'middle';
+
+                    for (const p of pointsInBatch) {
+                        targetCtx.fillText(letterToDraw, p.x, p.y);
+                    }
+                });
+
+                // Render feet (single batch)
+                if (footBatch.length > 0) {
+                    targetCtx.fillStyle = isImprint ? `rgba(20, 20, 40, ${imprintShade})` : `rgba(0, 0, 0, ${fadeAlpha})`;
+                    targetCtx.beginPath();
+                    for (const p of footBatch) {
+                        targetCtx.moveTo(p.x + baseFootRadius, p.y);
+                        targetCtx.arc(p.x, p.y, baseFootRadius, 0, Math.PI * 2);
+                    }
+                    targetCtx.fill();
                 }
             }
         }
 
-        class SpatialHashGrid { constructor(bounds, cellSize) { this.bounds = bounds; this.cellSize = cellSize; this.cols = Math.ceil(bounds.width / cellSize); this.rows = Math.ceil(bounds.height / cellSize); this.grid = new Map(); } _getKey(x, y) { return `${x}|${y}`; } insert(point, index) { const cx = Math.floor(point.x / this.cellSize); const cy = Math.floor(point.y / this.cellSize); const key = this._getKey(cx, cy); if (!this.grid.has(key)) { this.grid.set(key, []); } this.grid.get(key).push({ point, index }); } query(point, radius) { const nearby = []; const r = radius / this.cellSize; const cx = Math.floor(point.x / this.cellSize); const cy = Math.floor(point.y / this.cellSize); for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) { for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) { const key = this._getKey(x, y); if (this.grid.has(key)) { nearby.push(...this.grid.get(key)); } } } return nearby; } }
+        class SpatialHashGrid {
+            constructor(bounds, cellSize) {
+                this.bounds = bounds;
+                this.cellSize = cellSize;
+                this.cols = Math.ceil(bounds.width / cellSize);
+                this.rows = Math.ceil(bounds.height / cellSize);
+                this.grid = new Map();
+            }
+            _getKey(x, y) {
+                return `${x}|${y}`;
+            }
+            insert(point, index) {
+                const cx = Math.floor(point.x / this.cellSize);
+                const cy = Math.floor(point.y / this.cellSize);
+                const key = this._getKey(cx, cy);
+                if (!this.grid.has(key)) {
+                    this.grid.set(key, []);
+                }
+                this.grid.get(key).push({
+                    point,
+                    index
+                });
+            }
+            query(point, radius) {
+                const nearby = [];
+                const r = radius / this.cellSize;
+                const cx = Math.floor(point.x / this.cellSize);
+                const cy = Math.floor(point.y / this.cellSize);
+                for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
+                    for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) {
+                        const key = this._getKey(x, y);
+                        if (this.grid.has(key)) {
+                            nearby.push(...this.grid.get(key));
+                        }
+                    }
+                }
+                return nearby;
+            }
+        }
 
         class Point {
             constructor(x, y, creature, isFoot = false) {
@@ -1196,13 +1625,17 @@
                 this.isFoot = isFoot;
                 this.isHair = false;
                 this.footState = isFoot ? FOOT_STATES.FIXED : null;
-                this.targetPos = { x, y };
+                this.targetPos = {
+                    x,
+                    y
+                };
                 this.searchPhase = Math.random() * Math.PI * 2;
                 this.mass = 1;
                 this.stepStartTime = 0;
                 this.settleStartTime = 0;
                 this.pulseMagnitude = 0;
                 this.birthTime = Infinity;
+                this.sizeRandomizer = (Math.random() - 0.5) * 4; // A random value between -2 and 2
             }
 
             update() {
@@ -1224,12 +1657,41 @@
 
             updateFoot() {
                 switch (this.footState) {
-                    case FOOT_STATES.FIXED: this.x = this.targetPos.x; this.y = this.targetPos.y; break;
-                    case FOOT_STATES.SEEKING: let progress = (time - this.stepStartTime) / stepDuration; if (progress > 1) { this.setEdgeTarget(); this.stepStartTime = time; progress = 0; } const wobbleX = Math.sin(time * 0.02 + this.searchPhase) * wobbleStrength; const wobbleY = Math.cos(time * 0.015 + this.searchPhase) * wobbleStrength; const lift = Math.sin(progress * Math.PI) * stepHeight;
+                    case FOOT_STATES.FIXED:
+                        this.x = this.targetPos.x;
+                        this.y = this.targetPos.y;
+                        break;
+                    case FOOT_STATES.SEEKING:
+                        let progress = (time - this.stepStartTime) / stepDuration;
+                        if (progress > 1) {
+                            this.setEdgeTarget();
+                            this.stepStartTime = time;
+                            progress = 0;
+                        }
+                        const wobbleX = Math.sin(time * 0.02 + this.searchPhase) * wobbleStrength;
+                        const wobbleY = Math.cos(time * 0.015 + this.searchPhase) * wobbleStrength;
+                        const lift = Math.sin(progress * Math.PI) * stepHeight;
                         this.x += (this.targetPos.x - this.x) * targetAttraction + wobbleX + gravityX;
                         this.y += (this.targetPos.y - this.y) * targetAttraction - lift + wobbleY + gravityY;
-                        if (this.x <= 1 || this.x >= canvas.width - 1 || this.y <= 1 || this.y >= canvas.height - 1) { this.footState = FOOT_STATES.SETTLING; this.settleStartTime = time; this.targetPos.x = Math.max(0, Math.min(canvas.width, this.x)); this.targetPos.y = Math.max(0, Math.min(canvas.height, this.y)); this.pulseMagnitude = 1.0; } break;
-                    case FOOT_STATES.SETTLING: this.x = this.targetPos.x; this.y = this.targetPos.y; if (time > this.settleStartTime + stepCooldown) { this.footState = FOOT_STATES.FIXED; if (this.creature && !this.creature.isDead) { this.creature.incrementSteps(); this.creature.wakeNextMovers(this); } } break;
+                        if (this.x <= 1 || this.x >= canvas.width - 1 || this.y <= 1 || this.y >= canvas.height - 1) {
+                            this.footState = FOOT_STATES.SETTLING;
+                            this.settleStartTime = time;
+                            this.targetPos.x = Math.max(0, Math.min(canvas.width, this.x));
+                            this.targetPos.y = Math.max(0, Math.min(canvas.height, this.y));
+                            this.pulseMagnitude = 1.0;
+                        }
+                        break;
+                    case FOOT_STATES.SETTLING:
+                        this.x = this.targetPos.x;
+                        this.y = this.targetPos.y;
+                        if (time > this.settleStartTime + stepCooldown) {
+                            this.footState = FOOT_STATES.FIXED;
+                            if (this.creature && !this.creature.isDead) {
+                                this.creature.incrementSteps();
+                                this.creature.wakeNextMovers(this);
+                            }
+                        }
+                        break;
                 }
             }
 
@@ -1238,18 +1700,150 @@
                 this.x += fx / this.mass;
                 this.y += fy / this.mass;
             }
-            getRandomEdgeTarget() { const edge = Math.floor(Math.random() * 4); switch (edge) { case 0: return { x: Math.random() * canvas.width, y: 0 }; case 1: return { x: canvas.width, y: Math.random() * canvas.height }; case 2: return { x: Math.random() * canvas.width, y: canvas.height }; case 3: return { x: 0, y: Math.random() * canvas.height }; } }
-            getCoordinatedTarget() { let centerX = 0, centerY = 0; const creature = this.creature; if (creature && creature.points.length > 0) { const bodyPoints = creature.points.filter(p => !p.isHair); if (bodyPoints.length > 0) { for (const p of bodyPoints) { centerX += p.x; centerY += p.y; } centerX /= bodyPoints.length; centerY /= bodyPoints.length; } } const vectorX = this.targetPos.x - centerX; const vectorY = this.targetPos.y - centerY; const oppositeX = centerX - vectorX; const oppositeY = centerY - vectorY; let bestDist = Infinity; let bestPoint = { x: 0, y: 0 }; for (let x = 0; x <= canvas.width; x += 50) { for (const p of [{ x: x, y: 0 }, { x: x, y: canvas.height }]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if (d < bestDist) { bestDist = d; bestPoint = p; } } } for (let y = 0; y <= canvas.height; y += 50) { for (const p of [{ x: 0, y: y }, { x: canvas.width, y: y }]) { const d = Math.hypot(p.x - oppositeX, p.y - oppositeY); if (d < bestDist) { bestDist = d; bestPoint = p; } } } return bestPoint; }
-            setEdgeTarget() { this.targetPos = this.getRandomEdgeTarget(); }
+            getRandomEdgeTarget() {
+                const edge = Math.floor(Math.random() * 4);
+                switch (edge) {
+                    case 0:
+                        return {
+                            x: Math.random() * canvas.width,
+                            y: 0
+                        };
+                    case 1:
+                        return {
+                            x: canvas.width,
+                            y: Math.random() * canvas.height
+                        };
+                    case 2:
+                        return {
+                            x: Math.random() * canvas.width,
+                            y: canvas.height
+                        };
+                    case 3:
+                        return {
+                            x: 0,
+                            y: Math.random() * canvas.height
+                        };
+                }
+            }
+            getCoordinatedTarget() {
+                let centerX = 0,
+                    centerY = 0;
+                const creature = this.creature;
+                if (creature && creature.points.length > 0) {
+                    const bodyPoints = creature.points.filter(p => !p.isHair);
+                    if (bodyPoints.length > 0) {
+                        for (const p of bodyPoints) {
+                            centerX += p.x;
+                            centerY += p.y;
+                        }
+                        centerX /= bodyPoints.length;
+                        centerY /= bodyPoints.length;
+                    }
+                }
+                const vectorX = this.targetPos.x - centerX;
+                const vectorY = this.targetPos.y - centerY;
+                const oppositeX = centerX - vectorX;
+                const oppositeY = centerY - vectorY;
+                let bestDist = Infinity;
+                let bestPoint = {
+                    x: 0,
+                    y: 0
+                };
+                for (let x = 0; x <= canvas.width; x += 50) {
+                    for (const p of [{
+                        x: x,
+                        y: 0
+                    }, {
+                        x: x,
+                        y: canvas.height
+                    }]) {
+                        const d = Math.hypot(p.x - oppositeX, p.y - oppositeY);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            bestPoint = p;
+                        }
+                    }
+                }
+                for (let y = 0; y <= canvas.height; y += 50) {
+                    for (const p of [{
+                        x: 0,
+                        y: y
+                    }, {
+                        x: canvas.width,
+                        y: y
+                    }]) {
+                        const d = Math.hypot(p.x - oppositeX, p.y - oppositeY);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            bestPoint = p;
+                        }
+                    }
+                }
+                return bestPoint;
+            }
+            setEdgeTarget() {
+                this.targetPos = this.getRandomEdgeTarget();
+            }
         }
 
-        class Spring { constructor(p1, p2, baseLength) { this.p1 = p1; this.p2 = p2; this.baseRestLength = baseLength; this.isHair = false; } update() { const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2; let contraction = 1.0 - (averagePulse * shiverIntensityFactor); const currentRestLength = this.baseRestLength * this.p1.creature.restLengthFactor * contraction; const dx = this.p2.x - this.p1.x; const dy = this.p2.y - this.p1.y; const dist = Math.hypot(dx, dy); if (dist < 0.01) return; let stiffness = springStiffness; if (this.isHair) { stiffness = tendrilStiffness; } const forceScalar = (dist - currentRestLength) * stiffness; const fx = (dx / dist) * forceScalar; const fy = (dy / dist) * forceScalar; this.p1.applyForce(fx, fy); this.p2.applyForce(-fx, -fy); } }
+        class Spring {
+            constructor(p1, p2, baseLength) {
+                this.p1 = p1;
+                this.p2 = p2;
+                this.baseRestLength = baseLength;
+                this.isHair = false;
+            }
+            update() {
+                const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2;
+                let contraction = 1.0 - (averagePulse * shiverIntensityFactor);
+                const currentRestLength = this.baseRestLength * this.p1.creature.restLengthFactor * contraction;
+                const dx = this.p2.x - this.p1.x;
+                const dy = this.p2.y - this.p1.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < 0.01) return;
+                let stiffness = springStiffness;
+                if (this.isHair) {
+                    stiffness = tendrilStiffness;
+                }
+                const forceScalar = (dist - currentRestLength) * stiffness;
+                const fx = (dx / dist) * forceScalar;
+                const fy = (dy / dist) * forceScalar;
+                this.p1.applyForce(fx, fy);
+                this.p2.applyForce(-fx, -fy);
+            }
+        }
 
-        function getCurrentTotalPoints() { return creatures.reduce((sum, creature) => sum + creature.points.length, 0); }
-        function updateCurrentPointsDisplay() { const d = document.getElementById('currentPointsValue'); if (d) d.textContent = getCurrentTotalPoints(); }
-        function updateCreatureCountDisplay() { const d = document.getElementById('currentCreaturesValue'); if (d) d.textContent = creatures.length; }
-        function updateAddButtonState() { const b = document.getElementById('addCreatureBtn'); if (!b) return; b.disabled = (enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints); }
-        function addCreature() { if ((enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints)) return; const char = document.getElementById('letterInput').value || '+'; creatures.push(new Creature(creatureShape, char)); if (enablePointLimit && getCurrentTotalPoints() > maxPoints) { creatures.pop(); } updateAddButtonState(); updateCurrentPointsDisplay(); updateCreatureCountDisplay(); }
+        function getCurrentTotalPoints() {
+            return creatures.reduce((sum, creature) => sum + creature.points.length, 0);
+        }
+
+        function updateCurrentPointsDisplay() {
+            const d = document.getElementById('currentPointsValue');
+            if (d) d.textContent = getCurrentTotalPoints();
+        }
+
+        function updateCreatureCountDisplay() {
+            const d = document.getElementById('currentCreaturesValue');
+            if (d) d.textContent = creatures.length;
+        }
+
+        function updateAddButtonState() {
+            const b = document.getElementById('addCreatureBtn');
+            if (!b) return;
+            b.disabled = (enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints);
+        }
+
+        function addCreature() {
+            if ((enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints)) return;
+            const char = document.getElementById('letterInput').value || '+';
+            creatures.push(new Creature(creatureShape, char));
+            if (enablePointLimit && getCurrentTotalPoints() > maxPoints) {
+                creatures.pop();
+            }
+            updateAddButtonState();
+            updateCurrentPointsDisplay();
+            updateCreatureCountDisplay();
+        }
 
         function resetHistory() {
             if (backgroundCtx) {
@@ -1275,9 +1869,51 @@
         function update() {
             time++;
             const limitsReached = (enableCreatureLimit && creatures.length >= maxCreatures) || (enablePointLimit && getCurrentTotalPoints() >= maxPoints);
-            if (isInitializingFill) { if (!limitsReached) { if (time - timeSinceLastAutoAdd > INIT_FILL_DELAY) { addCreature(); timeSinceLastAutoAdd = time; } } else { isInitializingFill = false; } }
-            else { switch (autoMode) { case 'respawn': if (creatures.length === 0) { if (timeSinceEmpty === null) timeSinceEmpty = time; if (time - timeSinceEmpty > autoAddDelaySeconds * 60) { addCreature(); timeSinceEmpty = null; } } else { timeSinceEmpty = null; } break; case 'top-up': if (!limitsReached) { if (timeSinceLastAutoAdd === null) timeSinceLastAutoAdd = time; if (time - timeSinceLastAutoAdd > autoAddDelaySeconds * 60) { addCreature(); timeSinceLastAutoAdd = time; } } else { timeSinceLastAutoAdd = time; } break; } }
-            for (let i = creatures.length - 1; i >= 0; i--) { const c = creatures[i]; c.update(); if (c.isOffscreen() || c.hasFaded()) { creatures.splice(i, 1); updateAddButtonState(); updateCurrentPointsDisplay(); updateCreatureCountDisplay(); } }
+            if (isInitializingFill) {
+                if (!limitsReached) {
+                    if (time - timeSinceLastAutoAdd > INIT_FILL_DELAY) {
+                        addCreature();
+                        timeSinceLastAutoAdd = time;
+                    }
+                } else {
+                    isInitializingFill = false;
+                }
+            } else {
+                switch (autoMode) {
+                    case 'respawn':
+                        if (creatures.length === 0) {
+                            if (timeSinceEmpty === null) timeSinceEmpty = time;
+                            if (time - timeSinceEmpty > autoAddDelaySeconds * 60) {
+                                addCreature();
+                                timeSinceEmpty = null;
+                            }
+                        } else {
+                            timeSinceEmpty = null;
+                        }
+                        break;
+                    case 'top-up':
+                        if (!limitsReached) {
+                            if (timeSinceLastAutoAdd === null) timeSinceLastAutoAdd = time;
+                            if (time - timeSinceLastAutoAdd > autoAddDelaySeconds * 60) {
+                                addCreature();
+                                timeSinceLastAutoAdd = time;
+                            }
+                        } else {
+                            timeSinceLastAutoAdd = time;
+                        }
+                        break;
+                }
+            }
+            for (let i = creatures.length - 1; i >= 0; i--) {
+                const c = creatures[i];
+                c.update();
+                if (c.isOffscreen() || c.hasFaded()) {
+                    creatures.splice(i, 1);
+                    updateAddButtonState();
+                    updateCurrentPointsDisplay();
+                    updateCreatureCountDisplay();
+                }
+            }
         }
 
         function draw() {
@@ -1289,19 +1925,43 @@
 
         function drawGravityIndicator() {
             if (!gravityIndicatorCtx) return;
-            const gctx = gravityIndicatorCtx, w = gctx.canvas.width, h = gctx.canvas.height;
+            const gctx = gravityIndicatorCtx,
+                w = gctx.canvas.width,
+                h = gctx.canvas.height;
             gctx.clearRect(0, 0, w, h);
             const mag = Math.hypot(gravityX, gravityY);
-            if (mag < 0.001) { gctx.fillStyle = '#ccc'; gctx.beginPath(); gctx.arc(w / 2, h / 2, 2, 0, Math.PI * 2); gctx.fill(); return; }
+            if (mag < 0.001) {
+                gctx.fillStyle = '#ccc';
+                gctx.beginPath();
+                gctx.arc(w / 2, h / 2, 2, 0, Math.PI * 2);
+                gctx.fill();
+                return;
+            }
             gctx.save();
-            const cX = w / 2, cY = h / 2, maxLen = (w / 2) * .8, maxG = 0.5;
-            const normX = gravityX / mag, normY = gravityY / mag, len = (mag / maxG) * maxLen;
-            const endX = cX + normX * len, endY = cY + normY * len, hL = 8, ang = Math.atan2(endY - cY, endX - cX);
+            const cX = w / 2,
+                cY = h / 2,
+                maxLen = (w / 2) * .8,
+                maxG = 0.5;
+            const normX = gravityX / mag,
+                normY = gravityY / mag,
+                len = (mag / maxG) * maxLen;
+            const endX = cX + normX * len,
+                endY = cY + normY * len,
+                hL = 8,
+                ang = Math.atan2(endY - cY, endX - cX);
             gctx.strokeStyle = '#000aa7';
             gctx.fillStyle = '#000aa7';
             gctx.lineWidth = 2;
-            gctx.beginPath(); gctx.moveTo(cX, cY); gctx.lineTo(endX, endY); gctx.stroke();
-            gctx.beginPath(); gctx.moveTo(endX, endY); gctx.lineTo(endX - hL * Math.cos(ang - Math.PI / 6), endY - hL * Math.sin(ang - Math.PI / 6)); gctx.lineTo(endX - hL * Math.cos(ang + Math.PI / 6), endY - hL * Math.sin(ang + Math.PI / 6)); gctx.closePath(); gctx.fill();
+            gctx.beginPath();
+            gctx.moveTo(cX, cY);
+            gctx.lineTo(endX, endY);
+            gctx.stroke();
+            gctx.beginPath();
+            gctx.moveTo(endX, endY);
+            gctx.lineTo(endX - hL * Math.cos(ang - Math.PI / 6), endY - hL * Math.sin(ang - Math.PI / 6));
+            gctx.lineTo(endX - hL * Math.cos(ang + Math.PI / 6), endY - hL * Math.sin(ang + Math.PI / 6));
+            gctx.closePath();
+            gctx.fill();
             gctx.restore();
         }
 
@@ -1341,7 +2001,10 @@
             if (!window.isSecureContext) {
                 alert('Orientation controls require a secure (HTTPS) connection.');
                 debugStatus.textContent = "Blocked: Insecure";
-                if (sourceSelector) { sourceSelector.value = 'fixed'; sourceSelector.dispatchEvent(new Event('change')); }
+                if (sourceSelector) {
+                    sourceSelector.value = 'fixed';
+                    sourceSelector.dispatchEvent(new Event('change'));
+                }
                 return;
             }
 
@@ -1382,27 +2045,153 @@
             }
         }
 
-        function updateOrientationDebug() { debugOrientation.textContent = window.orientation || 0; }
+        function updateOrientationDebug() {
+            debugOrientation.textContent = window.orientation || 0;
+        }
 
         function animate() {
             frameCount++;
             const currentTime = performance.now();
             const deltaTime = currentTime - lastFpsUpdateTime;
-            if (deltaTime > 1000) { fps = Math.round((frameCount * 1000) / deltaTime); if (fpsCounterElement) { fpsCounterElement.textContent = fps; } frameCount = 0; lastFpsUpdateTime = currentTime; }
+            if (deltaTime > 1000) {
+                fps = Math.round((frameCount * 1000) / deltaTime);
+                if (fpsCounterElement) {
+                    fpsCounterElement.textContent = fps;
+                }
+                frameCount = 0;
+                lastFpsUpdateTime = currentTime;
+            }
             update();
             draw();
             drawGravityIndicator();
             requestAnimationFrame(animate);
         }
 
-        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) { const slider = document.getElementById(id); if (!slider) return; const display = document.getElementById(valueDisplayId); slider.addEventListener('input', e => { const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10); setter(value); if (display) { const precision = (id === 'damping' || id === 'breathingRate') ? 3 : (id === 'pointSize' || id === 'maxLineThickness' || id === 'autoAddDelay' || id === 'gravity' || id === 'minShade' || id === 'shiverPropagation' || id === 'shiverEffect' || id === 'shiverDuration' || id === 'imprintShade') ? 2 : 1; display.textContent = isFloat ? value.toFixed(precision) : value; } if (requiresReset && id !== 'autoAddDelay') { init(); } }); }
-        function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) { const checkbox = document.getElementById(id); if (!checkbox) return; const updateDependents = (checked) => { for (const control of dependentControls) { if (control) { control.style.display = checked ? 'block' : 'none'; } } }; checkbox.addEventListener('change', e => { const checked = e.target.checked; setter(checked); updateDependents(checked); if (requiresReset) init(); }); updateDependents(checkbox.checked); }
+        function setupSlider(id, valueDisplayId, setter, isFloat = true, requiresReset = false) {
+            const slider = document.getElementById(id);
+            if (!slider) return;
+            const display = document.getElementById(valueDisplayId);
+            slider.addEventListener('input', e => {
+                const value = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10);
+                setter(value);
+                if (display) {
+                    const precision = (id === 'damping' || id === 'breathingRate') ? 3 : (id === 'pointSize' || id === 'maxLineThickness' || id === 'autoAddDelay' || id === 'gravity' || id === 'minShade' || id === 'shiverPropagation' || id === 'shiverEffect' || id === 'shiverDuration' || id === 'imprintShade') ? 2 : 1;
+                    display.textContent = isFloat ? value.toFixed(precision) : value;
+                }
+                if (requiresReset && id !== 'autoAddDelay') {
+                    init();
+                }
+            });
+        }
 
-        function setupShapeSelector() { const e = document.getElementById("creatureShape"), t = document.getElementById("pointDensityLabel").parentElement, n = document.getElementById("pointDensityLabel"), i = document.getElementById("pointDensityValue"), a = document.getElementById("pointDensity"), d = document.getElementById("letterInputContainer"), o = document.getElementById("letterInput"); e.addEventListener("change", c => { creatureShape = c.target.value, d.style.display = "none", t.style.display = "block", "grid" === creatureShape ? (n.childNodes[0].nodeValue = "Points / Side ", a.min = 3, a.max = 15, parseInt(a.value) > 15 && (a.value = 15)) : "letter" === creatureShape && (n.childNodes[0].nodeValue = "Sampling Density ", a.min = 2, a.max = 18, d.style.display = "block"), i.textContent = a.value, pointDensity = parseInt(a.value) }), o.addEventListener("input", () => { init() }) }
+        function setupCheckbox(id, setter, requiresReset = false, dependentControls = []) {
+            const checkbox = document.getElementById(id);
+            if (!checkbox) return;
+            const updateDependents = (checked) => {
+                for (const control of dependentControls) {
+                    if (control) {
+                        control.style.display = checked ? 'block' : 'none';
+                    }
+                }
+            };
+            checkbox.addEventListener('change', e => {
+                const checked = e.target.checked;
+                setter(checked);
+                updateDependents(checked);
+                if (requiresReset) init();
+            });
+            updateDependents(checkbox.checked);
+        }
 
-        function setupGaitSelector() { const e = document.getElementById("gaitPattern"), t = document.getElementById("seekingFeetControl"), n = document.getElementById("waveDelayControl"), i = () => { gaitPattern = e.value, t.style.display = "sequential" === gaitPattern ? "block" : "none", n.style.display = "sidewinder" === gaitPattern ? "block" : "none" }; e.addEventListener("change", () => { i(), init() }), i() }
-        function setupTendrilControls() { setupSlider("numTendrils", "numTendrilsValue", e => { numTendrils = e }, !1, !0), setupSlider("tendrilLength", "tendrilLengthValue", e => { tendrilLength = e }, !1, !0), setupSlider("tendrilQuality", "tendrilQualityValue", e => { tendrilQuality = e }, !0, !0), setupSlider("tendrilStiffness", "tendrilStiffnessValue", e => { tendrilStiffness = e }); const e = document.getElementById("tendrilLengthVariation"), t = document.getElementById("tendrilLengthVariationValue"); e.addEventListener("input", n => { const i = parseFloat(n.target.value); tendrilLengthVariation = i, t.textContent = (100 * i).toFixed(0) + "%", init() }), setupCheckbox("feetOnTendrils", e => { placeFeetOnTendrils = e }, true), setupCheckbox("shiversOnTendrils", e => { shiversOnTendrils = e }); }
-        function setupAppearanceControls() { const e = document.getElementById("drawMode"), t = document.getElementById("pointSizeContainer"), n = document.getElementById("letterChoiceContainer"), i = document.getElementById("letterChoice"), a = () => { drawMode = e.value, t.style.display = "point" === drawMode ? "block" : "none", n.style.display = "letter" === drawMode ? "block" : "none" }; e.addEventListener("change", a), i.addEventListener("change", e => { letterToDraw = e.target.value }), setupSlider("pointSize", "pointSizeValue", e => { pointBaseSize = e }, !0), a() }
+        function setupShapeSelector() {
+            const e = document.getElementById("creatureShape"),
+                t = document.getElementById("pointDensityLabel").parentElement,
+                n = document.getElementById("pointDensityLabel"),
+                i = document.getElementById("pointDensityValue"),
+                a = document.getElementById("pointDensity"),
+                d = document.getElementById("letterInputContainer"),
+                o = document.getElementById("letterInput");
+            e.addEventListener("change", c => {
+                creatureShape = c.target.value, d.style.display = "none", t.style.display = "block", "grid" === creatureShape ? (n.childNodes[0].nodeValue = "Points / Side ", a.min = 3, a.max = 15, parseInt(a.value) > 15 && (a.value = 15)) : "letter" === creatureShape && (n.childNodes[0].nodeValue = "Sampling Density ", a.min = 2, a.max = 18, d.style.display = "block"), i.textContent = a.value, pointDensity = parseInt(a.value)
+            });
+            o.addEventListener("input", () => {
+                init()
+            })
+        }
+
+
+        function setupGaitSelector() {
+            const e = document.getElementById("gaitPattern"),
+                t = document.getElementById("seekingFeetControl"),
+                n = document.getElementById("waveDelayControl"),
+                i = () => {
+                    gaitPattern = e.value, t.style.display = "sequential" === gaitPattern ? "block" : "none", n.style.display = "sidewinder" === gaitPattern ? "block" : "none"
+                };
+            e.addEventListener("change", () => {
+                i(), init()
+            });
+            i()
+        }
+
+        function setupTendrilControls() {
+            setupSlider("numTendrils", "numTendrilsValue", e => {
+                numTendrils = e
+            }, false, true);
+            setupSlider("tendrilLength", "tendrilLengthValue", e => {
+                tendrilLength = e
+            }, false, true);
+            setupSlider("tendrilQuality", "tendrilQualityValue", e => {
+                tendrilQuality = e
+            }, true, true);
+            setupSlider("tendrilStiffness", "tendrilStiffnessValue", e => {
+                tendrilStiffness = e
+            });
+            const e = document.getElementById("tendrilLengthVariation"),
+                t = document.getElementById("tendrilLengthVariationValue");
+            e.addEventListener("input", n => {
+                const i = parseFloat(n.target.value);
+                tendrilLengthVariation = i, t.textContent = (100 * i).toFixed(0) + "%", init()
+            });
+            setupCheckbox("feetOnTendrils", e => {
+                placeFeetOnTendrils = e
+            }, true);
+            setupCheckbox("shiversOnTendrils", e => {
+                shiversOnTendrils = e
+            });
+        }
+
+        function setupAppearanceControls() {
+            const e = document.getElementById("drawMode"),
+                t = document.getElementById("pointSizeContainer"),
+                n = document.getElementById("letterChoiceContainer"),
+                i = document.getElementById("letterChoice"),
+                a = () => {
+                    drawMode = e.value, t.style.display = "point" === drawMode ? "block" : "none", n.style.display = "letter" === drawMode ? "block" : "none"
+                };
+            e.addEventListener("change", a);
+            i.addEventListener("change", e => {
+                letterToDraw = e.target.value
+            });
+            setupSlider("pointSize", "pointSizeValue", e => {
+                pointBaseSize = e
+            }, true);
+            a()
+        }
+
+        function setupPointSizeVariationControl() {
+            const slider = document.getElementById('pointSizeVariation');
+            const display = document.getElementById('pointSizeVariationValue');
+            if (!slider || !display) return;
+
+            slider.addEventListener('input', e => {
+                const value = parseFloat(e.target.value);
+                pointSizeVariation = value;
+                display.textContent = (value * 100).toFixed(0) + '%';
+            });
+
+            // Set initial display value on load
+            display.textContent = (parseFloat(slider.value) * 100).toFixed(0) + '%';
+        }
 
         function setupToggleControlsButton() {
             const toggleBtn = document.getElementById("toggleControlsBtn");
@@ -1502,21 +2291,27 @@
                 const slider = document.getElementById(id);
                 if (!slider) return;
                 slider.value = value;
-                slider.dispatchEvent(new Event('input', { bubbles: true }));
+                slider.dispatchEvent(new Event('input', {
+                    bubbles: true
+                }));
             };
 
             const updateCheckbox = (id, checked) => {
                 const checkbox = document.getElementById(id);
                 if (!checkbox) return;
                 checkbox.checked = checked;
-                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                checkbox.dispatchEvent(new Event('change', {
+                    bubbles: true
+                }));
             };
 
             const updateSelect = (id, value) => {
                 const select = document.getElementById(id);
                 if (!select) return;
                 select.value = value;
-                select.dispatchEvent(new Event('change', { bubbles: true }));
+                select.dispatchEvent(new Event('change', {
+                    bubbles: true
+                }));
             }
 
             // Creature Shape
@@ -1547,6 +2342,7 @@
 
             // Appearance
             updateSlider('pointSize', rand(1.0, 4.0, true));
+            updateSlider('pointSizeVariation', rand(0.0, 0.8, true));
             updateSlider('maxLineThickness', rand(1.0, 5.0, true));
             updateSlider('minShade', rand(0.0, 0.4, true));
 
@@ -1575,8 +2371,86 @@
             }
         }
 
-        function handleCopyParameters() { const params = { creatureShape, pointDensity, numFeet, restLengthFactor, useRandomPlacement, damping, springStiffness, gravity, shiverIntensityFactor, shiverPropagationFactor, shiverPropagationSpeed, shiverEffectMultiplier, shiverDurationFactor, numSeekingFeet, footCoordinationFactor, stepCooldown, stepDuration, stepHeight, wobbleStrength, targetAttraction, gaitPattern, enableTendrils, numTendrils, tendrilLength, tendrilStiffness, placeFeetOnTendrils, shiversOnTendrils, tendrilQuality, tendrilLengthVariation, drawMode, pointBaseSize, letterToDraw, maxLineThickness, autoAddDelaySeconds, autoMode, enableBreathing, breathingRate, breathingAmplitude, breathingOffset, pruneUnfootedPoints, enableProgressiveAppearance, growthSpeed, enableAging, agingMode, lifespanSeconds, maxFootsteps, deathEffect, enableCreatureLimit, maxCreatures, enablePointLimit, maxPoints, letterInput: document.getElementById('letterInput').value, imprintShade, shiverPropagationSpeedSlider: document.getElementById('shiverPropagationSpeed').value }; const paramsString = JSON.stringify(params, null, 2); navigator.clipboard.writeText(paramsString).then(() => { const btn = document.getElementById('copyParamsBtn'); if (btn) { const originalText = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = originalText; }, 1500); } }).catch(err => { console.error('Failed to copy parameters: ', err); }); console.log("Current Parameters:", params); }
-        function setupCopyButton() { const copyBtn = document.getElementById('copyParamsBtn'); if (copyBtn) { copyBtn.addEventListener('click', handleCopyParameters); } }
+        function handleCopyParameters() {
+            const params = {
+                creatureShape,
+                pointDensity,
+                numFeet,
+                restLengthFactor,
+                useRandomPlacement,
+                damping,
+                springStiffness,
+                gravity,
+                shiverIntensityFactor,
+                shiverPropagationFactor,
+                shiverPropagationSpeed,
+                shiverEffectMultiplier,
+                shiverDurationFactor,
+                numSeekingFeet,
+                footCoordinationFactor,
+                stepCooldown,
+                stepDuration,
+                stepHeight,
+                wobbleStrength,
+                targetAttraction,
+                gaitPattern,
+                enableTendrils,
+                numTendrils,
+                tendrilLength,
+                tendrilStiffness,
+                placeFeetOnTendrils,
+                shiversOnTendrils,
+                tendrilQuality,
+                tendrilLengthVariation,
+                drawMode,
+                pointBaseSize,
+                letterToDraw,
+                maxLineThickness,
+                pointSizeVariation,
+                autoAddDelaySeconds,
+                autoMode,
+                enableBreathing,
+                breathingRate,
+                breathingAmplitude,
+                breathingOffset,
+                pruneUnfootedPoints,
+                enableProgressiveAppearance,
+                growthSpeed,
+                enableAging,
+                agingMode,
+                lifespanSeconds,
+                maxFootsteps,
+                deathEffect,
+                enableCreatureLimit,
+                maxCreatures,
+                enablePointLimit,
+                maxPoints,
+                letterInput: document.getElementById('letterInput').value,
+                imprintShade,
+                shiverPropagationSpeedSlider: document.getElementById('shiverPropagationSpeed').value
+            };
+            const paramsString = JSON.stringify(params, null, 2);
+            navigator.clipboard.writeText(paramsString).then(() => {
+                const btn = document.getElementById('copyParamsBtn');
+                if (btn) {
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                    }, 1500);
+                }
+            }).catch(err => {
+                console.error('Failed to copy parameters: ', err);
+            });
+            console.log("Current Parameters:", params);
+        }
+
+        function setupCopyButton() {
+            const copyBtn = document.getElementById('copyParamsBtn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', handleCopyParameters);
+            }
+        }
 
         function setupBirthControls() {
             setupCheckbox('enableProgressiveAppearance', val => {
@@ -1584,7 +2458,9 @@
                 document.getElementById('progressiveAppearanceControls').style.display = val ? 'block' : 'none';
                 init();
             }, false, [document.getElementById('progressiveAppearanceControls')]);
-            setupSlider('growthSpeed', 'growthSpeedValue', val => { growthSpeed = val; }, false, true);
+            setupSlider('growthSpeed', 'growthSpeedValue', val => {
+                growthSpeed = val;
+            }, false, true);
         }
 
         function setupAgingControls() {
@@ -1593,20 +2469,58 @@
                 document.getElementById('agingControlsContainer').style.display = val ? 'block' : 'none';
                 init();
             }, false, [document.getElementById('agingControlsContainer')]);
-            const mS = document.getElementById('agingMode'), lC = document.getElementById('lifespanContainer'), mSC = document.getElementById('maxStepsContainer');
+            const mS = document.getElementById('agingMode'),
+                lC = document.getElementById('lifespanContainer'),
+                mSC = document.getElementById('maxStepsContainer');
             mS.addEventListener('change', () => {
                 agingMode = mS.value;
                 lC.style.display = (agingMode === 'time') ? 'block' : 'none';
                 mSC.style.display = (agingMode === 'steps') ? 'block' : 'none';
                 init();
             });
-            document.getElementById('deathEffect').addEventListener('change', (e) => { deathEffect = e.target.value; init(); });
+            document.getElementById('deathEffect').addEventListener('change', (e) => {
+                deathEffect = e.target.value;
+                init();
+            });
             lC.style.display = (agingMode === 'time') ? 'block' : 'none';
             mSC.style.display = (agingMode === 'steps') ? 'block' : 'none';
         }
 
-        function setupBreathingControls() { const e = document.getElementById("restLength"), t = document.getElementById("enableBreathing"), n = () => { enableBreathing = t.checked, e.disabled = enableBreathing, document.getElementById("breathingControlsContainer").style.display = enableBreathing ? "block" : "none", enableBreathing || (restLengthFactor = parseFloat(e.value)) }; t.addEventListener("change", n), setupSlider("breathingRate", "breathingRateValue", e => { breathingRate = e }, !0), setupSlider("breathingAmplitude", "breathingAmplitudeValue", e => { breathingAmplitude = e }, !0), setupSlider("breathingOffset", "breathingOffsetValue", e => { breathingOffset = e }, !0), n() }
-        function setupPopulationControls() { setupCheckbox('enableCreatureLimit', v => { enableCreatureLimit = v; updateAddButtonState(); init(); }, false, [document.getElementById('creatureLimitContainer')]); setupCheckbox('enablePointLimit', v => { enablePointLimit = v; updateAddButtonState(); init(); }, false, [document.getElementById('pointLimitContainer')]); document.getElementById('autoMode').addEventListener('change', e => { autoMode = e.target.value; init(); }); }
+        function setupBreathingControls() {
+            const e = document.getElementById("restLength"),
+                t = document.getElementById("enableBreathing"),
+                n = () => {
+                    enableBreathing = t.checked, e.disabled = enableBreathing, document.getElementById("breathingControlsContainer").style.display = enableBreathing ? "block" : "none", enableBreathing || (restLengthFactor = parseFloat(e.value))
+                };
+            t.addEventListener("change", n);
+            setupSlider("breathingRate", "breathingRateValue", e => {
+                breathingRate = e
+            }, true);
+            setupSlider("breathingAmplitude", "breathingAmplitudeValue", e => {
+                breathingAmplitude = e
+            }, true);
+            setupSlider("breathingOffset", "breathingOffsetValue", e => {
+                breathingOffset = e
+            }, true);
+            n()
+        }
+
+        function setupPopulationControls() {
+            setupCheckbox('enableCreatureLimit', v => {
+                enableCreatureLimit = v;
+                updateAddButtonState();
+                init();
+            }, false, [document.getElementById('creatureLimitContainer')]);
+            setupCheckbox('enablePointLimit', v => {
+                enablePointLimit = v;
+                updateAddButtonState();
+                init();
+            }, false, [document.getElementById('pointLimitContainer')]);
+            document.getElementById('autoMode').addEventListener('change', e => {
+                autoMode = e.target.value;
+                init();
+            });
+        }
 
         function setupGravityControls() {
             const sourceSelector = document.getElementById('gravitySource');
@@ -1641,9 +2555,15 @@
 
         // --- Setup All Controls ---
 
-        setupSlider('stiffness', 'stiffnessValue', (val) => { springStiffness = val; });
-        setupSlider('damping', 'dampingValue', (val) => { damping = val; }, true);
-        setupSlider('restLength', 'restLengthValue', (val) => { restLengthFactor = val; });
+        setupSlider('stiffness', 'stiffnessValue', (val) => {
+            springStiffness = val;
+        });
+        setupSlider('damping', 'dampingValue', (val) => {
+            damping = val;
+        }, true);
+        setupSlider('restLength', 'restLengthValue', (val) => {
+            restLengthFactor = val;
+        });
         setupSlider('gravity', 'gravityValue', (val) => {
             gravity = val;
             if (document.getElementById('gravitySource').value === 'fixed') {
@@ -1653,37 +2573,93 @@
                 debugGravityX.textContent = '0.000';
             }
         }, true);
-        setupSlider('shiverIntensity', 'shiverIntensityValue', (val) => { shiverIntensityFactor = val; });
-        setupSlider('shiverEffect', 'shiverEffectValue', (val) => { shiverEffectMultiplier = val; }, true);
-        setupSlider('shiverPropagation', 'shiverPropagationValue', (val) => { shiverPropagationFactor = val; }, true);
+        setupSlider('shiverIntensity', 'shiverIntensityValue', (val) => {
+            shiverIntensityFactor = val;
+        });
+        setupSlider('shiverEffect', 'shiverEffectValue', (val) => {
+            shiverEffectMultiplier = val;
+        }, true);
+        setupSlider('shiverPropagation', 'shiverPropagationValue', (val) => {
+            shiverPropagationFactor = val;
+        }, true);
 
         setupPropagationSpeedControl(); // Use custom handler for this slider
 
-        setupSlider('shiverDuration', 'shiverDurationValue', (val) => { shiverDurationFactor = val; }, true);
-        setupSlider('footCoordination', 'footCoordinationValue', (val) => { footCoordinationFactor = val; });
-        setupSlider('targetAttraction', 'targetAttractionValue', (val) => { targetAttraction = val; });
-        setupSlider('stepCooldown', 'stepCooldownValue', (val) => { stepCooldown = val; }, false);
-        setupSlider('stepDuration', 'stepDurationValue', (val) => { stepDuration = val; }, false);
-        setupSlider('stepHeight', 'stepHeightValue', (val) => { stepHeight = val; }, false);
-        setupSlider('wobbleStrength', 'wobbleStrengthValue', (val) => { wobbleStrength = val; }, false);
-        setupSlider('pointDensity', 'pointDensityValue', (val) => { pointDensity = val; }, false, true);
-        setupSlider('numFeet', 'numFeetValue', (val) => { numFeet = val; }, false, true);
-        setupSlider('numSeekingFeet', 'numSeekingFeetValue', (val) => { numSeekingFeet = val; }, false, false);
-        setupSlider('waveDelay', 'waveDelayValue', (val) => { waveDelay = val; }, false);
-        setupSlider('lifespan', 'lifespanValue', (val) => { lifespanSeconds = val; }, false, false);
-        setupSlider('maxSteps', 'maxStepsValue', (val) => { maxFootsteps = val; }, false, false);
-        setupSlider('maxCreatures', 'maxCreaturesValue', (val) => { maxCreatures = val; updateAddButtonState(); }, false);
-        setupSlider('maxPoints', 'maxPointsValue', (val) => { maxPoints = val; updateAddButtonState(); }, false);
-        setupSlider('maxLineThickness', 'maxLineThicknessValue', (val) => { maxLineThickness = val; }, true);
-        setupSlider('autoAddDelay', 'autoAddDelayValue', (val) => { autoAddDelaySeconds = val; }, true);
-        setupSlider('minShade', 'minShadeValue', (val) => { minShade = val; }, true);
-        setupSlider('imprintShade', 'imprintShadeValue', (val) => { imprintShade = val; }, true);
-        setupSlider('minPointsPerFoot', 'minPointsPerFootValue', (val) => { minPointsPerFoot = val; }, false, true);
-        setupSlider('printInterval', 'printIntervalValue', (val) => { printIntervalMs = val; }, false);
-        setupSlider('growthSpeed', 'growthSpeedValue', val => { growthSpeed = val; }, false, false);
+        setupSlider('shiverDuration', 'shiverDurationValue', (val) => {
+            shiverDurationFactor = val;
+        }, true);
+        setupSlider('footCoordination', 'footCoordinationValue', (val) => {
+            footCoordinationFactor = val;
+        });
+        setupSlider('targetAttraction', 'targetAttractionValue', (val) => {
+            targetAttraction = val;
+        });
+        setupSlider('stepCooldown', 'stepCooldownValue', (val) => {
+            stepCooldown = val;
+        }, false);
+        setupSlider('stepDuration', 'stepDurationValue', (val) => {
+            stepDuration = val;
+        }, false);
+        setupSlider('stepHeight', 'stepHeightValue', (val) => {
+            stepHeight = val;
+        }, false);
+        setupSlider('wobbleStrength', 'wobbleStrengthValue', (val) => {
+            wobbleStrength = val;
+        }, false);
+        setupSlider('pointDensity', 'pointDensityValue', (val) => {
+            pointDensity = val;
+        }, false, true);
+        setupSlider('numFeet', 'numFeetValue', (val) => {
+            numFeet = val;
+        }, false, true);
+        setupSlider('numSeekingFeet', 'numSeekingFeetValue', (val) => {
+            numSeekingFeet = val;
+        }, false, false);
+        setupSlider('waveDelay', 'waveDelayValue', (val) => {
+            waveDelay = val;
+        }, false);
+        setupSlider('lifespan', 'lifespanValue', (val) => {
+            lifespanSeconds = val;
+        }, false, false);
+        setupSlider('maxSteps', 'maxStepsValue', (val) => {
+            maxFootsteps = val;
+        }, false, false);
+        setupSlider('maxCreatures', 'maxCreaturesValue', (val) => {
+            maxCreatures = val;
+            updateAddButtonState();
+        }, false);
+        setupSlider('maxPoints', 'maxPointsValue', (val) => {
+            maxPoints = val;
+            updateAddButtonState();
+        }, false);
+        setupSlider('maxLineThickness', 'maxLineThicknessValue', (val) => {
+            maxLineThickness = val;
+        }, true);
+        setupSlider('autoAddDelay', 'autoAddDelayValue', (val) => {
+            autoAddDelaySeconds = val;
+        }, true);
+        setupSlider('minShade', 'minShadeValue', (val) => {
+            minShade = val;
+        }, true);
+        setupSlider('imprintShade', 'imprintShadeValue', (val) => {
+            imprintShade = val;
+        }, true);
+        setupSlider('minPointsPerFoot', 'minPointsPerFootValue', (val) => {
+            minPointsPerFoot = val;
+        }, false, true);
+        setupSlider('printInterval', 'printIntervalValue', (val) => {
+            printIntervalMs = val;
+        }, false);
+        setupSlider('growthSpeed', 'growthSpeedValue', val => {
+            growthSpeed = val;
+        }, false, false);
 
-        setupCheckbox('enableTendrils', (val) => { enableTendrils = val; }, true, [document.getElementById('tendrilControlsContainer')]);
-        setupCheckbox('randomPlacement', (val) => { useRandomPlacement = val; }, true);
+        setupCheckbox('enableTendrils', (val) => {
+            enableTendrils = val;
+        }, true, [document.getElementById('tendrilControlsContainer')]);
+        setupCheckbox('randomPlacement', (val) => {
+            useRandomPlacement = val;
+        }, true);
         setupCheckbox('pruneUnfooted', (val) => {
             pruneUnfootedPoints = val;
             document.getElementById('pruneThresholdContainer').style.display = val ? 'block' : 'none';
@@ -1693,6 +2669,7 @@
         setupGaitSelector();
         setupTendrilControls();
         setupAppearanceControls();
+        setupPointSizeVariationControl();
         setupToggleControlsButton();
         setupInteractionHandlers();
         setupEraseButton();
