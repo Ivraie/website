@@ -8,7 +8,198 @@
     <meta name="description" content="Ivraie: generative ink creatures that crawl across the screen and leave their imprints." />
     <link rel="canonical" href="https://ivraie.ink/" />
     <meta name="theme-color" content="#ffffff" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23fff'/><path d='M32 32L7 9M32 32L59 19M32 32L20 59M32 32L54 55' stroke='%23000' stroke-width='3.5' stroke-linecap='round'/><circle cx='7' cy='9' r='4'/><circle cx='59' cy='19' r='4'/><circle cx='20' cy='59' r='4'/><circle cx='54' cy='55' r='4'/><circle cx='32' cy='32' r='13'/></svg>" />
+    <!-- PNG icons for Safari and iOS, which do not use SVG favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- Default favicon ("Loose", seed 69352); replaced by a random one below -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cstyle%3E.line{stroke:%236b6b6b}.leg{stroke:%23000000}.dotf{fill:%231e1e1e}.legf{fill:%23000000}@media (prefers-color-scheme:dark){.line{stroke:%239a9a9a}.leg{stroke:%23ffffff}.dotf{fill:%23e6e6e6}.legf{fill:%23ffffff}}%3C/style%3E%3Cg class='line' stroke-width='1.6' stroke-linecap='round' fill='none'%3E%3Cline x1='36.3' y1='24.3' x2='37.3' y2='25.8'/%3E%3Cline x1='36.3' y1='24.3' x2='34.8' y2='20.6'/%3E%3Cline x1='36.3' y1='24.3' x2='30' y2='24.9'/%3E%3Cline x1='27.6' y1='22.1' x2='30' y2='24.9'/%3E%3Cline x1='27.6' y1='22.1' x2='31.4' y2='17.7'/%3E%3Cline x1='27.6' y1='22.1' x2='34.8' y2='20.6'/%3E%3Cline x1='30' y1='24.9' x2='34.8' y2='20.6'/%3E%3Cline x1='31.4' y1='17.7' x2='34.8' y2='20.6'/%3E%3Cline x1='30' y1='24.9' x2='31.4' y2='17.7'/%3E%3Cline x1='34.8' y1='20.6' x2='37.3' y2='25.8'/%3E%3Cline x1='30' y1='24.9' x2='37.3' y2='25.8'/%3E%3Cline x1='12.7' y1='39.2' x2='12' y2='39.7'/%3E%3Cline x1='12.7' y1='39.2' x2='19.1' y2='38.6'/%3E%3Cline x1='12' y1='39.7' x2='19.1' y2='38.6'/%3E%3Cline x1='30' y1='24.9' x2='19.1' y2='38.6'/%3E%3Cline x1='41.6' y1='50.1' x2='41.2' y2='51'/%3E%3Cline x1='41.6' y1='50.1' x2='41.4' y2='48.3'/%3E%3Cline x1='39.9' y1='47.1' x2='41.4' y2='48.3'/%3E%3Cline x1='41.6' y1='50.1' x2='39.9' y2='47.1'/%3E%3Cline x1='44.7' y1='42.7' x2='41.4' y2='48.3'/%3E%3Cline x1='39.9' y1='47.1' x2='44.7' y2='42.7'/%3E%3Cline x1='41.4' y1='48.3' x2='41.2' y2='51'/%3E%3Cline x1='37.3' y1='25.8' x2='42.5' y2='33.6'/%3E%3Cline x1='44.7' y1='42.7' x2='42.5' y2='33.6'/%3E%3Cline x1='32.4' y1='59.8' x2='30.8' y2='58.5'/%3E%3Cline x1='37.3' y1='25.8' x2='36.9' y2='37.1'/%3E%3Cline x1='36.9' y1='37.1' x2='34.4' y2='47.9'/%3E%3Cline x1='30.8' y1='58.5' x2='34.4' y2='47.9'/%3E%3C/g%3E%3Cg class='leg' stroke-width='2' stroke-linecap='round' fill='none'%3E%3Cline x1='31.4' y1='17.7' x2='30' y2='1'/%3E%3C/g%3E%3Cg class='dotf'%3E%3Ccircle cx='36.3' cy='24.3' r='3.1'/%3E%3Ccircle cx='27.6' cy='22.1' r='1.8'/%3E%3Ccircle cx='30' cy='24.9' r='3'/%3E%3Ccircle cx='31.4' cy='17.7' r='2.6'/%3E%3Ccircle cx='34.8' cy='20.6' r='1.6'/%3E%3Ccircle cx='37.3' cy='25.8' r='2.7'/%3E%3Ccircle cx='12.7' cy='39.2' r='2.6'/%3E%3Ccircle cx='12' cy='39.7' r='2.8'/%3E%3Ccircle cx='19.1' cy='38.6' r='1.9'/%3E%3Ccircle cx='41.6' cy='50.1' r='2.7'/%3E%3Ccircle cx='39.9' cy='47.1' r='1.8'/%3E%3Ccircle cx='44.7' cy='42.7' r='3.2'/%3E%3Ccircle cx='41.4' cy='48.3' r='1.7'/%3E%3Ccircle cx='41.2' cy='51' r='2.6'/%3E%3Ccircle cx='42.5' cy='33.6' r='1.3'/%3E%3Ccircle cx='32.4' cy='59.8' r='2.3'/%3E%3Ccircle cx='30.8' cy='58.5' r='2'/%3E%3Ccircle cx='36.9' cy='37.1' r='1.9'/%3E%3Ccircle cx='34.4' cy='47.9' r='1.2'/%3E%3C/g%3E%3C/svg%3E" />
+    <script>
+        // Draws a random "Hanging" creature as the favicon on each visit: one of a
+        // dozen layouts, grown from a random seed. Medium lines, ink tone, no
+        // background; switches to light ink when the browser is in dark mode.
+        (function () {
+            const WEIGHT = { line: 1.6, leg: 2.0, dot: 2.3 };
+            const LIGHT = { line: '#6b6b6b', dot: '#1e1e1e', leg: '#000000' };
+            const DARK = { line: '#9a9a9a', dot: '#e6e6e6', leg: '#ffffff' };
+
+            function mulberry32(a) {
+                return function () {
+                    a |= 0;
+                    a = (a + 0x6d2b79f5) | 0;
+                    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+            }
+
+            // Points joined by grey springs, dark legs to the edges, black feet.
+            function makeScene(rng) {
+                const pts = [];
+                const lines = new Set();
+                const legs = [];
+                const rand = (a, b) => a + rng() * (b - a);
+                const S = {
+                    pts,
+                    lines,
+                    legs,
+                    add(x, y, size = rand(0.6, 1.4)) {
+                        pts.push({ x, y, s: size });
+                        return pts.length - 1;
+                    },
+                    link(a, b) {
+                        if (a !== b) lines.add(a < b ? `${a}-${b}` : `${b}-${a}`);
+                    },
+                    d2(i, j) {
+                        return (pts[i].x - pts[j].x) ** 2 + (pts[i].y - pts[j].y) ** 2;
+                    },
+                    nearest(ids, k) {
+                        for (const i of ids) {
+                            ids.filter((j) => j !== i)
+                                .sort((p, q) => S.d2(i, p) - S.d2(i, q))
+                                .slice(0, k)
+                                .forEach((j) => S.link(i, j));
+                        }
+                    },
+                    cluster(cx, cy, n, spread, k = 2) {
+                        const ids = [];
+                        for (let i = 0; i < n; i++) {
+                            const a = rand(0, Math.PI * 2);
+                            const r = Math.sqrt(rng()) * spread;
+                            ids.push(S.add(cx + Math.cos(a) * r, cy + Math.sin(a) * r));
+                        }
+                        S.nearest(ids, k);
+                        return ids;
+                    },
+                    scatter(n, x0, y0, x1, y1) {
+                        const ids = [];
+                        for (let i = 0; i < n; i++) ids.push(S.add(rand(x0, x1), rand(y0, y1), rand(0.7, 1.3)));
+                        return ids;
+                    },
+                    thread(i, j, beads = 1, wobble = 2.5) {
+                        const a = pts[i];
+                        const b = pts[j];
+                        const nx = -(b.y - a.y);
+                        const ny = b.x - a.x;
+                        const len = Math.hypot(nx, ny) || 1;
+                        let prev = i;
+                        for (let s = 1; s <= beads; s++) {
+                            const t = s / (beads + 1);
+                            const w = rand(-wobble, wobble);
+                            const id = S.add(
+                                a.x + (b.x - a.x) * t + (nx / len) * w,
+                                a.y + (b.y - a.y) * t + (ny / len) * w,
+                                rand(0.4, 0.9),
+                            );
+                            S.link(prev, id);
+                            prev = id;
+                        }
+                        S.link(prev, j);
+                    },
+                    leg(i, x, y, foot = false) {
+                        legs.push({ from: i, x, y, foot });
+                    },
+                    anchor(x, y) {
+                        const id = S.add(x, y, 1.6);
+                        pts[id].dark = true;
+                    },
+                    closest(ids, x, y) {
+                        let best = ids[0];
+                        let bd = Infinity;
+                        for (const id of ids) {
+                            const d = (pts[id].x - x) ** 2 + (pts[id].y - y) ** 2;
+                            if (d < bd) {
+                                bd = d;
+                                best = id;
+                            }
+                        }
+                        return best;
+                    },
+                };
+                return S;
+            }
+
+            // A body hanging from the top edge, knots dangling below.
+            // body: [x, y, points, spread, links]; knots: [x, y, points, spread, beads].
+            function hang(S, { feet, body, knots = [], beads = 1, dot = false, tangle = false, chain = false }) {
+                const [bx, by, bn, bsp, bk = 3] = body;
+                let top;
+                if (tangle) {
+                    top = S.scatter(bn, bx - bsp, by - bsp * 0.8, bx + bsp, by + bsp * 0.8);
+                    S.nearest(top, bk);
+                } else {
+                    top = S.cluster(bx, by, bn, bsp, bk);
+                }
+                for (const [fx, fy] of feet) {
+                    S.leg(S.closest(top, fx, fy), fx, fy);
+                    if (dot) S.anchor(fx, fy);
+                }
+                let prev = top;
+                let prevXY = [bx, by];
+                for (const [kx, ky, kn, ksp, kb = beads] of knots) {
+                    const k = S.cluster(kx, ky, kn, ksp);
+                    const from = chain ? prev : top;
+                    const fromXY = chain ? prevXY : [bx, by];
+                    S.thread(S.closest(from, kx, ky), S.closest(k, fromXY[0], fromXY[1]), kb);
+                    prev = k;
+                    prevXY = [kx, ky];
+                }
+            }
+
+            const LAYOUTS = [
+                (S) => {
+                    const top = S.cluster(32, 28, 8, 8, 3);
+                    const l = S.cluster(20, 52, 4, 5);
+                    const r = S.cluster(46, 53, 4, 5);
+                    S.thread(S.closest(top, 20, 52), S.closest(l, 32, 28), 1);
+                    S.thread(S.closest(top, 46, 53), S.closest(r, 32, 28), 1);
+                    S.leg(S.closest(top, 32, 0), 30, 1);
+                },
+                (S) => hang(S, { feet: [[24, 1]], body: [36, 26, 8, 8], knots: [[18, 50, 5, 5.5], [50, 58, 3, 3.5]] }),
+                (S) => hang(S, { feet: [[34, 1]], body: [30, 27, 8, 8], knots: [[15, 46, 6, 6, 0], [48, 58, 2, 3, 2]] }),
+                (S) => hang(S, { feet: [[28, 1]], body: [33, 25, 8, 8], knots: [[22, 57, 4, 4.5, 2], [52, 40, 3, 4, 0]] }),
+                (S) => hang(S, { feet: [[42, 1]], body: [38, 23, 9, 9], knots: [[20, 42, 4, 5], [12, 59, 2, 3, 0]], chain: true }),
+                (S) => hang(S, { feet: [[10, 1]], body: [37, 30, 8, 8], knots: [[27, 56, 4, 4.5], [55, 49, 2, 3, 0]] }),
+                (S) => hang(S, { feet: [[38, 1.5]], body: [31, 28, 8, 8], knots: [[17, 49, 4, 5], [42, 58, 3, 4, 2]], dot: true }),
+                (S) => hang(S, { feet: [[46, 1]], body: [42, 24, 8, 8], knots: [[14, 45, 3, 4], [27, 59, 4, 4.5]] }),
+                (S) => hang(S, { feet: [[42, 1]], body: [24, 30, 8, 8], knots: [[41, 52, 5, 5], [12, 58, 2, 3, 0]] }),
+                (S) => hang(S, { feet: [[5, 1]], body: [40, 28, 10, 10], knots: [[50, 56, 3, 4, 0], [20, 53, 2, 3, 2]] }),
+                (S) => hang(S, { feet: [[26, 1.5]], body: [35, 26, 10, 14, 3], knots: [[14, 52, 3, 4], [50, 58, 2, 3, 0]], dot: true, tangle: true }),
+                (S) => hang(S, { feet: [[30, 1]], body: [34, 22, 6, 7], knots: [[16, 40, 3, 4, 0], [44, 47, 5, 5], [30, 60, 2, 2.5, 2]] }),
+            ];
+
+            function creatureSvg(layout, seed) {
+                const S = makeScene(mulberry32(seed));
+                LAYOUTS[layout](S);
+                const f = (n) => Math.round(n * 10) / 10;
+                const P = S.pts;
+                let out =
+                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><style>' +
+                    `.l{stroke:${LIGHT.line}}.k{stroke:${LIGHT.leg}}.d{fill:${LIGHT.dot}}.f{fill:${LIGHT.leg}}` +
+                    `@media (prefers-color-scheme:dark){.l{stroke:${DARK.line}}.k{stroke:${DARK.leg}}.d{fill:${DARK.dot}}.f{fill:${DARK.leg}}}` +
+                    '</style>';
+                out += `<g class="l" stroke-width="${WEIGHT.line}" stroke-linecap="round">`;
+                for (const key of S.lines) {
+                    const [a, b] = key.split('-').map(Number);
+                    out += `<line x1="${f(P[a].x)}" y1="${f(P[a].y)}" x2="${f(P[b].x)}" y2="${f(P[b].y)}"/>`;
+                }
+                out += `</g><g class="k" stroke-width="${WEIGHT.leg}" stroke-linecap="round">`;
+                for (const l of S.legs) {
+                    out += `<line x1="${f(P[l.from].x)}" y1="${f(P[l.from].y)}" x2="${f(l.x)}" y2="${f(l.y)}"/>`;
+                }
+                out += '</g><g class="d">';
+                for (const p of P) if (!p.dark) out += `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(WEIGHT.dot * p.s)}"/>`;
+                out += '</g><g class="f">';
+                for (const p of P) if (p.dark) out += `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(WEIGHT.dot * p.s)}"/>`;
+                return out + '</g></svg>';
+            }
+
+            const icon = document.querySelector('link[rel="icon"][type="image/svg+xml"]');
+            if (!icon) return;
+            const layout = Math.floor(Math.random() * LAYOUTS.length);
+            const seed = Math.floor(Math.random() * 100000);
+            icon.href = 'data:image/svg+xml,' + encodeURIComponent(creatureSvg(layout, seed));
+        })();
+    </script>
 
     <!-- Link previews (no og:image yet: add a 1200x630 screenshot and switch twitter:card to summary_large_image) -->
     <meta property="og:type" content="website" />
