@@ -968,6 +968,12 @@
         const INIT_FILL_DELAY = 30;
         const FOOT_STATES = { FIXED: 0, SEEKING: 1, SETTLING: 2 };
         const FADE_DURATION = 180;
+        const SIM_STEP_MS = 1000 / 60;
+        const MAX_STEPS_PER_FRAME = 4;
+        const STEP_TOLERANCE_MS = 1;
+        let lastFrameTime = null;
+        let stepAccumulator = 0;
+        let resizeTimeoutId = null;
 
         // --- Physics & Motion ---
         let damping = 0.1;
@@ -2053,9 +2059,8 @@
         /**
          * The main animation loop.
          */
-        function animate() {
+        function animate(currentTime = performance.now()) {
             frameCount++;
-            const currentTime = performance.now();
             const deltaTime = currentTime - lastFpsUpdateTime;
             if (deltaTime > 1000) {
                 fps = Math.round((frameCount * 1000) / deltaTime);
@@ -2066,7 +2071,21 @@
                 lastFpsUpdateTime = currentTime;
             }
 
-            update();
+            // Fixed timestep: the simulation always advances at SIM_STEP_MS per step,
+            // whatever the display refresh rate (60/120/144 Hz...).
+            if (lastFrameTime === null) lastFrameTime = currentTime;
+            stepAccumulator += Math.min(
+                currentTime - lastFrameTime,
+                SIM_STEP_MS * MAX_STEPS_PER_FRAME,
+            );
+            lastFrameTime = currentTime;
+            // The tolerance absorbs rAF timestamp jitter on 60 Hz screens, which
+            // would otherwise alternate between 0 and 2 steps per frame.
+            while (stepAccumulator >= SIM_STEP_MS - STEP_TOLERANCE_MS) {
+                update();
+                stepAccumulator -= SIM_STEP_MS;
+            }
+
             draw();
             drawGravityIndicator();
 
@@ -2605,12 +2624,33 @@
             }
         }
 
+        /**
+         * Resizes both canvases to the window, keeping the existing imprints
+         * (setting a canvas size wipes its content).
+         */
+        function resizeCanvases() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if (canvas.width === w && canvas.height === h) return;
+            let snapshot = null;
+            if (backgroundCanvas.width > 0 && backgroundCanvas.height > 0) {
+                snapshot = document.createElement('canvas');
+                snapshot.width = backgroundCanvas.width;
+                snapshot.height = backgroundCanvas.height;
+                snapshot.getContext('2d').drawImage(backgroundCanvas, 0, 0);
+            }
+            canvas.width = w;
+            canvas.height = h;
+            backgroundCanvas.width = w;
+            backgroundCanvas.height = h;
+            if (snapshot) backgroundCtx.drawImage(snapshot, 0, 0);
+        }
+
+        // Debounced so that mobile address-bar show/hide and window dragging
+        // don't thrash the canvases. Creatures are kept alive across resizes.
         function handleResize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            backgroundCanvas.width = window.innerWidth;
-            backgroundCanvas.height = window.innerHeight;
-            init(true);
+            clearTimeout(resizeTimeoutId);
+            resizeTimeoutId = setTimeout(resizeCanvases, 150);
         }
 
         function setupInteractionHandlers() {
@@ -3116,12 +3156,13 @@
             window.addEventListener('orientationchange', updateOrientationDebug);
 
             // Initial state setup
-            handleResize(); // This calls init(true)
+            resizeCanvases();
+            init(true);
             updateOrientationDebug();
             setDefaultGravitySource();
 
             // Start the loop!
-            animate();
+            requestAnimationFrame(animate);
         }
 
         // --- Let's go! ---
