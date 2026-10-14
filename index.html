@@ -5,7 +5,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ivraie - Ink on canvas</title>
-    <link rel="icon" type="image/png" href="input_file_0.png">
+    <meta name="description" content="Ivraie: generative ink creatures that crawl across the screen and leave their imprints." />
+    <link rel="canonical" href="https://ivraie.ink/" />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23fff'/><path d='M32 32L7 9M32 32L59 19M32 32L20 59M32 32L54 55' stroke='%23000' stroke-width='3.5' stroke-linecap='round'/><circle cx='7' cy='9' r='4'/><circle cx='59' cy='19' r='4'/><circle cx='20' cy='59' r='4'/><circle cx='54' cy='55' r='4'/><circle cx='32' cy='32' r='13'/></svg>" />
+
+    <!-- Link previews (no og:image yet: add a 1200x630 screenshot and switch twitter:card to summary_large_image) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ivraie.ink/" />
+    <meta property="og:title" content="Ivraie - Ink on canvas" />
+    <meta property="og:description" content="Ivraie: generative ink creatures that crawl across the screen and leave their imprints." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Ivraie - Ink on canvas" />
+    <meta name="twitter:description" content="Ivraie: generative ink creatures that crawl across the screen and leave their imprints." />
     <style>
         * {
             margin: 0;
@@ -74,6 +86,17 @@
 
         #title-container h1:hover {
             color: rgba(0, 0, 0, 0.6);
+        }
+
+        /* While the title is pressed it fades out quickly to a pale ghost... */
+        #title-container h1.is-pressed {
+            color: rgba(0, 0, 0, 0.12);
+            transition: color 0.2s ease-out;
+        }
+
+        /* ...then comes back once released. */
+        #title-container h1.is-restoring {
+            transition: color 0.5s ease-out;
         }
 
         #randomizeShortcutBtn {
@@ -456,21 +479,8 @@
             }
         }
     </style>
-    <!-- Matomo -->
-    <script>
-        var _paq = window._paq = window._paq || [];
-        /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-        _paq.push(['trackPageView']);
-        _paq.push(['enableLinkTracking']);
-        (function () {
-            var u = "https://ivraieink.matomo.cloud/";
-            _paq.push(['setTrackerUrl', u + 'matomo.php']);
-            _paq.push(['setSiteId', '1']);
-            var d = document, g = d.createElement('script'), s = d.getElementsByTagName('script')[0];
-            g.async = true; g.src = 'https://cdn.matomo.cloud/ivraieink.matomo.cloud/matomo.js'; s.parentNode.insertBefore(g, s);
-        })();
-    </script>
-    <!-- End Matomo Code -->
+    <!-- Umami analytics -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="777033c8-3192-4fa6-add0-49c80fe62be5"></script>
 
 </head>
 
@@ -2688,6 +2698,38 @@
             resizePending = true;
         }
 
+        const TITLE_RESTORE_DELAY_MS = 120;
+        const TITLE_RESTORE_DURATION_MS = 500; // matches .is-restoring transition
+        let titleRestoreTimeoutId = null;
+        let titleRestoreEndTimeoutId = null;
+        let titleH1El = null;
+
+        function fadeTitleOut() {
+            if (!titleH1El) return;
+            clearTimeout(titleRestoreTimeoutId);
+            clearTimeout(titleRestoreEndTimeoutId);
+            titleH1El.classList.remove('is-restoring');
+            titleH1El.classList.add('is-pressed');
+        }
+
+        function restoreTitle() {
+            if (!titleH1El || !titleH1El.classList.contains('is-pressed')) return;
+            clearTimeout(titleRestoreTimeoutId);
+            titleRestoreTimeoutId = setTimeout(() => {
+                titleH1El.classList.add('is-restoring');
+                titleH1El.classList.remove('is-pressed');
+                // Drop the slow transition afterwards so hover stays snappy.
+                titleRestoreEndTimeoutId = setTimeout(
+                    () => titleH1El.classList.remove('is-restoring'),
+                    TITLE_RESTORE_DURATION_MS,
+                );
+            }, TITLE_RESTORE_DELAY_MS);
+        }
+
+        function setupTitle() {
+            titleH1El = document.querySelector('#title-container h1');
+        }
+
         function setupInteractionHandlers() {
             document
                 .getElementById('addCreatureBtn')
@@ -2710,11 +2752,13 @@
                 };
                 const startPrinting = (e) => {
                     e.preventDefault();
+                    fadeTitleOut();
                     if (continuousPrintTimeoutId !== null) return;
                     continuousPrintTimeoutId = 1; // Set a truthy value to start
                     scheduleNextPrint();
                 };
                 const stopPrinting = () => {
+                    restoreTitle();
                     if (continuousPrintTimeoutId !== null) {
                         clearTimeout(continuousPrintTimeoutId);
                         continuousPrintTimeoutId = null;
@@ -3193,6 +3237,7 @@
             // Initial state setup
             resizeCanvases();
             init(true);
+            setupTitle();
             updateOrientationDebug();
             setDefaultGravitySource();
 
