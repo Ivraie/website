@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Only scripts from this site (sim.js, favicon.js, tour.js) and Umami analytics may run.
+    <!-- Only scripts from this site (sim.js, favicon.js, tour.js, color-picker.js) and Umami analytics may run.
          Inline scripts, eval and any other origin are blocked by the browser. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; connect-src 'self' https://cloud.umami.is https://gateway.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <title>Ivraie - Ink on canvas</title>
@@ -37,7 +37,6 @@
     <button id="eraseBtn" title="Start over"></button>
     <button id="clearImprintsBtn" title="Clear the imprints"></button>
     <button id="printColorBtn" title="Print color"></button>
-    <input type="color" id="printColorCornerInput" class="corner-picker" value="#000000" tabindex="-1" aria-hidden="true" />
     <button id="toggleControlsBtn" title="Settings" aria-label="Settings"></button>
 
     <canvas id="background-canvas"></canvas>
@@ -157,12 +156,12 @@
                 <div class="color-control">
                     <label for="creatureColor">Creature Color <span id="creatureColorValue"
                             class="value-display">#000000</span></label>
-                    <input type="color" id="creatureColor" value="#000000" />
+                    <input type="color" id="creatureColor" value="#000000" autocomplete="off" />
                 </div>
                 <div class="color-control">
                     <label for="shiverColor">Shiver Color <span id="shiverColorValue"
                             class="value-display">#000000</span></label>
-                    <input type="color" id="shiverColor" value="#000000" />
+                    <input type="color" id="shiverColor" value="#000000" autocomplete="off" />
                 </div>
                 <div>
                     <label for="drawMode">Draw Mode</label>
@@ -222,10 +221,10 @@
                 <div class="color-control">
                     <label for="imprintColor">Imprint Color <span id="imprintColorValue"
                             class="value-display">#000000</span></label>
-                    <input type="color" id="imprintColor" value="#000000" disabled />
+                    <input type="color" id="imprintColor" value="#000000" disabled autocomplete="off" />
                 </div>
                 <div class="sub-control">
-                    <input type="checkbox" id="imprintMatchesCreatureCheck" checked />
+                    <input type="checkbox" id="imprintMatchesCreatureCheck" checked autocomplete="off" />
                     <label for="imprintMatchesCreatureCheck" class="checkbox-label">Imprint Uses Creature Colors</label>
                 </div>
                 <div>
@@ -503,6 +502,7 @@
         <a href="https://www.instagram.com/ant_______1/">Instagram</a>
     </footer>
 
+    <script src="color-picker.js"></script>
     <script src="sim.js"></script>
     <script src="tour.js"></script>
 </body>

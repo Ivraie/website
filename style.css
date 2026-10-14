@@ -95,7 +95,8 @@ body {
 /* The blend goes on the fixed container: as its own stacking context it is
    what gets composited onto the canvases (a blend on the h1 alone would only
    blend inside the empty container and show plain white). */
-#title-container:has(h1.is-pressed) {
+#title-container:has(h1.is-pressed),
+#title-container:has(h1.is-restoring) {
   mix-blend-mode: difference;
 }
 
@@ -106,9 +107,25 @@ body {
   }
 }
 
-/* ...then fades back to black once released. */
+/* On release, no white flash: first the negative dissolves (white fading to
+   black shows nothing in difference mode)... */
 #title-container h1.is-restoring {
-  transition: color 0.5s ease-out;
+  color: #000000;
+  transition: color 0.25s ease-in;
+}
+
+/* ...then the plain black title fades back in. */
+#title-container h1.is-returning {
+  animation: title-return 0.4s ease-out;
+}
+
+@keyframes title-return {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 #randomizeShortcutBtn {
@@ -177,20 +194,6 @@ body {
   z-index: 9;
   border-radius: 0;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
-}
-
-/* The native color input behind #printColorBtn: invisible, but kept in the
-   corner (not display:none) so browsers open the picker there. */
-.corner-picker {
-  position: fixed;
-  left: 24px;
-  bottom: 24px;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  opacity: 0;
-  pointer-events: none;
 }
 
 /* Settings button: same family as the "?" button (tour.js). */
@@ -672,6 +675,11 @@ body.tour-running .tour-hint.is-cue {
   display: none;
 }
 
+/* While the color picker is open, the corner hints would sit under it. */
+body:has(.cp-card:not([hidden])) .tour-hint.is-cue {
+  visibility: hidden;
+}
+
 /* While a toggle state is flashing, hide the proximity cues so texts don't overlap. */
 .tour-layer:has(.is-flash.is-visible) .tour-hint.is-cue {
   visibility: hidden;
@@ -814,4 +822,119 @@ body.tour-running #title-container h1[data-hint]::after {
   .tour-hint.is-tour .tour-dot {
     animation: none;
   }
+}
+
+/* ---------- Ink color picker (color-picker.js) ---------- */
+/* The card and its "same" dot are shown and hidden with the hidden
+   attribute; their display rules below must not override it. */
+.cp-card[hidden],
+.cp-card [hidden] {
+  display: none;
+}
+
+/* Minimal: a color square and a thread, on a borderless white card. */
+.cp-card {
+  position: fixed;
+  z-index: 30;
+  display: grid;
+  gap: 10px;
+  padding: 8px;
+  background: var(--paper);
+}
+
+/* Square color field: hue across, white to black down. */
+.cp-field {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  cursor: crosshair;
+  touch-action: none;
+  outline: none;
+}
+
+.cp-field canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cp-field:focus-visible {
+  outline: 1px dashed var(--ink);
+  outline-offset: 3px;
+}
+
+/* The current color: a thin ink ring. */
+.cp-marker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1.5px var(--paper),
+    0 0 0 2.5px var(--ink);
+  pointer-events: none;
+}
+
+/* Bottom row: the optional "same as the creatures" dot, then the thread. */
+.cp-bottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-same {
+  flex: none;
+  display: flex;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.cp-same-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.cp-same.is-selected .cp-same-dot {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.cp-same:focus-visible {
+  outline: 1px dashed var(--ink);
+  outline-offset: 3px;
+}
+
+/* Intensity: a hairline gradient thread (grey to vivid) with an ink dot. */
+.cp-card input.cp-range {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 14px;
+  margin: 0;
+}
+
+.cp-card input.cp-range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--track, var(--thread));
+}
+
+.cp-card input.cp-range::-moz-range-track {
+  height: 2px;
+  background: var(--track, var(--thread));
+}
+
+.cp-card input.cp-range::-webkit-slider-thumb {
+  margin-top: -4px;
+  width: 10px;
+  height: 10px;
+}
+
+.cp-card input.cp-range::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
 }

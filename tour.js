@@ -292,6 +292,9 @@
     const flashHint = makeHint('is-flash');
     let flashTimer = null;
     document.addEventListener('printcolorchange', (e) => {
+        // While the color picker is open it shows the color itself; the final
+        // color is flashed once it closes.
+        if (document.querySelector('.cp-card:not([hidden])')) return;
         const { x, y } = anchor.print();
         const { same, color } = e.detail;
         placeHint(flashHint, { x, y, lx: x + 36, ly: y - 36, side: 'right', text: TEXT.printState(same, color) });

@@ -140,17 +140,37 @@ function imprintInk(rgb, lightness, alpha) {
 }
 
 /**
- * Sets the print color from the bottom-left picker: the creature color means
- * "same as the creatures", anything else is a separate print color.
+ * Sets a separate print color (bottom-left picker).
  */
 function setPrintColor(hex) {
-    imprintMatchesCreature = hex.toLowerCase() === creatureColor.toLowerCase();
-    if (!imprintMatchesCreature) imprintColor = hex;
+    imprintMatchesCreature = false;
+    imprintColor = hex;
     syncPrintColorControls();
     document.dispatchEvent(
-        new CustomEvent('printcolorchange', {
-            detail: { same: imprintMatchesCreature, color: hex },
-        }),
+        new CustomEvent('printcolorchange', { detail: { same: false, color: hex } }),
+    );
+}
+
+/**
+ * Sets the creature color and updates its panel control.
+ */
+function setCreatureColor(hex) {
+    creatureColor = hex;
+    creatureRgb = hexToRgb(hex);
+    const input = document.getElementById('creatureColor');
+    const value = document.getElementById('creatureColorValue');
+    if (input) input.value = hex;
+    if (value) value.textContent = hex;
+}
+
+/**
+ * Prints in the creature and shiver colors again.
+ */
+function setPrintColorSame() {
+    imprintMatchesCreature = true;
+    syncPrintColorControls();
+    document.dispatchEvent(
+        new CustomEvent('printcolorchange', { detail: { same: true, color: creatureColor } }),
     );
 }
 
@@ -1848,7 +1868,8 @@ function handleResize() {
 }
 
 const TITLE_RESTORE_DELAY_MS = 120;
-const TITLE_RESTORE_DURATION_MS = 500; // matches .is-restoring transition
+const TITLE_DISSOLVE_MS = 250; // matches the .is-restoring transition
+const TITLE_RETURN_MS = 400; // matches the .is-returning animation
 let titleRestoreTimeoutId = null;
 let titleRestoreEndTimeoutId = null;
 let titleH1El = null;
@@ -1857,7 +1878,7 @@ function fadeTitleOut() {
     if (!titleH1El) return;
     clearTimeout(titleRestoreTimeoutId);
     clearTimeout(titleRestoreEndTimeoutId);
-    titleH1El.classList.remove('is-restoring');
+    titleH1El.classList.remove('is-restoring', 'is-returning');
     titleH1El.classList.add('is-pressed');
 }
 
@@ -1865,13 +1886,18 @@ function restoreTitle() {
     if (!titleH1El || !titleH1El.classList.contains('is-pressed')) return;
     clearTimeout(titleRestoreTimeoutId);
     titleRestoreTimeoutId = setTimeout(() => {
+        // 1. The negative dissolves, still in difference mode.
         titleH1El.classList.add('is-restoring');
         titleH1El.classList.remove('is-pressed');
-        // Drop the slow transition afterwards so hover stays snappy.
-        titleRestoreEndTimeoutId = setTimeout(
-            () => titleH1El.classList.remove('is-restoring'),
-            TITLE_RESTORE_DURATION_MS,
-        );
+        titleRestoreEndTimeoutId = setTimeout(() => {
+            // 2. The black title fades back in.
+            titleH1El.classList.remove('is-restoring');
+            titleH1El.classList.add('is-returning');
+            titleRestoreEndTimeoutId = setTimeout(
+                () => titleH1El.classList.remove('is-returning'),
+                TITLE_RETURN_MS,
+            );
+        }, TITLE_DISSOLVE_MS);
     }, TITLE_RESTORE_DELAY_MS);
 }
 
@@ -1902,7 +1928,9 @@ function setupSettingsTracking() {
     const trackedSettings = new Set();
     panel.addEventListener('change', (e) => {
         const id = e.target.id;
-        if (!e.isTrusted || !id || trackedSettings.has(id)) return;
+        // Changes from the ink color picker are dispatched by script.
+        const fromUser = e.isTrusted || e.detail?.fromPicker;
+        if (!fromUser || !id || trackedSettings.has(id)) return;
         trackedSettings.add(id);
         trackEvent('setting-changed', { setting: id });
     });
@@ -1980,23 +2008,32 @@ function setupInteractionHandlers() {
     // on the creature color; picking that color means "same as the creatures"
     // (creature and shiver colors), any other color prints in that color.
     // tour.js listens to 'printcolorchange' to flash the new color.
-    const printColorBtn = document.getElementById('printColorBtn');
-    const cornerPicker = document.getElementById('printColorCornerInput');
-    printColorBtn?.addEventListener('click', () => {
-        if (!cornerPicker) return;
-        cornerPicker.value = imprintMatchesCreature ? creatureColor : imprintColor;
+    // The picker (color-picker.js) opens in the corner and offers "same as
+    // the creatures" as well as any color.
+    document.getElementById('printColorBtn')?.addEventListener('click', () => {
+        if (!window.openColorPicker) return;
         trackEvent('print-color-open');
-        try {
-            if (cornerPicker.showPicker) cornerPicker.showPicker();
-            else cornerPicker.click();
-        } catch (err) {
-            cornerPicker.click();
-        }
+        const corner = 24;
+        const y = window.innerHeight - corner;
+        window.openColorPicker(
+            { left: corner, right: corner, top: y, bottom: y },
+            {
+                value: imprintMatchesCreature ? creatureColor : imprintColor,
+                link: { active: imprintMatchesCreature, colors: [creatureColor, shiverColor] },
+                // Linked: the color is the creature color and prints follow it.
+                // Unlinked: the color is a separate print color.
+                onChange: ({ color, linked }, final) => {
+                    if (linked) {
+                        setCreatureColor(color);
+                        setPrintColorSame();
+                    } else {
+                        setPrintColor(color);
+                    }
+                    if (final) trackEvent('print-color', { same: linked, color });
+                },
+            },
+        );
     });
-    cornerPicker?.addEventListener('input', (e) => setPrintColor(e.target.value));
-    cornerPicker?.addEventListener('change', (e) =>
-        trackEvent('print-color', { same: imprintMatchesCreature, color: e.target.value }),
-    );
 
     // Clears the printed imprints but keeps the creatures walking.
     document
@@ -2421,6 +2458,9 @@ function runSetup() {
         imprintMatchesCreature = val;
         syncPrintColorControls();
     });
+    // Browsers can restore a checkbox state from the last visit on reload;
+    // show the real setting instead.
+    syncPrintColorControls();
     setupColor('creatureColor', (v) => {
         creatureColor = v;
         creatureRgb = hexToRgb(v);
