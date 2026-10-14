@@ -12,6 +12,13 @@
   --thread: #b8b8b8;
   --thread-faint: #e6e6e6;
   --paper: #ffffff;
+  /* Hidden button zones, proportional to the screen so they work in phone
+     portrait too. Left edge: three stacked zones; top: one centered zone.
+     The title in the middle stays clear. */
+  --zone-left-w: 25vw;
+  --zone-left-h: 31vh;
+  --zone-top-w: 40vw;
+  --zone-top-h: 22vh;
 }
 
 html {
@@ -77,30 +84,48 @@ body {
   color: rgba(0, 0, 0, 0.6);
 }
 
-/* While the title is pressed it fades out quickly to a pale ghost... */
+/* While the title is pressed it turns into a negative of the drawing behind
+   it: white letters in "difference" mode invert whatever is under them, so
+   the title stays readable over any imprint colors... */
 #title-container h1.is-pressed {
-  color: rgba(0, 0, 0, 0.12);
+  color: #ffffff;
   transition: color 0.2s ease-out;
 }
 
-/* ...then comes back once released. */
+/* The blend goes on the fixed container: as its own stacking context it is
+   what gets composited onto the canvases (a blend on the h1 alone would only
+   blend inside the empty container and show plain white). */
+#title-container:has(h1.is-pressed) {
+  mix-blend-mode: difference;
+}
+
+/* Browsers without :has() fall back to a pale, see-through title. */
+@supports not selector(:has(*)) {
+  #title-container h1.is-pressed {
+    color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* ...then fades back to black once released. */
 #title-container h1.is-restoring {
   transition: color 0.5s ease-out;
 }
 
 #randomizeShortcutBtn {
   position: fixed;
-  top: 30px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
+  width: var(--zone-top-w);
+  height: var(--zone-top-h);
   z-index: 9;
   pointer-events: auto;
   cursor: pointer;
   background: transparent;
   border: none;
   color: transparent;
-  border-radius: 4px;
-  padding: 10px 20px;
+  border-radius: 0;
+  padding: 0;
   font-size: 1rem;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
 }
@@ -113,53 +138,103 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 60px;
-  height: 60px;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
   background-color: transparent;
   border: none;
   cursor: pointer;
   z-index: 9;
-  border-radius: 50%;
+  border-radius: 0;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Middle of the left edge: clears the imprints only (invisible, like #eraseBtn). */
+#clearImprintsBtn {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  margin-top: calc(var(--zone-left-h) / -2);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  border-radius: 0;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Bottom-left corner: opens the print color picker (sim.js). */
+#printColorBtn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  border-radius: 0;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+/* The native color input behind #printColorBtn: invisible, but kept in the
+   corner (not display:none) so browsers open the picker there. */
+.corner-picker {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Settings button: same family as the "?" button (tour.js). */
 #toggleControlsBtn {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
   z-index: 11;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  padding: 0;
+  border: 1px solid var(--thread);
   border-radius: 50%;
-  background-color: var(--ink);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--thread-strong);
+  cursor: pointer;
+  /* Hidden until hovered or focused, or while the panel is open. */
   opacity: 0;
   transition:
     opacity 0.3s ease,
-    transform 0.5s ease;
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
 #toggleControlsBtn:hover,
+#toggleControlsBtn:focus-visible,
 #toggleControlsBtn.is-visible {
   opacity: 1;
 }
 
-#toggleControlsBtn.is-visible:hover {
-  background-color: var(--ink-soft);
+#toggleControlsBtn:hover,
+#toggleControlsBtn.is-visible {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
-#toggleControlsBtn svg {
-  fill: white;
-  transition: transform 0.5s ease;
-}
-
-#toggleControlsBtn:hover svg,
-#toggleControlsBtn.is-visible:hover svg {
-  transform: rotate(90deg);
+#toggleControlsBtn:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .main-content {
@@ -169,11 +244,17 @@ body {
   width: 100%;
   position: relative;
   z-index: 10;
+  /* Full-width row: let clicks through to the title and the hidden zones;
+     only the panel itself catches them. */
+  pointer-events: none;
 }
 
 /* Controls panel: drawn like the creatures and the favicon.
    White paper, black ink dots, grey hairline threads. */
 .controls {
+  pointer-events: auto;
+  /* Starts below the settings button (top 20px + 30px), right edges aligned. */
+  margin-top: 40px;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--thread);
   border-radius: 2px;
@@ -338,6 +419,51 @@ input[type='range']:active::-moz-range-thumb {
 input[type='range']:focus-visible::-webkit-slider-thumb {
   outline: 1px solid var(--ink);
   outline-offset: 3px;
+}
+
+/* Color picker: an ink dot of the chosen color on a hairline ring. */
+.color-control {
+  margin-bottom: 12px;
+}
+
+input[type='color'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid var(--thread);
+  border-radius: 50%;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+input[type='color']:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+input[type='color']:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+input[type='color']:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+input[type='color']::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
 }
 
 /* Select and text: no box, just a thread underneath. */
@@ -513,5 +639,179 @@ footer a:hover {
     max-width: 450px;
     column-count: 1;
     padding: 20px;
+  }
+}
+
+/* ---------- Guided tour and hints (tour.js) ---------- */
+/* Same drawing as the creatures: an ink dot, a grey thread, a short label. */
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.tour-hint {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.tour-hint.is-tour.is-visible,
+.tour-hint.is-flash.is-visible {
+  opacity: 1;
+}
+
+/* Proximity cues follow the mouse through inline opacity; hidden during the tour. */
+.tour-hint.is-cue {
+  transition: opacity 0.15s linear;
+}
+
+body.tour-running .tour-hint.is-cue {
+  display: none;
+}
+
+/* While a toggle state is flashing, hide the proximity cues so texts don't overlap. */
+.tour-layer:has(.is-flash.is-visible) .tour-hint.is-cue {
+  visibility: hidden;
+}
+
+.tour-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.tour-hint.is-tour .tour-dot {
+  animation: tour-pulse 1.4s ease-in-out infinite;
+}
+
+.tour-hint.is-cue .tour-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+}
+
+@keyframes tour-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(0, 0, 0, 0);
+  }
+}
+
+.tour-thread {
+  position: absolute;
+  height: 1px;
+  background: var(--thread-strong);
+  transform-origin: 0 50%;
+}
+
+.tour-label {
+  position: absolute;
+  display: grid;
+  gap: 2px;
+  padding: 4px 0;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: lighter;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.tour-label[data-side='below'] {
+  transform: translate(-50%, 2px);
+  text-align: center;
+}
+
+.tour-label[data-side='right'] {
+  transform: translate(6px, -50%);
+}
+
+.tour-sub {
+  font-size: 0.78rem;
+  color: var(--thread-strong);
+}
+
+.tour-sub:empty {
+  display: none;
+}
+
+.tour-hint.is-cue .tour-label {
+  font-size: 0.8rem;
+  color: var(--thread-strong);
+}
+
+/* Title: the hint appears under the word on hover. */
+#title-container h1 {
+  position: relative;
+  /* Box hugs the letters, so the hint sits right under the word. */
+  line-height: 1;
+}
+
+#title-container h1[data-hint]::after {
+  content: attr(data-hint);
+  position: absolute;
+  left: 50%;
+  /* Just under the letters: tour.js measures the baseline into --hint-top. */
+  top: var(--hint-top, 100%);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--thread-strong);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+#title-container h1[data-hint]:hover::after {
+  opacity: 1;
+}
+
+body.tour-running #title-container h1[data-hint]::after {
+  opacity: 0;
+}
+
+/* "?" button: replays the tour. */
+#tourHelpBtn {
+  position: fixed;
+  right: 20px;
+  bottom: 30px;
+  z-index: 11;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--thread);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--thread-strong);
+  font: 300 0.95rem/1 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+#tourHelpBtn:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+#tourHelpBtn:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-hint.is-tour .tour-dot {
+    animation: none;
   }
 }

@@ -116,8 +116,78 @@ let randomizeMode = 'reset';
 
 // --- Printing & Gravity ---
 let imprintShade = 0.39;
+let imprintColor = '#000000';
+let creatureColor = '#000000';
+let shiverColor = '#000000';
+let imprintMatchesCreature = true; // imprints use the creature and shiver colors
+
+/**
+ * Converts '#rrggbb' to {r, g, b}.
+ */
+function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+/**
+ * Imprint ink: the chosen color lightened toward white by `lightness` (0..1),
+ * so shiver intensity still reads as darker or lighter ink. Black gives the
+ * original grays.
+ */
+function imprintInk(rgb, lightness, alpha) {
+    const mix = (v) => Math.round(v + (255 - v) * lightness);
+    return `rgba(${mix(rgb.r)}, ${mix(rgb.g)}, ${mix(rgb.b)}, ${alpha})`;
+}
+
+/**
+ * Sets the print color from the bottom-left picker: the creature color means
+ * "same as the creatures", anything else is a separate print color.
+ */
+function setPrintColor(hex) {
+    imprintMatchesCreature = hex.toLowerCase() === creatureColor.toLowerCase();
+    if (!imprintMatchesCreature) imprintColor = hex;
+    syncPrintColorControls();
+    document.dispatchEvent(
+        new CustomEvent('printcolorchange', {
+            detail: { same: imprintMatchesCreature, color: hex },
+        }),
+    );
+}
+
+/**
+ * Keeps the Printing panel controls in line with the current print color.
+ */
+function syncPrintColorControls() {
+    const check = document.getElementById('imprintMatchesCreatureCheck');
+    const picker = document.getElementById('imprintColor');
+    const value = document.getElementById('imprintColorValue');
+    if (check) check.checked = imprintMatchesCreature;
+    if (picker) {
+        picker.value = imprintColor;
+        picker.disabled = imprintMatchesCreature;
+    }
+    if (value) value.textContent = imprintColor;
+}
+
+// Parsed once per color change, not on every frame.
+let creatureRgb = hexToRgb(creatureColor);
+let shiverRgb = hexToRgb(shiverColor);
+
+/**
+ * Live ink: the creature color, lightened by `restLightness` at rest, moving
+ * toward the shiver color as `intensity` (0..1) rises. With both colors black
+ * this gives the original grays.
+ */
+function liveInk(restLightness, intensity, alpha) {
+    const mix = (c, s) => {
+        const rest = c + (255 - c) * restLightness;
+        return Math.round(rest + (s - rest) * intensity);
+    };
+    return `rgba(${mix(creatureRgb.r, shiverRgb.r)}, ${mix(creatureRgb.g, shiverRgb.g)}, ${mix(creatureRgb.b, shiverRgb.b)}, ${alpha})`;
+}
 let imprintBlendMode = 'multiply';
 let usePerCreatureImprint = false;
+const keepImprintsOnReset = true; // randomize and start over leave the imprints
 let printIntervalMs = 250;
 let printIntervalRandomness = 0.89;
 const gravity = 0.17;
@@ -164,6 +234,7 @@ class Creature {
             tendrilLengthVariation,
             imprintShade,
             imprintBlendMode,
+            imprintColor,
         };
         if (enableAging) {
             this.birthTime = time;
@@ -195,9 +266,12 @@ class Creature {
         const blendModeToUse = usePerCreatureImprint
             ? this.params.imprintBlendMode
             : imprintBlendMode;
+        const colorToUse = usePerCreatureImprint
+            ? this.params.imprintColor
+            : imprintColor;
         backgroundCtx.save();
         backgroundCtx.globalCompositeOperation = blendModeToUse;
-        this.draw(backgroundCtx, true, shadeToUse);
+        this.draw(backgroundCtx, true, shadeToUse, hexToRgb(colorToUse));
         backgroundCtx.restore();
     }
 
@@ -679,12 +753,18 @@ class Creature {
         }
     }
 
-    draw(targetCtx, isImprint = false, currentImprintShade = 0.2) {
+    draw(targetCtx, isImprint = false, currentImprintShade = 0.2, imprintRgb = hexToRgb(imprintColor)) {
         let fadeAlpha = 1.0;
         if (!isImprint && this.isDead && deathEffect === 'fade') {
             fadeAlpha = Math.max(0, 1.0 - (time - this.deathTime) / FADE_DURATION);
             if (fadeAlpha <= 0.01) return;
         }
+        // Imprint ink: the imprint color, or the creature and shiver colors
+        // when "Imprint Uses Creature Colors" is on.
+        const imprintFill = (restLightness, intensity, lightness, alpha) =>
+            imprintMatchesCreature
+                ? liveInk(restLightness, intensity, alpha)
+                : imprintInk(imprintRgb, lightness, alpha);
         const springBatches = new Map();
         const pointBatches = new Map();
         const letterBatches = new Map();
@@ -745,8 +825,8 @@ class Creature {
         }
         if (tendrilBatch.length > 0) {
             targetCtx.strokeStyle = isImprint
-                ? `rgba(20, 20, 40, ${currentImprintShade * 0.75})`
-                : `rgba(0, 0, 0, ${0.5 * fadeAlpha})`;
+                ? imprintFill(20 / 255, 0, 20 / 255, currentImprintShade * 0.75)
+                : liveInk(0, 0, 0.5 * fadeAlpha);
             targetCtx.lineWidth = 1;
             targetCtx.beginPath();
             for (const s of tendrilBatch) {
@@ -764,8 +844,8 @@ class Creature {
                 maxLineThickness,
             );
             targetCtx.strokeStyle = isImprint
-                ? `rgba(${gray}, ${gray}, ${gray}, ${currentImprintShade})`
-                : `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
+                ? imprintFill(80 / 255, shadeIntensity, gray / 255, currentImprintShade)
+                : liveInk(80 / 255, shadeIntensity, fadeAlpha);
             targetCtx.lineWidth = lineWidth;
             targetCtx.beginPath();
             for (const s of springsInBatch) {
@@ -778,8 +858,8 @@ class Creature {
             const shadeIntensity = styleKey / 20;
             const gray = Math.floor(180 * (1 - shadeIntensity));
             targetCtx.fillStyle = isImprint
-                ? `rgba(${gray}, ${gray}, ${gray}, ${currentImprintShade})`
-                : `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
+                ? imprintFill(180 / 255, shadeIntensity, gray / 255, currentImprintShade)
+                : liveInk(180 / 255, shadeIntensity, fadeAlpha);
             targetCtx.beginPath();
             for (const item of pointsInBatch) {
                 targetCtx.moveTo(item.point.x + item.radius, item.point.y);
@@ -792,8 +872,8 @@ class Creature {
             const shadeIntensity = parseInt(shadeKey, 10) / 20;
             const gray = Math.floor(180 * (1 - shadeIntensity));
             targetCtx.fillStyle = isImprint
-                ? `rgba(${gray}, ${gray}, ${gray}, ${currentImprintShade})`
-                : `rgba(${gray}, ${gray}, ${gray}, ${fadeAlpha})`;
+                ? imprintFill(180 / 255, shadeIntensity, gray / 255, currentImprintShade)
+                : liveInk(180 / 255, shadeIntensity, fadeAlpha);
             targetCtx.font = `bold ${fontSizeKey}px sans-serif`;
             targetCtx.textAlign = 'center';
             targetCtx.textBaseline = 'middle';
@@ -803,8 +883,8 @@ class Creature {
         });
         if (footBatch.length > 0) {
             targetCtx.fillStyle = isImprint
-                ? `rgba(20, 20, 40, ${currentImprintShade})`
-                : `rgba(0, 0, 0, ${fadeAlpha})`;
+                ? imprintFill(20 / 255, 0, 20 / 255, currentImprintShade)
+                : liveInk(0, 0, fadeAlpha);
             targetCtx.beginPath();
             for (const point of footBatch) {
                 targetCtx.moveTo(point.x + baseFootRadius, point.y);
@@ -1845,8 +1925,10 @@ function setupInteractionHandlers() {
             }
             const base = printIntervalMs;
             const variation = base * printIntervalRandomness;
+            // Floor of 8 ms: below one simulation step (~16.7 ms) prints repeat
+            // the same pose, which only darkens it, so going lower adds nothing.
             const randomDelay = Math.max(
-                20,
+                8,
                 base + (Math.random() - 0.5) * 2 * variation,
             );
             continuousPrintTimeoutId = setTimeout(scheduleNextPrint, randomDelay);
@@ -1891,7 +1973,37 @@ function setupInteractionHandlers() {
         .getElementById('eraseBtn')
         ?.addEventListener('click', () => {
             trackEvent('erase');
-            init(true);
+            init(!keepImprintsOnReset);
+        });
+
+    // Bottom-left corner: opens a color picker for the print color. It starts
+    // on the creature color; picking that color means "same as the creatures"
+    // (creature and shiver colors), any other color prints in that color.
+    // tour.js listens to 'printcolorchange' to flash the new color.
+    const printColorBtn = document.getElementById('printColorBtn');
+    const cornerPicker = document.getElementById('printColorCornerInput');
+    printColorBtn?.addEventListener('click', () => {
+        if (!cornerPicker) return;
+        cornerPicker.value = imprintMatchesCreature ? creatureColor : imprintColor;
+        trackEvent('print-color-open');
+        try {
+            if (cornerPicker.showPicker) cornerPicker.showPicker();
+            else cornerPicker.click();
+        } catch (err) {
+            cornerPicker.click();
+        }
+    });
+    cornerPicker?.addEventListener('input', (e) => setPrintColor(e.target.value));
+    cornerPicker?.addEventListener('change', (e) =>
+        trackEvent('print-color', { same: imprintMatchesCreature, color: e.target.value }),
+    );
+
+    // Clears the printed imprints but keeps the creatures walking.
+    document
+        .getElementById('clearImprintsBtn')
+        ?.addEventListener('click', () => {
+            trackEvent('clear-imprints');
+            resetHistory();
         });
 
     setupSettingsTracking();
@@ -1982,7 +2094,7 @@ function randomizeAndRespawn() {
         case 'reset':
         default:
             randomizeAll();
-            init(true);
+            init(!keepImprintsOnReset);
             break;
     }
 }
@@ -2044,6 +2156,10 @@ function handleCopyParameters() {
         letterInput: document.getElementById('letterInput').value,
         imprintShade,
         imprintBlendMode,
+        imprintColor,
+        imprintMatchesCreature,
+        creatureColor,
+        shiverColor,
         printIntervalRandomness,
         shiverPropagationSpeedSlider: document.getElementById(
             'shiverPropagationSpeed',
@@ -2294,6 +2410,25 @@ function runSetup() {
     document
         .getElementById('imprintBlendMode')
         .addEventListener('change', (e) => (imprintBlendMode = e.target.value));
+    const setupColor = (id, setter) => {
+        document.getElementById(id)?.addEventListener('input', (e) => {
+            setter(e.target.value);
+            document.getElementById(`${id}Value`).textContent = e.target.value;
+        });
+    };
+    setupColor('imprintColor', (v) => (imprintColor = v));
+    setupCheckbox('imprintMatchesCreatureCheck', (val) => {
+        imprintMatchesCreature = val;
+        syncPrintColorControls();
+    });
+    setupColor('creatureColor', (v) => {
+        creatureColor = v;
+        creatureRgb = hexToRgb(v);
+    });
+    setupColor('shiverColor', (v) => {
+        shiverColor = v;
+        shiverRgb = hexToRgb(v);
+    });
     setupCheckbox(
         'perCreatureImprintCheck',
         (val) => (usePerCreatureImprint = val),

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Only scripts from this site (sim.js, favicon.js) and Umami analytics may run.
+    <!-- Only scripts from this site (sim.js, favicon.js, tour.js) and Umami analytics may run.
          Inline scripts, eval and any other origin are blocked by the browser. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; connect-src 'self' https://cloud.umami.is https://gateway.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <title>Ivraie - Ink on canvas</title>
@@ -34,14 +34,11 @@
 
 <body>
 
-    <button id="eraseBtn" title="Erase all imprints"></button>
-    <button id="toggleControlsBtn" title="Toggle Controls">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px">
-            <rect x="11" y="1" width="2" height="22" rx="1" />
-            <rect x="11" y="1" width="2" height="22" rx="1" transform="rotate(60 12 12)" />
-            <rect x="11" y="1" width="2" height="22" rx="1" transform="rotate(120 12 12)" />
-        </svg>
-    </button>
+    <button id="eraseBtn" title="Start over"></button>
+    <button id="clearImprintsBtn" title="Clear the imprints"></button>
+    <button id="printColorBtn" title="Print color"></button>
+    <input type="color" id="printColorCornerInput" class="corner-picker" value="#000000" tabindex="-1" aria-hidden="true" />
+    <button id="toggleControlsBtn" title="Settings" aria-label="Settings"></button>
 
     <canvas id="background-canvas"></canvas>
     <canvas id="canvas"></canvas>
@@ -157,6 +154,16 @@
 
             <div class="control-group">
                 <h3>Appearance</h3>
+                <div class="color-control">
+                    <label for="creatureColor">Creature Color <span id="creatureColorValue"
+                            class="value-display">#000000</span></label>
+                    <input type="color" id="creatureColor" value="#000000" />
+                </div>
+                <div class="color-control">
+                    <label for="shiverColor">Shiver Color <span id="shiverColorValue"
+                            class="value-display">#000000</span></label>
+                    <input type="color" id="shiverColor" value="#000000" />
+                </div>
                 <div>
                     <label for="drawMode">Draw Mode</label>
                     <select id="drawMode">
@@ -205,12 +212,21 @@
                 <div>
                     <label for="printInterval">Continuous Print Interval (ms) <span id="printIntervalValue"
                             class="value-display">250</span></label>
-                    <input type="range" id="printInterval" min="50" max="1000" step="10" value="250" />
+                    <input type="range" id="printInterval" min="10" max="1000" step="10" value="250" />
                 </div>
                 <div class="sub-control">
                     <label for="printIntervalRandomness">Interval Variation <span id="printIntervalRandomnessValue"
                             class="value-display">89%</span></label>
                     <input type="range" id="printIntervalRandomness" min="0.0" max="1.0" step="0.01" value="0.89" />
+                </div>
+                <div class="color-control">
+                    <label for="imprintColor">Imprint Color <span id="imprintColorValue"
+                            class="value-display">#000000</span></label>
+                    <input type="color" id="imprintColor" value="#000000" disabled />
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="imprintMatchesCreatureCheck" checked />
+                    <label for="imprintMatchesCreatureCheck" class="checkbox-label">Imprint Uses Creature Colors</label>
                 </div>
                 <div>
                     <label for="imprintShade">Imprint Shade <span id="imprintShadeValue"
@@ -488,6 +504,7 @@
     </footer>
 
     <script src="sim.js"></script>
+    <script src="tour.js"></script>
 </body>
 
 </html>
