@@ -2382,6 +2382,11 @@
                 toggleBtn.addEventListener('click', () => {
                     controlsPanel.classList.toggle('hidden');
                     toggleBtn.classList.toggle('is-visible');
+                    trackEvent(
+                        controlsPanel.classList.contains('hidden')
+                            ? 'controls-close'
+                            : 'controls-open',
+                    );
                 });
             }
         }
@@ -2403,11 +2408,17 @@
         function setupRandomizeButtons() {
             const panelBtn = document.getElementById('randomizeBtn');
             if (panelBtn) {
-                panelBtn.addEventListener('click', randomizeAndRespawn);
+                panelBtn.addEventListener('click', () => {
+                    trackEvent('randomize', { source: 'panel' });
+                    randomizeAndRespawn();
+                });
             }
             const shortcutBtn = document.getElementById('randomizeShortcutBtn');
             if (shortcutBtn) {
-                shortcutBtn.addEventListener('click', randomizeAndRespawn);
+                shortcutBtn.addEventListener('click', () => {
+                    trackEvent('randomize', { source: 'shortcut' });
+                    randomizeAndRespawn();
+                });
             }
         }
 
@@ -2730,10 +2741,42 @@
             titleH1El = document.querySelector('#title-container h1');
         }
 
+        /**
+         * Sends a custom event to Umami analytics. Never throws: the script may
+         * be blocked or not loaded yet (and is absent when opened locally).
+         */
+        function trackEvent(name, data) {
+            try {
+                window.umami?.track(name, data);
+            } catch (err) {
+                // Analytics must never break the animation.
+            }
+        }
+
+        /**
+         * Tracks the first change of each setting in the controls panel, per
+         * visit (one event per setting keeps the free event quota in check).
+         * Programmatic changes (e.g. randomize) are ignored via isTrusted.
+         */
+        function setupSettingsTracking() {
+            const panel = document.querySelector('.controls');
+            if (!panel) return;
+            const trackedSettings = new Set();
+            panel.addEventListener('change', (e) => {
+                const id = e.target.id;
+                if (!e.isTrusted || !id || trackedSettings.has(id)) return;
+                trackedSettings.add(id);
+                trackEvent('setting-changed', { setting: id });
+            });
+        }
+
         function setupInteractionHandlers() {
             document
                 .getElementById('addCreatureBtn')
-                ?.addEventListener('click', addCreature);
+                ?.addEventListener('click', () => {
+                    trackEvent('add-creature', { source: 'button' });
+                    addCreature();
+                });
 
             const titleH1 = document.querySelector('#title-container h1');
             if (titleH1) {
@@ -2750,15 +2793,22 @@
                     );
                     continuousPrintTimeoutId = setTimeout(scheduleNextPrint, randomDelay);
                 };
+                let pressStartTime = null;
                 const startPrinting = (e) => {
                     e.preventDefault();
                     fadeTitleOut();
                     if (continuousPrintTimeoutId !== null) return;
+                    pressStartTime = performance.now();
                     continuousPrintTimeoutId = 1; // Set a truthy value to start
                     scheduleNextPrint();
                 };
                 const stopPrinting = () => {
                     restoreTitle();
+                    if (pressStartTime !== null) {
+                        const seconds = (performance.now() - pressStartTime) / 1000;
+                        trackEvent('title-press-impress', { seconds: Math.round(seconds * 10) / 10 });
+                        pressStartTime = null;
+                    }
                     if (continuousPrintTimeoutId !== null) {
                         clearTimeout(continuousPrintTimeoutId);
                         continuousPrintTimeoutId = null;
@@ -2774,13 +2824,19 @@
             document.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' && !e.target.closest('input, select, button')) {
                     e.preventDefault();
+                    trackEvent('add-creature', { source: 'space' });
                     addCreature();
                 }
             });
 
             document
                 .getElementById('eraseBtn')
-                ?.addEventListener('click', () => init(true));
+                ?.addEventListener('click', () => {
+                    trackEvent('erase');
+                    init(true);
+                });
+
+            setupSettingsTracking();
         }
 
         function randomizeAndRespawn() {
@@ -3230,7 +3286,10 @@
             setupRandomizeButtons();
             document
                 .getElementById('copyParamsBtn')
-                ?.addEventListener('click', handleCopyParameters);
+                ?.addEventListener('click', () => {
+                    trackEvent('copy-params');
+                    handleCopyParameters();
+                });
             window.addEventListener('resize', handleResize);
             window.addEventListener('orientationchange', updateOrientationDebug);
 
