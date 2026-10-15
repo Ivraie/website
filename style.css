@@ -19,6 +19,8 @@
   --zone-left-h: 31vh;
   --zone-top-w: 40vw;
   --zone-top-h: 22vh;
+  /* Settings zone: a square in the top-right corner. */
+  --zone-corner: min(25vw, 25vh);
 }
 
 html {
@@ -196,48 +198,31 @@ body {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
 }
 
-/* Settings button: same family as the "?" button (tour.js). */
+/* Settings: an invisible square zone in the top-right corner, like the
+   other hidden zones. It only opens the panel; while the panel is open it
+   lets clicks through to the panel (which has its own close button). */
 #toggleControlsBtn {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 0;
+  right: 0;
   z-index: 11;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: var(--zone-corner);
+  height: var(--zone-corner);
   padding: 0;
-  border: 1px solid var(--thread);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--thread-strong);
+  border: none;
+  background: transparent;
   cursor: pointer;
-  /* Hidden until hovered or focused, or while the panel is open. */
-  opacity: 0;
-  transition:
-    opacity 0.3s ease,
-    background-color 0.15s,
-    color 0.15s,
-    border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-#toggleControlsBtn:hover,
-#toggleControlsBtn:focus-visible,
-#toggleControlsBtn.is-visible {
-  opacity: 1;
-}
-
-#toggleControlsBtn:hover,
-#toggleControlsBtn.is-visible {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-
+/* Invisible in every state, focus included. */
+#toggleControlsBtn:focus,
 #toggleControlsBtn:focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 3px;
+  outline: none;
+}
+
+#toggleControlsBtn.is-visible {
+  pointer-events: none;
 }
 
 .main-content {
@@ -258,20 +243,67 @@ body {
    White paper, black ink dots, grey hairline threads. */
 .controls {
   pointer-events: auto;
-  /* Starts below the settings button (top 20px + 30px), right edges aligned. */
-  margin-top: 40px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--thread);
   border-radius: 2px;
-  padding: 26px 30px 10px;
   width: 700px;
   color: var(--ink);
-  /* Scrolls inside itself and ends above the footer links (bottom 30px +
-     about 40px tall), instead of running under them. */
-  max-height: calc(100vh - 140px);
-  max-height: calc(100dvh - 140px);
+  /* Ends above the statement and the footer links instead of running under
+     them; the content scrolls inside .controls-scroll. */
+  max-height: calc(100vh - 130px);
+  max-height: calc(100dvh - 130px);
+  overflow: hidden;
+}
+
+/* Thin top bar holding the close button, above the scrolling area, so the
+   button never sits on the scrollbar. */
+.controls-bar {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 8px 0;
+}
+
+/* Scrolls the settings, with a thin grey scrollbar. */
+.controls-scroll {
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--thread) transparent;
+  padding: 6px 30px 10px;
+}
+
+/* Close button: same family as the "?" button. */
+#closeControlsBtn {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--thread);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--thread-strong);
+  font: 300 18px/1 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+#closeControlsBtn:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+#closeControlsBtn:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
 }
 
 /* The columns live in an inner wrapper: with a height limit on .controls
@@ -703,7 +735,10 @@ footer a:hover {
   .controls {
     width: 90vw;
     max-width: 450px;
-    padding: 20px;
+  }
+
+  .controls-scroll {
+    padding: 6px 20px 20px;
   }
 
   .controls-columns {
@@ -963,6 +998,10 @@ body.tour-running #title-container h1[data-hint]::after {
   height: 12px;
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.cp-toggle {
+  margin-left: 6px; /* set apart from the color dots */
 }
 
 .cp-target.is-selected .cp-target-dot {

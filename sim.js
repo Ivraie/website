@@ -222,11 +222,32 @@ let shiverRgb = hexToRgb(shiverColor);
  * this gives the original grays.
  */
 function liveInk(restLightness, intensity, alpha) {
+    // The creature being drawn may have its own color (random colors).
+    const base = drawInkRgb || creatureRgb;
     const mix = (c, s) => {
         const rest = c + (255 - c) * restLightness;
         return Math.round(rest + (s - rest) * intensity);
     };
-    return `rgba(${mix(creatureRgb.r, shiverRgb.r)}, ${mix(creatureRgb.g, shiverRgb.g)}, ${mix(creatureRgb.b, shiverRgb.b)}, ${alpha})`;
+    return `rgba(${mix(base.r, shiverRgb.r)}, ${mix(base.g, shiverRgb.g)}, ${mix(base.b, shiverRgb.b)}, ${alpha})`;
+}
+
+// Set by Creature.draw for the creature being drawn (drawing is synchronous).
+let drawInkRgb = null;
+let randomCreatureColor = false; // each new creature gets its own random ink
+
+/**
+ * A random ink color: any hue, fairly saturated, never too pale or too
+ * bright, so creatures stay ink-like on white paper.
+ */
+function randomInkRgb() {
+    const h = Math.random() * 360;
+    const s = 0.55 + Math.random() * 0.35;
+    const v = 0.35 + Math.random() * 0.45;
+    const f = (n) => {
+        const k = (n + h / 60) % 6;
+        return Math.round((v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255);
+    };
+    return { r: f(5), g: f(3), b: f(1) };
 }
 let imprintBlendMode = 'multiply';
 let usePerCreatureImprint = false;
@@ -258,6 +279,9 @@ class Creature {
         this.isDead = false;
         this.stepsTaken = 0;
         this.lastShiverPrint = -Infinity;
+        // Own color when "Random Color for New Creatures" is on, else the
+        // shared creature color (null).
+        this.inkRgb = randomCreatureColor ? randomInkRgb() : null;
         this.breathingPhase = Math.random() * Math.PI * 2;
         this.propagationAccumulator = 0;
         this.currentRestLengthFactor = 1.0;
@@ -833,6 +857,7 @@ class Creature {
     }
 
     draw(targetCtx, isImprint = false, currentImprintShade = 0.2, imprintRgb = hexToRgb(imprintColor)) {
+        drawInkRgb = this.inkRgb;
         let fadeAlpha = 1.0;
         if (!isImprint && this.isDead && deathEffect === 'fade') {
             fadeAlpha = Math.max(0, 1.0 - (time - this.deathTime) / FADE_DURATION);
@@ -1608,20 +1633,20 @@ function setupPercentageSlider(sliderId, displayId, setter) {
     display.textContent = `${(parseFloat(slider.value) * 100).toFixed(0)}%`;
 }
 
+// The top-right zone opens the settings panel; the panel's close button
+// closes it. While the panel is open the zone lets clicks through.
 function setupToggleControlsButton() {
     const toggleBtn = document.getElementById('toggleControlsBtn');
+    const closeBtn = document.getElementById('closeControlsBtn');
     const controlsPanel = document.querySelector('.controls');
-    if (toggleBtn && controlsPanel) {
-        toggleBtn.addEventListener('click', () => {
-            controlsPanel.classList.toggle('hidden');
-            toggleBtn.classList.toggle('is-visible');
-            trackEvent(
-                controlsPanel.classList.contains('hidden')
-                    ? 'controls-close'
-                    : 'controls-open',
-            );
-        });
-    }
+    if (!toggleBtn || !controlsPanel) return;
+    const setOpen = (open) => {
+        controlsPanel.classList.toggle('hidden', !open);
+        toggleBtn.classList.toggle('is-visible', open);
+        trackEvent(open ? 'controls-open' : 'controls-close');
+    };
+    toggleBtn.addEventListener('click', () => setOpen(true));
+    closeBtn?.addEventListener('click', () => setOpen(false));
 }
 
 function setupPropagationSpeedControl() {
@@ -2135,8 +2160,16 @@ function setupInteractionHandlers() {
     // main color (creatures, and the prints follow it) and the shiver color.
     const isFrench = (navigator.language || '').toLowerCase().startsWith('fr');
     const LABELS = isFrench
-        ? { main: "couleur des créatures et de l'impression", shiver: 'couleur du frisson' }
-        : { main: 'creature and print color', shiver: 'shiver color' };
+        ? {
+              main: "couleur des créatures et de l'impression",
+              shiver: 'couleur du frisson',
+              random: 'couleur aléatoire pour les nouvelles créatures',
+          }
+        : {
+              main: 'creature and print color',
+              shiver: 'shiver color',
+              random: 'random color for new creatures',
+          };
     document.getElementById('printColorBtn')?.addEventListener('click', () => {
         if (!window.openColorPicker) return;
         trackEvent('print-color-open');
@@ -2149,6 +2182,18 @@ function setupInteractionHandlers() {
                 targets: () => [
                     { id: 'main', label: LABELS.main, color: creatureColor },
                     { id: 'shiver', label: LABELS.shiver, color: shiverColor },
+                ],
+                toggles: [
+                    {
+                        label: LABELS.random,
+                        background:
+                            'conic-gradient(#c8361f, #d98e04, #2e6b3f, #1f6f78, #1f2fb0, #6a2c70, #c8361f)',
+                        active: () => randomCreatureColor,
+                        onToggle: () => {
+                            randomCreatureColor = !randomCreatureColor;
+                            trackEvent('random-creature-color', { on: randomCreatureColor });
+                        },
+                    },
                 ],
                 onChange: (hex, target) => {
                     if (target === 'shiver') {
@@ -2336,6 +2381,7 @@ function handleCopyParameters() {
         imprintColor,
         imprintMatchesCreature,
         printOnShiver,
+        randomCreatureColor,
         creatureColor,
         shiverColor,
         printIntervalRandomness,

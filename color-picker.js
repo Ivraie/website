@@ -87,15 +87,17 @@
     // ---------- State ----------
     // { opts, active, value, hsv, changed }
     //   opts.targets(): [{ id, label, color, split? }] (optional)
+    //   opts.toggles: [{ label, background, active(), onToggle() }] (optional),
+    //     on/off dots shown after the targets
     //   opts.onChange(hex, targetId), opts.onReselect(targetId), opts.onClose(changed)
     let session = null;
 
     function renderTargets() {
         const { opts, active } = session;
-        targetBox.hidden = !opts.targets;
-        if (!opts.targets) return;
+        targetBox.hidden = !opts.targets && !opts.toggles;
+        if (targetBox.hidden) return;
         targetBox.innerHTML = '';
-        for (const t of opts.targets()) {
+        for (const t of opts.targets ? opts.targets() : []) {
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'cp-target';
@@ -110,6 +112,26 @@
                 : t.color;
             b.appendChild(dot);
             b.addEventListener('click', () => selectTarget(t.id));
+            targetBox.appendChild(b);
+        }
+        for (const t of opts.toggles || []) {
+            const on = t.active();
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cp-target cp-toggle';
+            b.title = t.label;
+            b.setAttribute('aria-label', t.label);
+            b.setAttribute('aria-pressed', String(on));
+            b.classList.toggle('is-selected', on);
+            const dot = document.createElement('span');
+            dot.className = 'cp-target-dot';
+            dot.style.background = t.background;
+            b.appendChild(dot);
+            b.addEventListener('click', () => {
+                t.onToggle();
+                session.changed = true;
+                renderTargets();
+            });
             targetBox.appendChild(b);
         }
     }
