@@ -581,12 +581,18 @@ select {
   padding-left: 0;
 }
 
+/* A fixed 34px row, so the links line up with the "?" button (30px,
+   centered on the same line, see #tourHelpBtn). */
 footer {
   position: fixed;
   bottom: 30px;
   left: 0;
   width: 100%;
-  text-align: center;
+  height: 34px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
   z-index: 5;
   pointer-events: none;
 }
@@ -595,8 +601,8 @@ footer a {
   pointer-events: auto;
   color: var(--ink);
   text-decoration: none;
-  margin: 0 15px;
   font-size: 0.9rem;
+  line-height: 16px;
   background: rgba(255, 255, 255, 0.9);
   padding: 8px 15px;
   border-radius: 2px;
@@ -807,7 +813,8 @@ body.tour-running #title-container h1[data-hint]::after {
 #tourHelpBtn {
   position: fixed;
   right: 20px;
-  bottom: 30px;
+  /* Centered on the footer row: 30px + (34px - 30px) / 2. */
+  bottom: 32px;
   z-index: 11;
   width: 30px;
   height: 30px;
