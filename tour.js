@@ -169,9 +169,26 @@
     let tourTimer = null;
     let tourStep = -1;
 
+    // If a label would cover the title (e.g. the middle-left hint on a phone
+    // in portrait), move it just above the title; the thread follows.
+    function avoidTitle(el, spot) {
+        const label = el.querySelector('.tour-label').getBoundingClientRect();
+        const t = title.getBoundingClientRect();
+        const margin = 12;
+        const overlaps =
+            label.right > t.left - margin &&
+            label.left < t.right + margin &&
+            label.bottom > t.top - margin &&
+            label.top < t.bottom + margin;
+        if (!overlaps) return;
+        placeHint(el, { ...spot, ly: t.top - margin - label.height / 2 });
+    }
+
     function showStep(i) {
         tourStep = i;
-        placeHint(tourHint, STEPS[i].place());
+        const spot = STEPS[i].place();
+        placeHint(tourHint, spot);
+        if (STEPS[i].id !== 'title') avoidTitle(tourHint, spot);
         tourHint.classList.add('is-visible');
         tourTimer = setTimeout(() => {
             tourHint.classList.remove('is-visible');
