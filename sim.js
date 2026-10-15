@@ -231,6 +231,8 @@ function liveInk(restLightness, intensity, alpha) {
 let imprintBlendMode = 'multiply';
 let usePerCreatureImprint = false;
 const keepImprintsOnReset = true; // randomize and start over leave the imprints
+let printOnShiver = true; // a creature prints when one of its feet lands
+const SHIVER_PRINT_COOLDOWN = 30; // frames between two shiver prints of one creature
 let printIntervalMs = 250;
 let printIntervalRandomness = 0.89;
 const gravity = 0.17;
@@ -255,6 +257,7 @@ class Creature {
         this.nextPairToWake = 0;
         this.isDead = false;
         this.stepsTaken = 0;
+        this.lastShiverPrint = -Infinity;
         this.breathingPhase = Math.random() * Math.PI * 2;
         this.propagationAccumulator = 0;
         this.currentRestLengthFactor = 1.0;
@@ -300,6 +303,16 @@ class Creature {
         for (const foot of this.feet) {
             foot.footState = FOOT_STATES.FIXED;
         }
+    }
+
+    /**
+     * Called when a foot lands on an edge and a shiver starts.
+     */
+    onShiverStart() {
+        if (!printOnShiver || this.isDead) return;
+        if (time - this.lastShiverPrint < SHIVER_PRINT_COOLDOWN) return;
+        this.lastShiverPrint = time;
+        this.printToBackground();
     }
 
     printToBackground() {
@@ -1090,6 +1103,7 @@ class Point {
                     this.targetPos.x = Math.max(0, Math.min(canvas.width, this.x));
                     this.targetPos.y = Math.max(0, Math.min(canvas.height, this.y));
                     this.pulseMagnitude = 1.0;
+                    this.creature?.onShiverStart();
                 }
                 break;
             case FOOT_STATES.SETTLING:
@@ -2321,6 +2335,7 @@ function handleCopyParameters() {
         imprintBlendMode,
         imprintColor,
         imprintMatchesCreature,
+        printOnShiver,
         creatureColor,
         shiverColor,
         printIntervalRandomness,
@@ -2599,6 +2614,7 @@ function runSetup() {
         'perCreatureImprintCheck',
         (val) => (usePerCreatureImprint = val),
     );
+    setupCheckbox('printOnShiverCheck', (val) => (printOnShiver = val));
 
     // Birth & Death
     setupSlider(
