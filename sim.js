@@ -201,6 +201,17 @@ function syncPrintColorControls() {
     if (value) value.textContent = imprintColor;
 }
 
+// Drawing buckets shared by all creatures (drawing is synchronous, one
+// creature at a time), so no arrays or objects are allocated per frame.
+const SHADE_STEPS = 20;
+const DRAW_BUCKETS = {
+    springs: Array.from({ length: SHADE_STEPS + 1 }, () => []),
+    points: Array.from({ length: SHADE_STEPS + 1 }, () => []),
+    radii: Array.from({ length: SHADE_STEPS + 1 }, () => []),
+    feet: [],
+    tendrils: [],
+};
+
 // Parsed once per color change, not on every frame.
 let creatureRgb = hexToRgb(creatureColor);
 let shiverRgb = hexToRgb(shiverColor);
@@ -738,7 +749,9 @@ class Creature {
         }
         this.processGaitQueue();
         for (const point of this.points) point.update();
-        for (const s of this.springs) s.update();
+        const restFactor = this.currentRestLengthFactor;
+        const tendrilStiffness = this.params.tendrilStiffness;
+        for (const s of this.springs) s.update(restFactor, tendrilStiffness);
         this.propagationAccumulator += shiverPropagationSpeed;
         const hopsThisFrame = Math.floor(this.propagationAccumulator);
         if (hopsThisFrame > 0) {
@@ -749,39 +762,60 @@ class Creature {
 
     propagateInternalPulse(numHops) {
         if (this.isDead) return;
+        const points = this.points;
+        const n = points.length;
+        // Nothing shivering: nothing to spread or decay (the common case).
+        let shivering = false;
+        for (let i = 0; i < n; i++) {
+            if (points[i].pulseMagnitude > 0) {
+                shivering = true;
+                break;
+            }
+        }
+        if (!shivering) return;
+
         const pulseLoss = shiverPropagationFactor;
         const decayRate = 0.9 + shiverDurationFactor * 0.09;
-        const hopBuffer = new Map();
-        this.points.forEach((p) => hopBuffer.set(p, p.pulseMagnitude));
-        for (let i = 0; i < numHops; i++) {
-            const newPulsesThisHop = new Map();
+        // Reused buffers indexed by point, instead of new Maps every frame.
+        if (!this.pulseNow || this.pulseNow.length !== n) {
+            this.pulseNow = new Float64Array(n);
+            this.pulseNext = new Float64Array(n);
+        }
+        const now = this.pulseNow;
+        const next = this.pulseNext;
+        for (let i = 0; i < n; i++) {
+            points[i].index = i;
+            now[i] = points[i].pulseMagnitude;
+        }
+        const skipHair = !this.params.shiversOnTendrils;
+        for (let hop = 0; hop < numHops; hop++) {
+            next.fill(0);
             for (const spring of this.springs) {
-                if (!this.params.shiversOnTendrils && spring.isHair) continue;
-                const p1 = spring.p1;
-                const p2 = spring.p2;
-                const mag1 = hopBuffer.get(p1);
-                const mag2 = hopBuffer.get(p2);
-                if (mag1 > mag2) {
-                    const current = newPulsesThisHop.get(p2) || 0;
-                    newPulsesThisHop.set(p2, Math.max(current, mag1 * pulseLoss));
-                } else if (mag2 > mag1) {
-                    const current = newPulsesThisHop.get(p1) || 0;
-                    newPulsesThisHop.set(p1, Math.max(current, mag2 * pulseLoss));
+                if (skipHair && spring.isHair) continue;
+                const a = spring.p1.index;
+                const b = spring.p2.index;
+                const magA = now[a];
+                const magB = now[b];
+                if (magA > magB) {
+                    const pulse = magA * pulseLoss;
+                    if (pulse > next[b]) next[b] = pulse;
+                } else if (magB > magA) {
+                    const pulse = magB * pulseLoss;
+                    if (pulse > next[a]) next[a] = pulse;
                 }
             }
             let changed = false;
-            newPulsesThisHop.forEach((pulse, point) => {
-                if (pulse > hopBuffer.get(point)) {
-                    hopBuffer.set(point, pulse);
+            for (let i = 0; i < n; i++) {
+                if (next[i] > now[i]) {
+                    now[i] = next[i];
                     changed = true;
                 }
-            });
+            }
             if (!changed) break;
         }
-        for (const point of this.points) {
-            point.pulseMagnitude = hopBuffer.get(point);
-            point.pulseMagnitude *= decayRate;
-            if (point.pulseMagnitude < 0.01) point.pulseMagnitude = 0;
+        for (let i = 0; i < n; i++) {
+            const pulse = now[i] * decayRate;
+            points[i].pulseMagnitude = pulse < 0.01 ? 0 : pulse;
         }
     }
 
@@ -797,11 +831,20 @@ class Creature {
             imprintMatchesCreature
                 ? liveInk(restLightness, intensity, alpha)
                 : imprintInk(imprintRgb, lightness, alpha);
-        const springBatches = new Map();
-        const pointBatches = new Map();
+        // Reused per-shade buckets (21 shades); emptied, not reallocated.
+        const springBatches = DRAW_BUCKETS.springs;
+        const pointBatches = DRAW_BUCKETS.points;
+        const pointRadii = DRAW_BUCKETS.radii;
+        for (let k = 0; k <= SHADE_STEPS; k++) {
+            springBatches[k].length = 0;
+            pointBatches[k].length = 0;
+            pointRadii[k].length = 0;
+        }
+        const footBatch = DRAW_BUCKETS.feet;
+        const tendrilBatch = DRAW_BUCKETS.tendrils;
+        footBatch.length = 0;
+        tendrilBatch.length = 0;
         const letterBatches = new Map();
-        const footBatch = [];
-        const tendrilBatch = [];
         const baseBodyRadius = pointBaseSize;
         const baseFootRadius = baseBodyRadius + 2.0;
         for (const s of this.springs) {
@@ -815,11 +858,7 @@ class Creature {
                 1.0,
                 Math.max(minShade, baseIntensity * shiverEffectMultiplier),
             );
-            const styleKey = Math.floor(shadeIntensity * 20);
-            if (!springBatches.has(styleKey)) {
-                springBatches.set(styleKey, []);
-            }
-            springBatches.get(styleKey).push(s);
+            springBatches[Math.floor(shadeIntensity * SHADE_STEPS)].push(s);
         }
         for (const point of this.points) {
             if (point.isHair || time < point.birthTime) continue;
@@ -839,9 +878,9 @@ class Creature {
                         0.1,
                         baseBodyRadius * radiusMultiplier * variation,
                     );
-                    const styleKey = Math.floor(shadeIntensity * 20);
-                    if (!pointBatches.has(styleKey)) pointBatches.set(styleKey, []);
-                    pointBatches.get(styleKey).push({ point, radius: finalRadius });
+                    const k = Math.floor(shadeIntensity * SHADE_STEPS);
+                    pointBatches[k].push(point);
+                    pointRadii[k].push(finalRadius);
                 } else if (drawMode === 'letter') {
                     const fontSize = Math.max(
                         1,
@@ -868,8 +907,10 @@ class Creature {
             targetCtx.stroke();
         }
         const baseLineWidth = Math.max(0.2, 2.8 - this.points.length / 25);
-        springBatches.forEach((springsInBatch, styleKey) => {
-            const shadeIntensity = styleKey / 20;
+        for (let styleKey = 0; styleKey <= SHADE_STEPS; styleKey++) {
+            const springsInBatch = springBatches[styleKey];
+            if (springsInBatch.length === 0) continue;
+            const shadeIntensity = styleKey / SHADE_STEPS;
             const gray = Math.floor(80 * (1 - shadeIntensity));
             const lineWidth = Math.min(
                 baseLineWidth + shadeIntensity * (baseLineWidth * 3.5),
@@ -885,20 +926,25 @@ class Creature {
                 targetCtx.lineTo(s.p2.x, s.p2.y);
             }
             targetCtx.stroke();
-        });
-        pointBatches.forEach((pointsInBatch, styleKey) => {
-            const shadeIntensity = styleKey / 20;
+        }
+        for (let styleKey = 0; styleKey <= SHADE_STEPS; styleKey++) {
+            const pointsInBatch = pointBatches[styleKey];
+            if (pointsInBatch.length === 0) continue;
+            const radii = pointRadii[styleKey];
+            const shadeIntensity = styleKey / SHADE_STEPS;
             const gray = Math.floor(180 * (1 - shadeIntensity));
             targetCtx.fillStyle = isImprint
                 ? imprintFill(180 / 255, shadeIntensity, gray / 255, currentImprintShade)
                 : liveInk(180 / 255, shadeIntensity, fadeAlpha);
             targetCtx.beginPath();
-            for (const item of pointsInBatch) {
-                targetCtx.moveTo(item.point.x + item.radius, item.point.y);
-                targetCtx.arc(item.point.x, item.point.y, item.radius, 0, Math.PI * 2);
+            for (let i = 0; i < pointsInBatch.length; i++) {
+                const p = pointsInBatch[i];
+                const r = radii[i];
+                targetCtx.moveTo(p.x + r, p.y);
+                targetCtx.arc(p.x, p.y, r, 0, Math.PI * 2);
             }
             targetCtx.fill();
-        });
+        }
         letterBatches.forEach((pointsInBatch, styleKey) => {
             const [shadeKey, fontSizeKey] = styleKey.split('_');
             const shadeIntensity = parseInt(shadeKey, 10) / 20;
@@ -1148,24 +1194,27 @@ class Spring {
         this.isHair = false;
     }
 
-    update() {
-        const p = this.p1.creature.params;
-        const averagePulse = (this.p1.pulseMagnitude + this.p2.pulseMagnitude) / 2;
+    /**
+     * @param {number} restFactor - The creature's current rest length factor.
+     * @param {number} tendrilStiffness - The creature's tendril stiffness.
+     */
+    update(restFactor, tendrilStiffness) {
+        const p1 = this.p1;
+        const p2 = this.p2;
+        const averagePulse = (p1.pulseMagnitude + p2.pulseMagnitude) * 0.5;
         const contraction = 1.0 - averagePulse * shiverIntensityFactor;
-        const currentRestLength =
-            this.baseRestLength *
-            this.p1.creature.currentRestLengthFactor *
-            contraction;
-        const dx = this.p2.x - this.p1.x;
-        const dy = this.p2.y - this.p1.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < 0.01) return;
-        const stiffness = this.isHair ? p.tendrilStiffness : springStiffness;
-        const forceScalar = (dist - currentRestLength) * stiffness;
-        const fx = (dx / dist) * forceScalar;
-        const fy = (dy / dist) * forceScalar;
-        this.p1.applyForce(fx, fy);
-        this.p2.applyForce(-fx, -fy);
+        const currentRestLength = this.baseRestLength * restFactor * contraction;
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < 0.0001) return; // dist < 0.01
+        const dist = Math.sqrt(distSq);
+        const stiffness = this.isHair ? tendrilStiffness : springStiffness;
+        const scale = ((dist - currentRestLength) * stiffness) / dist;
+        const fx = dx * scale;
+        const fy = dy * scale;
+        p1.applyForce(fx, fy);
+        p2.applyForce(-fx, -fy);
     }
 }
 
