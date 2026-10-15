@@ -1,13 +1,13 @@
 // Ink color picker: a square color field (hue across, white to black down)
 // and one intensity thread, no text. Replaces the native picker of every
-// color input in the settings panel, and is opened by sim.js for the print
-// color corner (window.openColorPicker), where a "same as the creatures"
-// toggle links the picked color to the creatures.
+// color input in the settings panel. sim.js also opens it from the print
+// color corner (window.openColorPicker) with several targets (creature,
+// shiver, print), shown as small dots next to the thread.
 (function () {
     const isFrench = (navigator.language || '').toLowerCase().startsWith('fr');
     const T = isFrench
-        ? { same: 'comme les créatures', dialog: 'Choisir une couleur', intensity: 'Intensité' }
-        : { same: 'same as the creatures', dialog: 'Choose a color', intensity: 'Intensity' };
+        ? { dialog: 'Choisir une couleur', intensity: 'Intensité' }
+        : { dialog: 'Choose a color', intensity: 'Intensity' };
 
     const FIELD = 168; // px, square
     const DEFAULT_SATURATION = 0.75;
@@ -51,22 +51,18 @@
     card.setAttribute('role', 'dialog');
     card.setAttribute('aria-label', T.dialog);
     card.innerHTML = `
+        <div class="cp-targets" hidden></div>
         <div class="cp-field" tabindex="0" role="application" aria-label="${T.dialog}">
             <canvas width="${FIELD * 2}" height="${FIELD * 2}"></canvas>
             <span class="cp-marker"></span>
         </div>
-        <div class="cp-bottom">
-            <button type="button" class="cp-same" hidden title="${T.same}" aria-label="${T.same}">
-                <span class="cp-same-dot"></span>
-            </button>
-            <input type="range" class="cp-range cp-sat" min="0" max="1" step="0.01" aria-label="${T.intensity}" />
-        </div>`;
+        <input type="range" class="cp-range cp-sat" min="0" max="1" step="0.01" aria-label="${T.intensity}" />`;
     document.body.appendChild(card);
 
-    const sameBtn = card.querySelector('.cp-same');
     const field = card.querySelector('.cp-field');
     const canvas = field.querySelector('canvas');
     const marker = field.querySelector('.cp-marker');
+    const targetBox = card.querySelector('.cp-targets');
     const satInput = card.querySelector('.cp-sat');
 
     // The field at a given intensity, at twice the size for sharp screens.
@@ -94,47 +90,81 @@
     }
 
     // ---------- State ----------
-    let session = null; // { onChange, startValue, value, link, linked, hsl }
+    // { opts, active, value, hsl, changed }
+    //   opts.targets(): [{ id, label, color, split? }] (optional)
+    //   opts.onChange(hex, targetId), opts.onReselect(targetId), opts.onClose(changed)
+    let session = null;
+
+    function renderTargets() {
+        const { opts, active } = session;
+        targetBox.hidden = !opts.targets;
+        if (!opts.targets) return;
+        targetBox.innerHTML = '';
+        for (const t of opts.targets()) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cp-target';
+            b.title = t.label;
+            b.setAttribute('aria-label', t.label);
+            b.setAttribute('aria-pressed', String(t.id === active));
+            b.classList.toggle('is-selected', t.id === active);
+            const dot = document.createElement('span');
+            dot.className = 'cp-target-dot';
+            dot.style.background = t.split
+                ? `linear-gradient(135deg, ${t.split[0]} 0 50%, ${t.split[1]} 50% 100%)`
+                : t.color;
+            b.appendChild(dot);
+            b.addEventListener('click', () => selectTarget(t.id));
+            targetBox.appendChild(b);
+        }
+    }
 
     function render() {
-        const { value, link, linked, hsl } = session;
-        sameBtn.classList.toggle('is-selected', !!linked);
-        sameBtn.setAttribute('aria-pressed', String(!!linked));
-        if (link) {
-            // Linked: the picked color is the creature color.
-            const a = linked ? value : link.colors[0];
-            sameBtn.querySelector('.cp-same-dot').style.background =
-                `linear-gradient(135deg, ${a} 0 50%, ${link.colors[1]} 50% 100%)`;
-        }
-        drawField(hsl.s);
-        marker.style.left = `${(hsl.h / 360) * 100}%`;
-        marker.style.top = `${(1 - hsl.l) * 100}%`;
+        const { value, hsl } = session;
+        // A grey or black color has no intensity: show the field in color
+        // anyway, so there is always something to pick from.
+        drawField(hsl.s < 0.05 ? DEFAULT_SATURATION : hsl.s);
+        // Kept inside the field at the edges (the marker is 10px wide).
+        marker.style.left = `calc(5px + (100% - 10px) * ${hsl.h / 360})`;
+        marker.style.top = `calc(5px + (100% - 10px) * ${1 - hsl.l})`;
         marker.style.background = value;
         satInput.value = String(hsl.s);
         satInput.style.setProperty(
             '--track',
             `linear-gradient(to right, ${hslToHex(hsl.h, 0, 0.5)}, ${hslToHex(hsl.h, 1, 0.5)})`,
         );
+        renderTargets();
     }
 
-    // Picked colors reach the caller as a hex string, or as { color, linked }
-    // when the picker was opened with a link toggle.
-    const result = () =>
-        session.link ? { color: session.value, linked: session.linked } : session.value;
-    const resultKey = () => (session.link ? `${session.linked}|${session.value}` : session.value);
+    function load(value) {
+        session.value = value;
+        session.hsl = hexToHsl(value);
+        render();
+    }
+
+    // Clicking another dot edits that color; clicking the selected one again
+    // lets the caller act on it (the print dot relinks to the creatures).
+    function selectTarget(id) {
+        if (id === session.active) {
+            if (session.opts.onReselect) {
+                session.opts.onReselect(id);
+                session.changed = true;
+                renderTargets();
+            }
+            return;
+        }
+        session.active = id;
+        const t = session.opts.targets().find((x) => x.id === id);
+        load(t.color);
+    }
 
     function apply() {
         const { h, s, l } = session.hsl;
         session.value = hslToHex(h, s, l);
+        session.changed = true;
+        session.opts.onChange(session.value, session.active);
         render();
-        session.onChange(result(), false);
     }
-
-    sameBtn.addEventListener('click', () => {
-        session.linked = !session.linked;
-        render();
-        session.onChange(result(), false);
-    });
 
     // Field: click or drag.
     function pickAt(clientX, clientY) {
@@ -148,17 +178,19 @@
         apply();
     }
     field.addEventListener('pointerdown', (e) => {
+        if (!session) return;
         e.preventDefault();
         field.focus();
         field.setPointerCapture(e.pointerId);
         pickAt(e.clientX, e.clientY);
     });
     field.addEventListener('pointermove', (e) => {
-        if (field.hasPointerCapture(e.pointerId)) pickAt(e.clientX, e.clientY);
+        if (session && field.hasPointerCapture(e.pointerId)) pickAt(e.clientX, e.clientY);
     });
 
     // Keyboard: left/right for the hue, up/down toward white/black.
     field.addEventListener('keydown', (e) => {
+        if (!session) return; // closed by the same key press (Escape, Enter)
         const step = e.shiftKey ? 10 : 2;
         const hsl = session.hsl;
         if (e.key === 'ArrowLeft') hsl.h = (hsl.h - step + 360) % 360;
@@ -171,6 +203,7 @@
     });
 
     satInput.addEventListener('input', () => {
+        if (!session) return;
         session.hsl.s = Number(satInput.value);
         apply();
     });
@@ -178,20 +211,14 @@
     // ---------- Open / close ----------
     // anchor: a DOMRect-like {left, top, right, bottom}; the card opens below
     // it, or above when there is no room, and stays inside the window.
-    // link: optional { active, colors: [creature, shiver] } for the toggle.
-    function openColorPicker(anchor, { value, link = null, onChange }) {
+    function openColorPicker(anchor, opts) {
         if (session) closeColorPicker();
-        session = {
-            onChange,
-            value,
-            link,
-            linked: !!(link && link.active),
-            hsl: hexToHsl(value),
-        };
-        session.startKey = resultKey();
-        sameBtn.hidden = !link;
+        session = { opts, active: opts.active || null, changed: false };
+        const start = opts.targets
+            ? opts.targets().find((t) => t.id === session.active).color
+            : opts.value;
         card.hidden = false;
-        render();
+        load(start);
 
         const margin = 8;
         const w = card.offsetWidth;
@@ -212,14 +239,12 @@
 
     function closeColorPicker() {
         if (!session) return;
-        const final = result();
-        const changed = resultKey() !== session.startKey;
-        const { onChange } = session;
+        const { opts, changed } = session;
         session = null;
         card.hidden = true;
         document.removeEventListener('pointerdown', onOutside, true);
         document.removeEventListener('keydown', onKey, true);
-        if (changed) onChange(final, true);
+        if (opts.onClose) opts.onClose(changed);
     }
 
     function onOutside(e) {
@@ -242,13 +267,15 @@
         input.addEventListener('click', (e) => {
             e.preventDefault();
             if (input.disabled) return;
+            const detail = { fromPicker: true };
             openColorPicker(input.getBoundingClientRect(), {
                 value: input.value,
-                onChange: (hex, final) => {
+                onChange: (hex) => {
                     input.value = hex;
-                    const detail = { fromPicker: true };
                     input.dispatchEvent(new CustomEvent('input', { bubbles: true, detail }));
-                    if (final) input.dispatchEvent(new CustomEvent('change', { bubbles: true, detail }));
+                },
+                onClose: (changed) => {
+                    if (changed) input.dispatchEvent(new CustomEvent('change', { bubbles: true, detail }));
                 },
             });
         });

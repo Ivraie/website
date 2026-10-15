@@ -164,6 +164,18 @@ function setCreatureColor(hex) {
 }
 
 /**
+ * Sets the shiver color and updates its panel control.
+ */
+function setShiverColor(hex) {
+    shiverColor = hex;
+    shiverRgb = hexToRgb(hex);
+    const input = document.getElementById('shiverColor');
+    const value = document.getElementById('shiverColorValue');
+    if (input) input.value = hex;
+    if (value) value.textContent = hex;
+}
+
+/**
  * Prints in the creature and shiver colors again.
  */
 function setPrintColorSame() {
@@ -1962,6 +1974,10 @@ function setupInteractionHandlers() {
             continuousPrintTimeoutId = setTimeout(scheduleNextPrint, randomDelay);
         };
         let pressStartTime = null;
+        // Presses in this visit, reported at these counts only.
+        const PRESS_MILESTONES = [1, 5, 20, 50];
+        let pressCount = 0;
+        let pressSeconds = 0;
         const startPrinting = (e) => {
             e.preventDefault();
             fadeTitleOut();
@@ -1973,9 +1989,16 @@ function setupInteractionHandlers() {
         const stopPrinting = () => {
             restoreTitle();
             if (pressStartTime !== null) {
-                const seconds = (performance.now() - pressStartTime) / 1000;
-                trackEvent('title-press-impress', { seconds: Math.round(seconds * 10) / 10 });
+                pressCount++;
+                pressSeconds += (performance.now() - pressStartTime) / 1000;
                 pressStartTime = null;
+                // One event per milestone, not per press: at most four per visit.
+                if (PRESS_MILESTONES.includes(pressCount)) {
+                    trackEvent('title-press-impress', {
+                        presses: pressCount,
+                        seconds: Math.round(pressSeconds * 10) / 10,
+                    });
+                }
             }
             if (continuousPrintTimeoutId !== null) {
                 clearTimeout(continuousPrintTimeoutId);
@@ -2008,8 +2031,12 @@ function setupInteractionHandlers() {
     // on the creature color; picking that color means "same as the creatures"
     // (creature and shiver colors), any other color prints in that color.
     // tour.js listens to 'printcolorchange' to flash the new color.
-    // The picker (color-picker.js) opens in the corner and offers "same as
-    // the creatures" as well as any color.
+    // The picker (color-picker.js) opens in the corner with two dots: the
+    // main color (creatures, and the prints follow it) and the shiver color.
+    const isFrench = (navigator.language || '').toLowerCase().startsWith('fr');
+    const LABELS = isFrench
+        ? { main: "couleur des créatures et de l'impression", shiver: 'couleur du frisson' }
+        : { main: 'creature and print color', shiver: 'shiver color' };
     document.getElementById('printColorBtn')?.addEventListener('click', () => {
         if (!window.openColorPicker) return;
         trackEvent('print-color-open');
@@ -2018,18 +2045,31 @@ function setupInteractionHandlers() {
         window.openColorPicker(
             { left: corner, right: corner, top: y, bottom: y },
             {
-                value: imprintMatchesCreature ? creatureColor : imprintColor,
-                link: { active: imprintMatchesCreature, colors: [creatureColor, shiverColor] },
-                // Linked: the color is the creature color and prints follow it.
-                // Unlinked: the color is a separate print color.
-                onChange: ({ color, linked }, final) => {
-                    if (linked) {
-                        setCreatureColor(color);
-                        setPrintColorSame();
+                active: 'main',
+                targets: () => [
+                    { id: 'main', label: LABELS.main, color: creatureColor },
+                    { id: 'shiver', label: LABELS.shiver, color: shiverColor },
+                ],
+                onChange: (hex, target) => {
+                    if (target === 'shiver') {
+                        setShiverColor(hex);
                     } else {
-                        setPrintColor(color);
+                        setCreatureColor(hex);
+                        if (!imprintMatchesCreature) setPrintColorSame();
                     }
-                    if (final) trackEvent('print-color', { same: linked, color });
+                },
+                onClose: (changed) => {
+                    if (!changed) return;
+                    trackEvent('print-color', { creature: creatureColor, shiver: shiverColor });
+                    // Flash the resulting print color next to the corner.
+                    document.dispatchEvent(
+                        new CustomEvent('printcolorchange', {
+                            detail: {
+                                same: imprintMatchesCreature,
+                                color: imprintMatchesCreature ? creatureColor : imprintColor,
+                            },
+                        }),
+                    );
                 },
             },
         );
