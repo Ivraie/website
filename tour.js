@@ -173,19 +173,22 @@
     let tourTimer = null;
     let tourStep = -1;
 
-    // If a label would cover the title (e.g. the middle-left hint on a phone
-    // in portrait), move it just above the title; the thread follows.
+    // If a label would cover the title or the statement (e.g. on a phone in
+    // portrait), move it just above what it covers; the thread follows.
+    const statement = document.querySelector('.statement');
     function avoidTitle(el, spot) {
-        const label = el.querySelector('.tour-label').getBoundingClientRect();
-        const t = title.getBoundingClientRect();
         const margin = 12;
-        const overlaps =
-            label.right > t.left - margin &&
-            label.left < t.right + margin &&
-            label.bottom > t.top - margin &&
-            label.top < t.bottom + margin;
-        if (!overlaps) return;
-        placeHint(el, { ...spot, ly: t.top - margin - label.height / 2 });
+        for (const obstacle of [title, statement]) {
+            if (!obstacle) continue;
+            const label = el.querySelector('.tour-label').getBoundingClientRect();
+            const t = obstacle.getBoundingClientRect();
+            const overlaps =
+                label.right > t.left - margin &&
+                label.left < t.right + margin &&
+                label.bottom > t.top - margin &&
+                label.top < t.bottom + margin;
+            if (overlaps) placeHint(el, { ...spot, ly: t.top - margin - label.height / 2 });
+        }
     }
 
     function showStep(i) {

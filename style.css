@@ -581,6 +581,38 @@ select {
   padding-left: 0;
 }
 
+/* Short statement just above the footer row: quiet, but visible text for
+   search engines. */
+.statement {
+  position: fixed;
+  left: 50%;
+  bottom: 76px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 40px));
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--thread-strong);
+  pointer-events: none;
+  text-wrap: balance;
+}
+
+.statement p {
+  margin: 0;
+}
+
+/* No room under the title on short screens (phones in landscape). Search
+   crawlers render a portrait phone screen, where it stays visible. */
+@media (max-height: 480px) {
+  .statement {
+    display: none;
+  }
+}
+
 /* A fixed 34px row, so the links line up with the "?" button (30px,
    centered on the same line, see #tourHelpBtn). */
 footer {
