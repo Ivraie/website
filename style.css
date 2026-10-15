@@ -651,6 +651,18 @@ footer a:hover {
   }
 }
 
+/* Portrait (phones): a bigger title, and narrower left-edge zones so the
+   title's first letter stays clear of them (about 10px at 20vw / 20vw). */
+@media (orientation: portrait) {
+  :root {
+    --zone-left-w: 20vw;
+  }
+
+  #title-container h1 {
+    font-size: 20vw;
+  }
+}
+
 @media (max-width: 800px) {
   .main-content {
     justify-content: center;
@@ -865,7 +877,7 @@ body.tour-running #title-container h1[data-hint]::after {
   background: var(--paper);
 }
 
-/* Square color field: hue across, white to black down. */
+/* Square for the current tint: intensity across, light to dark down. */
 .cp-field {
   position: relative;
   width: 168px;
@@ -931,7 +943,20 @@ body.tour-running #title-container h1[data-hint]::after {
   outline-offset: 3px;
 }
 
-/* Intensity: a hairline gradient thread (grey to vivid) with an ink dot. */
+/* Tint: a hairline rainbow thread with an ink dot. */
+.cp-card input.cp-hue {
+  --track: linear-gradient(
+    to right,
+    #ff0000,
+    #ffff00,
+    #00ff00,
+    #00ffff,
+    #0000ff,
+    #ff00ff,
+    #ff0000
+  );
+}
+
 .cp-card input.cp-range {
   width: 100%;
   height: 14px;
