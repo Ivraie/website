@@ -10,7 +10,9 @@
     const TEXT = isFrench
         ? {
               title: isTouch ? 'restez appuyé pour imprimer' : 'maintenez pour imprimer',
-              titleSub: isTouch ? '' : 'espace : ajouter une créature',
+              titleSub: isTouch
+                  ? 'double tap : imprimer sans tenir'
+                  : 'double-clic : imprimer sans tenir · espace : ajouter une créature',
               randomize: isTouch ? 'touchez pour tout changer' : 'cliquez pour tout changer',
               erase: isTouch ? 'touchez pour tout recommencer' : 'cliquez pour tout recommencer',
               cueRandomize: 'tout changer',
@@ -25,7 +27,9 @@
           }
         : {
               title: isTouch ? 'touch and hold to print' : 'hold to print',
-              titleSub: isTouch ? '' : 'space: add a creature',
+              titleSub: isTouch
+                  ? 'double tap: keep printing'
+                  : 'double-click: keep printing · space: add a creature',
               randomize: isTouch ? 'tap to randomize' : 'click to randomize',
               erase: isTouch ? 'tap to start over' : 'click to start over',
               cueRandomize: 'randomize',

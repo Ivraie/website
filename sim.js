@@ -2027,15 +2027,52 @@ function setupInteractionHandlers() {
         const PRESS_MILESTONES = [1, 5, 20, 50];
         let pressCount = 0;
         let pressSeconds = 0;
-        const startPrinting = (e) => {
-            e.preventDefault();
-            fadeTitleOut();
+        // A double tap (or double-click) keeps printing without holding; the
+        // next single tap on the title stops it.
+        const TAP_MAX_MS = 250; // a press shorter than this is a tap
+        const DOUBLE_TAP_MS = 350; // max time between the two taps
+        let latched = false;
+        let latchCount = 0;
+        let lastTapEnd = -Infinity;
+        let ignoreRelease = false; // the release of the tap that unlatched
+        const beginPrinting = () => {
             if (continuousPrintTimeoutId !== null) return;
             pressStartTime = performance.now();
             continuousPrintTimeoutId = 1; // Set a truthy value to start
             scheduleNextPrint();
         };
+        const startPrinting = (e) => {
+            e.preventDefault();
+            if (latched) {
+                latched = false;
+                ignoreRelease = true;
+                endPrinting();
+                return;
+            }
+            fadeTitleOut();
+            beginPrinting();
+        };
         const stopPrinting = () => {
+            if (ignoreRelease) {
+                ignoreRelease = false;
+                return;
+            }
+            if (latched) return; // keeps printing until the next tap
+            if (pressStartTime !== null) {
+                const now = performance.now();
+                const isTap = now - pressStartTime < TAP_MAX_MS;
+                if (isTap && now - lastTapEnd < DOUBLE_TAP_MS) {
+                    latched = true;
+                    lastTapEnd = -Infinity;
+                    latchCount++;
+                    if (latchCount === 1) trackEvent('title-latch'); // once per visit
+                    return;
+                }
+                if (isTap) lastTapEnd = now;
+            }
+            endPrinting();
+        };
+        const endPrinting = () => {
             restoreTitle();
             if (pressStartTime !== null) {
                 pressCount++;
