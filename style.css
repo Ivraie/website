@@ -319,8 +319,17 @@ body {
 .controls-bar {
   flex: none;
   display: flex;
-  justify-content: flex-end;
-  padding: 8px 8px 0;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 8px 0 30px;
+}
+
+/* Frame rate, always visible at the top of the panel. */
+.controls-fps {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--thread-strong);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Scrolls the settings, with a thin grey scrollbar. */
@@ -792,6 +801,10 @@ footer a:hover {
 
   .controls-scroll {
     padding: 6px 20px 20px;
+  }
+
+  .controls-bar {
+    padding-left: 20px;
   }
 
   .controls-columns {

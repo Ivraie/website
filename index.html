@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Only scripts from this site (sim.js, favicon.js, tour.js, color-picker.js) and Umami analytics may run.
+    <!-- Only scripts from this site (sim.js, favicon.js, tour.js, color-picker.js, control-help.js) and Umami analytics may run.
          Inline scripts, eval and any other origin are blocked by the browser. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; connect-src 'self' https://cloud.umami.is https://gateway.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <title>Ivraie - Ink on canvas</title>
@@ -47,7 +47,7 @@
 
     <button id="eraseBtn" title="Start over"></button>
     <button id="clearImprintsBtn" title="Clear the imprints"></button>
-    <button id="keepOnScreenBtn" title="Keep creatures on screen" aria-pressed="true"></button>
+    <button id="keepOnScreenBtn" title="Keep creatures on screen" aria-pressed="false"></button>
     <button id="printColorBtn" title="Print color"></button>
     <button id="toggleControlsBtn" title="Settings" aria-label="Settings"></button>
 
@@ -68,6 +68,7 @@
     <main class="main-content">
         <div class="controls hidden">
             <div class="controls-bar">
+                <span class="controls-fps" title="Frame rate"><span id="fpsCounter">--</span> fps</span>
                 <button id="closeControlsBtn" type="button" title="Close" aria-label="Close settings">&times;</button>
             </div>
             <div class="controls-scroll">
@@ -105,7 +106,7 @@
                     <label for="randomPlacement" class="checkbox-label">Random Foot Placement</label>
                 </div>
                 <div class="sub-control">
-                    <input type="checkbox" id="keepOnScreenCheck" checked autocomplete="off" />
+                    <input type="checkbox" id="keepOnScreenCheck" autocomplete="off" />
                     <label for="keepOnScreenCheck" class="checkbox-label">Keep Creatures on Screen</label>
                 </div>
                 <div class="sub-control">
@@ -283,13 +284,17 @@
                 <div id="fadeTimeContainer" style="display: none;">
                     <div class="sub-control">
                         <label for="fadeTime">Fade Time (s) <span id="fadeTimeValue"
-                                class="value-display">60</span></label>
-                        <input type="range" id="fadeTime" min="5" max="300" step="5" value="60" autocomplete="off" />
+                                class="value-display">10</span></label>
+                        <input type="range" id="fadeTime" min="1" max="20" step="1" value="10" autocomplete="off" />
                     </div>
                     <div class="sub-control">
                         <label for="fadeAmount">Fade Amount (%) <span id="fadeAmountValue"
                                 class="value-display">100</span></label>
                         <input type="range" id="fadeAmount" min="0" max="100" step="5" value="100" autocomplete="off" />
+                    </div>
+                    <div class="sub-control">
+                        <input type="checkbox" id="blendFadeLayersCheck" autocomplete="off" />
+                        <label for="blendFadeLayersCheck" class="checkbox-label">Blend Fade Layers (slower)</label>
                     </div>
                 </div>
                 <div class="sub-control">
@@ -531,15 +536,6 @@
                 <button id="copyParamsBtn">Copy Parameters</button>
             </div>
 
-            <div class="control-group">
-                <h3>Performance</h3>
-                <div>
-                    <label>Frame Rate
-                        <span id="fpsCounter" class="value-display">--</span>
-                    </label>
-                </div>
-            </div>
-
             </div>
             </div>
         </div>
@@ -556,6 +552,7 @@
     </footer>
 
     <script src="color-picker.js"></script>
+    <script src="control-help.js"></script>
     <script src="sim.js"></script>
     <script src="tour.js"></script>
 </body>

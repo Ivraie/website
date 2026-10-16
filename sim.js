@@ -13,6 +13,7 @@ const fadeLayers = [];
 for (let i = 0; i < FADE_LAYERS; i++) {
     const layer = document.createElement('canvas');
     layer.className = 'fade-layer';
+    layer.style.display = 'none'; // hidden while empty (see clearFadeLayer)
     canvas.before(layer); // between the background and the live drawing
     fadeLayers.push({ canvas: layer, ctx: layer.getContext('2d'), born: 0, hasInk: false, opacity: 1 });
 }
@@ -277,7 +278,7 @@ const keepImprintsOnReset = true; // randomize and start over leave the imprints
 let printOnShiver = true; // a creature prints when one of its feet lands
 // Walls and floor: body points stop at the screen edges (and slide along
 // them) instead of hanging past them, e.g. with soft springs and gravity.
-let keepOnScreen = true;
+let keepOnScreen = false;
 const EDGE_FRICTION = 0.8; // share of the sliding speed kept along an edge
 const SHIVER_PRINT_COOLDOWN = 30; // frames between two shiver prints of one creature
 // Point circles: how much a shiver swells them, and their largest radius (px).
@@ -293,8 +294,11 @@ const MAX_POINT_RADIUS = 4;
 // round away to nothing.) fadeAmount decides how much of each imprint fades;
 // the rest stays on the background.
 let fadeImprints = false;
-let fadeTimeSeconds = 60;
+let fadeTimeSeconds = 10;
 let fadeAmount = 1; // share of each imprint that fades (the rest stays)
+// Off by default: blending full-screen layers is costly for the browser
+// (measured in software rendering: 60 fps without, ~20 fps with).
+let blendFadeLayers = false;
 let printIntervalMs = 250;
 let printIntervalRandomness = 0.89;
 let gravity = 0.17; // Gravity Magnitude slider (fixed) or tilt sensitivity
@@ -1504,15 +1508,28 @@ function currentFadeLayer() {
     if (!layer.hasInk) {
         layer.born = time;
         layer.hasInk = true;
+        layer.canvas.style.display = ''; // shown only while it holds imprints
     }
     return layer;
 }
 
+/**
+ * The CSS mix-blend-mode matching a canvas composite operation.
+ */
+function cssBlendMode(op) {
+    if (op === 'source-over') return 'normal';
+    if (op === 'lighter') return 'plus-lighter';
+    return op; // multiply, screen, difference, overlay, color-burn, ...
+}
+
+// An empty layer is hidden: a full-screen layer, above all one with a blend
+// mode, costs the browser compositing work on every frame even when empty.
 function clearFadeLayer(layer) {
     layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
     layer.hasInk = false;
     layer.opacity = 1;
     layer.canvas.style.opacity = '';
+    layer.canvas.style.display = 'none';
 }
 
 /**
@@ -1521,7 +1538,14 @@ function clearFadeLayer(layer) {
  */
 function updateFadeLayers() {
     const life = fadeTimeSeconds * 60;
+    const blend = blendFadeLayers ? cssBlendMode(imprintBlendMode) : 'normal';
     for (const layer of fadeLayers) {
+        // Layers blend with what is under them (the permanent imprints and
+        // older layers) the way prints blend within one canvas.
+        if (layer.blend !== blend) {
+            layer.blend = blend;
+            layer.canvas.style.mixBlendMode = blend;
+        }
         if (!layer.hasInk) continue;
         const opacity = Math.max(0, 1 - (time - layer.born) / life);
         if (opacity === 0) {
@@ -2562,6 +2586,7 @@ function handleCopyParameters() {
         fadeImprints,
         fadeTimeSeconds,
         fadeAmount,
+        blendFadeLayers,
         randomCreatureColor,
         creatureColor,
         shiverColor,
@@ -2850,6 +2875,7 @@ function runSetup() {
     ]);
     setupSlider('fadeTime', 'fadeTimeValue', (val) => (fadeTimeSeconds = val), false);
     setupSlider('fadeAmount', 'fadeAmountValue', (val) => (fadeAmount = val / 100), false);
+    setupCheckbox('blendFadeLayersCheck', (val) => (blendFadeLayers = val));
 
     // Birth & Death
     setupSlider(
