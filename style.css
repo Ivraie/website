@@ -278,27 +278,22 @@ body {
 }
 
 /* Close button: same family as the "?" button. */
+/* Close button: just an x. */
 #closeControlsBtn {
   flex: none;
   width: 26px;
   height: 26px;
   padding: 0;
-  border: 1px solid var(--thread);
-  border-radius: 50%;
-  background: var(--paper);
+  border: none;
+  background: none;
   color: var(--thread-strong);
-  font: 300 18px/1 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font: 300 24px/1 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   cursor: pointer;
-  transition:
-    background-color 0.15s,
-    color 0.15s,
-    border-color 0.15s;
+  transition: color 0.15s;
 }
 
 #closeControlsBtn:hover {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 #closeControlsBtn:focus-visible {

@@ -254,6 +254,17 @@ let usePerCreatureImprint = false;
 const keepImprintsOnReset = true; // randomize and start over leave the imprints
 let printOnShiver = true; // a creature prints when one of its feet lands
 const SHIVER_PRINT_COOLDOWN = 30; // frames between two shiver prints of one creature
+
+// Fading imprints: the imprint layer loses FADE_STEP of its opacity at
+// regular intervals, so an imprint is ~95% gone after fadeTimeSeconds.
+// Steps are fairly large (6%) because the canvas stores opacity in 256
+// levels: tiny steps get rounded away and leave a faint ghost. A cleanup
+// pass every half fade time (2-15 s) clears what is left below FADE_FLOOR.
+let fadeImprints = false;
+let fadeTimeSeconds = 60;
+const FADE_STEP = 0.06;
+const FADE_STEPS_TO_VANISH = Math.log(0.05) / Math.log(1 - FADE_STEP); // ~48
+const FADE_FLOOR = 12; // of 255
 let printIntervalMs = 250;
 let printIntervalRandomness = 0.89;
 const gravity = 0.17;
@@ -1266,6 +1277,7 @@ class Spring {
  */
 function update() {
     time++;
+    if (fadeImprints) fadeImprintLayer();
     const limitsReached =
         (enableCreatureLimit && creatures.length >= maxCreatures) ||
         (enablePointLimit && getCurrentTotalPoints() >= maxPoints);
@@ -1411,6 +1423,35 @@ function addCreature() {
 /**
  * Clears the persistent background canvas.
  */
+/**
+ * One fading step of the imprint layer, called from update() at the
+ * interval that matches the chosen fade time.
+ */
+function fadeImprintLayer() {
+    const interval = Math.max(1, Math.round((fadeTimeSeconds * 60) / FADE_STEPS_TO_VANISH));
+    if (time % interval === 0) {
+        backgroundCtx.save();
+        backgroundCtx.globalCompositeOperation = 'destination-out';
+        backgroundCtx.fillStyle = `rgba(0, 0, 0, ${FADE_STEP})`;
+        backgroundCtx.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+        backgroundCtx.restore();
+    }
+    const cleanupInterval = Math.min(15 * 60, Math.max(2 * 60, Math.round(fadeTimeSeconds * 30)));
+    if (time % cleanupInterval === 0) {
+        const { width, height } = backgroundCanvas;
+        const image = backgroundCtx.getImageData(0, 0, width, height);
+        const data = image.data;
+        let changed = false;
+        for (let i = 3; i < data.length; i += 4) {
+            if (data[i] !== 0 && data[i] < FADE_FLOOR) {
+                data[i] = 0;
+                changed = true;
+            }
+        }
+        if (changed) backgroundCtx.putImageData(image, 0, 0);
+    }
+}
+
 function resetHistory() {
     if (backgroundCtx) {
         backgroundCtx.clearRect(
@@ -2381,6 +2422,8 @@ function handleCopyParameters() {
         imprintColor,
         imprintMatchesCreature,
         printOnShiver,
+        fadeImprints,
+        fadeTimeSeconds,
         randomCreatureColor,
         creatureColor,
         shiverColor,
@@ -2661,6 +2704,10 @@ function runSetup() {
         (val) => (usePerCreatureImprint = val),
     );
     setupCheckbox('printOnShiverCheck', (val) => (printOnShiver = val));
+    setupCheckbox('fadeImprintsCheck', (val) => (fadeImprints = val), false, [
+        document.getElementById('fadeTimeContainer'),
+    ]);
+    setupSlider('fadeTime', 'fadeTimeValue', (val) => (fadeTimeSeconds = val), false);
 
     // Birth & Death
     setupSlider(
