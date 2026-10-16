@@ -279,6 +279,13 @@ let printOnShiver = true; // a creature prints when one of its feet lands
 // Walls and floor: body points stop at the screen edges (and slide along
 // them) instead of hanging past them, e.g. with soft springs and gravity.
 let keepOnScreen = false;
+// Burst: many creatures born at once (B key: random places; long press on the
+// paper: around the finger). Spread staggers the births, Force pushes them
+// outward. Bursts ignore the point limit; the population settles afterwards.
+let burstSize = 12;
+let burstSpreadSeconds = 0.5;
+let burstForce = 3;
+const burstQueue = []; // { at (step), x, y, around: origin or null }
 let darkPaper = false; // inverted page: black paper, white ink (style.css)
 const EDGE_FRICTION = 0.8; // share of the sliding speed kept along an edge
 const SHIVER_PRINT_COOLDOWN = 30; // frames between two shiver prints of one creature
@@ -1354,6 +1361,10 @@ class Spring {
 function update() {
     time++;
     updateFadeLayers();
+    while (burstQueue.length && burstQueue[0].at <= time) {
+        const b = burstQueue.shift();
+        spawnBurstCreature(b.x, b.y, b.around);
+    }
     const limitsReached =
         (enableCreatureLimit && creatures.length >= maxCreatures) ||
         (enablePointLimit && getCurrentTotalPoints() >= maxPoints);
@@ -1494,6 +1505,85 @@ function addCreature() {
     updateAddButtonState();
     updateCurrentPointsDisplay();
     updateCreatureCountDisplay();
+}
+
+/**
+ * Queues a burst of creatures. With an origin ({x, y}), they are born around
+ * it and pushed away from it; without one, each is born at a random place and
+ * bursts outward from its own center.
+ */
+function triggerBurst(origin = null) {
+    const steps = Math.round(burstSpreadSeconds * 60);
+    const radius = Math.min(canvas.width, canvas.height) * 0.12;
+    for (let i = 0; i < burstSize; i++) {
+        const at = time + 1 + Math.round(Math.random() * steps);
+        let x;
+        let y;
+        if (origin) {
+            const a = Math.random() * Math.PI * 2;
+            const r = Math.sqrt(Math.random()) * radius;
+            x = origin.x + Math.cos(a) * r;
+            y = origin.y + Math.sin(a) * r;
+        } else {
+            x = canvas.width * (0.1 + Math.random() * 0.8);
+            y = canvas.height * (0.1 + Math.random() * 0.8);
+        }
+        burstQueue.push({ at, x, y, around: origin });
+    }
+    burstQueue.sort((a, b) => a.at - b.at);
+}
+
+/**
+ * One burst creature: born with its body centered on (x, y), then pushed
+ * away from the burst origin (or from its own center for random bursts).
+ */
+function spawnBurstCreature(x, y, around) {
+    const char = document.getElementById('letterInput').value || '+';
+    // About 1 creature in 8 comes out empty (Remove Loose Parts can discard
+    // every point when the feet land on a detached piece): try again.
+    let c;
+    let body = [];
+    for (let attempt = 0; attempt < 5 && body.length === 0; attempt++) {
+        c = new Creature(creatureShape, char);
+        body = c.points.filter((p) => !p.isHair);
+    }
+    if (body.length === 0) return;
+    let cx = 0;
+    let cy = 0;
+    for (const p of body) {
+        cx += p.x;
+        cy += p.y;
+    }
+    cx /= body.length;
+    cy /= body.length;
+    const dx = x - cx;
+    const dy = y - cy;
+    const from = around || { x, y };
+    for (const p of c.points) {
+        p.x += dx;
+        p.y += dy;
+        p.targetPos.x += dx;
+        p.targetPos.y += dy;
+        // Verlet speed is the gap between x and oldX: away from the origin.
+        const ox = p.x - from.x;
+        const oy = p.y - from.y;
+        const len = Math.hypot(ox, oy) || 1;
+        const speed = burstForce * (around ? 1 : 0.6);
+        p.oldX = p.x - (ox / len) * speed;
+        p.oldY = p.y - (oy / len) * speed;
+    }
+    creatures.push(c);
+    updateAddButtonState();
+    updateCurrentPointsDisplay();
+    updateCreatureCountDisplay();
+}
+
+// Bursts per visit, reported at these counts only (like the title presses).
+const BURST_MILESTONES = [1, 5, 20];
+let burstCount = 0;
+function trackBurst(origin) {
+    burstCount++;
+    if (BURST_MILESTONES.includes(burstCount)) trackEvent('burst', { bursts: burstCount, origin });
 }
 
 /**
@@ -2327,7 +2417,58 @@ function setupInteractionHandlers() {
             e.preventDefault();
             trackEvent('add-creature', { source: 'space' });
             addCreature();
+        } else if (e.code === 'KeyB' && !e.repeat && !e.target.closest('input, select, textarea')) {
+            triggerBurst(); // random places
+            trackBurst('key');
         }
+    });
+
+    // Long press on the paper (not the title, the zones or the panel): a
+    // burst around the finger. A ring grows under the finger while pressing.
+    const LONG_PRESS_MS = 550;
+    const MOVE_TOLERANCE = 12;
+    let press = null;
+    const pressRing = document.createElement('div');
+    pressRing.className = 'press-ring';
+    document.body.appendChild(pressRing);
+    const onPaper = (el) =>
+        !el.closest('#title-container h1, button, a, input, select, label, .controls, .cp-card');
+    const cancelPress = () => {
+        if (!press) return;
+        clearTimeout(press.timer);
+        press = null;
+        pressRing.classList.remove('is-pressing', 'is-burst');
+    };
+    document.addEventListener('pointerdown', (e) => {
+        if (!e.isPrimary || !onPaper(e.target)) return;
+        cancelPress();
+        const x = e.clientX;
+        const y = e.clientY;
+        pressRing.style.left = `${x}px`;
+        pressRing.style.top = `${y}px`;
+        pressRing.classList.remove('is-burst');
+        void pressRing.offsetWidth; // restart the ring animation
+        pressRing.classList.add('is-pressing');
+        press = {
+            x,
+            y,
+            timer: setTimeout(() => {
+                triggerBurst({ x, y });
+                trackBurst('press');
+                pressRing.classList.remove('is-pressing');
+                pressRing.classList.add('is-burst');
+                press = null;
+            }, LONG_PRESS_MS),
+        };
+    });
+    document.addEventListener('pointermove', (e) => {
+        if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOVE_TOLERANCE) cancelPress();
+    });
+    document.addEventListener('pointerup', cancelPress);
+    document.addEventListener('pointercancel', cancelPress);
+    // No context menu or text selection on a long press on the paper.
+    document.addEventListener('contextmenu', (e) => {
+        if (onPaper(e.target)) e.preventDefault();
     });
 
     document
@@ -2573,6 +2714,9 @@ function handleCopyParameters() {
         pruneUnfootedPoints,
         minPointsPerFoot,
         keepOnScreen,
+        burstSize,
+        burstSpreadSeconds,
+        burstForce,
         darkPaper,
         enableProgressiveAppearance,
         growthSpeed,
@@ -2883,6 +3027,9 @@ function runSetup() {
     );
     setupCheckbox('printOnShiverCheck', (val) => (printOnShiver = val));
     setupCheckbox('keepOnScreenCheck', (val) => setKeepOnScreen(val));
+    setupSlider('burstSize', 'burstSizeValue', (val) => (burstSize = val), false);
+    setupSlider('burstSpread', 'burstSpreadValue', (val) => (burstSpreadSeconds = val), true);
+    setupSlider('burstForce', 'burstForceValue', (val) => (burstForce = val), true);
     // Dark paper, also from the address (?dark), e.g. for projection tests.
     const darkCheck = document.getElementById('darkPaperCheck');
     const setDarkPaper = (on) => {

@@ -20,6 +20,9 @@
         autoMode: 'How new creatures appear: never on their own, when the screen is empty, or continuously.',
         autoAddDelay: 'Seconds between two automatic new creatures.',
         randomizeModeSelect: 'What Randomize does: new settings and a fresh start, or new settings for the next creatures only.',
+        burstSize: 'How many creatures a burst gives birth to (B key: at random places; long press on the paper: around your finger).',
+        burstSpread: 'Seconds over which the burst births are spread: 0 is all at once.',
+        burstForce: 'How hard burst creatures are pushed outward at birth.',
         randomizeBtn: 'Pick random settings.',
         addCreatureBtn: 'Add one creature now (Space does the same).',
         // Appearance
