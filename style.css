@@ -56,6 +56,15 @@ body {
   background: #ffffff;
 }
 
+/* Fading imprint layers (sim.js), over the permanent ones: same z-index,
+   later in the page. */
+.fade-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -3;
+}
+
 #title-container {
   position: fixed;
   top: 0;
@@ -76,7 +85,9 @@ body {
   letter-spacing: 0.05em;
   pointer-events: auto;
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition:
+    color 0.3s ease,
+    opacity 0.3s ease;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
@@ -86,47 +97,77 @@ body {
   color: rgba(0, 0, 0, 0.6);
 }
 
-/* While the title is pressed it turns into a negative of the drawing behind
-   it: white letters in "difference" mode invert whatever is under them, so
-   the title stays readable over any imprint colors... */
+/* Pressing the title crossfades it with a negative copy (#title-negative):
+   white letters in "difference" mode invert whatever is under them, so the
+   title stays readable over any imprint colors. Same duration both ways. */
 #title-container h1.is-pressed {
-  color: #ffffff;
-  transition: color 0.2s ease-out;
+  opacity: 0;
 }
 
-/* The blend goes on the fixed container: as its own stacking context it is
-   what gets composited onto the canvases (a blend on the h1 alone would only
-   blend inside the empty container and show plain white). */
-#title-container:has(h1.is-pressed),
-#title-container:has(h1.is-restoring) {
+/* Its own fixed layer, so the blend applies against the canvases. */
+#title-negative {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  text-align: center;
   mix-blend-mode: difference;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-/* Browsers without :has() fall back to a pale, see-through title. */
-@supports not selector(:has(*)) {
-  #title-container h1.is-pressed {
-    color: rgba(255, 255, 255, 0.35);
+#title-negative.is-visible {
+  opacity: 1;
+}
+
+/* Same type as the title (sizes per orientation are set below). */
+.title-negative-text {
+  position: relative;
+  color: #ffffff;
+  font-size: 10vw;
+  font-weight: lighter;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Auto print on (double tap): a dot pulses under the title. */
+.latch-dot {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 10px;
+  height: 10px;
+  margin: 10px 0 0 -5px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#title-negative.is-latched .latch-dot {
+  opacity: 1;
+  animation: latch-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes latch-pulse {
+  0%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.45;
   }
-}
-
-/* On release, no white flash: first the negative dissolves (white fading to
-   black shows nothing in difference mode)... */
-#title-container h1.is-restoring {
-  color: #000000;
-  transition: color 0.25s ease-in;
-}
-
-/* ...then the plain black title fades back in. */
-#title-container h1.is-returning {
-  animation: title-return 0.4s ease-out;
-}
-
-@keyframes title-return {
-  from {
-    opacity: 0;
-  }
-  to {
+  50% {
+    transform: scale(1.15);
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #title-negative.is-latched .latch-dot {
+    animation: none;
   }
 }
 
@@ -168,6 +209,21 @@ body {
 }
 
 /* Middle of the left edge: clears the imprints only (invisible, like #eraseBtn). */
+/* Middle of the right edge: keeps creatures on screen or lets them leave. */
+#keepOnScreenBtn {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  margin-top: calc(var(--zone-left-h) / -2);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
 #clearImprintsBtn {
   position: fixed;
   top: 50%;
@@ -705,7 +761,8 @@ footer a:hover {
 }
 
 @media (orientation: landscape) {
-  #title-container h1 {
+  #title-container h1,
+  .title-negative-text {
     font-size: 8vw;
   }
 }
@@ -717,7 +774,8 @@ footer a:hover {
     --zone-left-w: 20vw;
   }
 
-  #title-container h1 {
+  #title-container h1,
+  .title-negative-text {
     font-size: 20vw;
   }
 }
@@ -836,6 +894,11 @@ body:has(.cp-card:not([hidden])) .tour-hint.is-cue {
 
 .tour-label[data-side='right'] {
   transform: translate(6px, -50%);
+}
+
+.tour-label[data-side='left'] {
+  transform: translate(calc(-100% - 6px), -50%);
+  text-align: right;
 }
 
 .tour-sub {

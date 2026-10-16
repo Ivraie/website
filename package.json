@@ -1,0 +1,11 @@
+{
+  "name": "ivraie-website",
+  "private": true,
+  "description": "ivraie.ink: ink creatures made of points and springs.",
+  "scripts": {
+    "start": "node dev-server.js"
+  },
+  "devDependencies": {
+    "browser-sync": "3.0.3"
+  }
+}

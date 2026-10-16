@@ -47,6 +47,7 @@
 
     <button id="eraseBtn" title="Start over"></button>
     <button id="clearImprintsBtn" title="Clear the imprints"></button>
+    <button id="keepOnScreenBtn" title="Keep creatures on screen" aria-pressed="true"></button>
     <button id="printColorBtn" title="Print color"></button>
     <button id="toggleControlsBtn" title="Settings" aria-label="Settings"></button>
 
@@ -55,6 +56,11 @@
 
     <div id="title-container">
         <h1>Ivraie</h1>
+    </div>
+    <!-- Negative copy of the title, crossfaded in while the title is pressed;
+         its dot pulses while printing is latched (double tap). -->
+    <div id="title-negative" aria-hidden="true">
+        <span class="title-negative-text">Ivraie<span class="latch-dot"></span></span>
     </div>
 
     <button id="randomizeShortcutBtn">Randomize</button>
@@ -97,6 +103,10 @@
                 <div class="sub-control">
                     <input type="checkbox" id="randomPlacement" checked />
                     <label for="randomPlacement" class="checkbox-label">Random Foot Placement</label>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="keepOnScreenCheck" checked autocomplete="off" />
+                    <label for="keepOnScreenCheck" class="checkbox-label">Keep Creatures on Screen</label>
                 </div>
                 <div class="sub-control">
                     <input type="checkbox" id="pruneUnfooted" checked />
@@ -275,6 +285,11 @@
                         <label for="fadeTime">Fade Time (s) <span id="fadeTimeValue"
                                 class="value-display">60</span></label>
                         <input type="range" id="fadeTime" min="5" max="300" step="5" value="60" autocomplete="off" />
+                    </div>
+                    <div class="sub-control">
+                        <label for="fadeAmount">Fade Amount (%) <span id="fadeAmountValue"
+                                class="value-display">100</span></label>
+                        <input type="range" id="fadeAmount" min="0" max="100" step="5" value="100" autocomplete="off" />
                     </div>
                 </div>
                 <div class="sub-control">

@@ -10,6 +10,7 @@
         : { dialog: 'Choose a color', tint: 'Tint' };
 
     const FIELD = 168; // px, square
+    const AUTO_HIDE_MS = 6000; // closes after this long without interaction
 
     // ---------- Color math (HSV: hue, saturation, value) ----------
     function hexToHsv(hex) {
@@ -226,6 +227,24 @@
     // ---------- Open / close ----------
     // anchor: a DOMRect-like {left, top, right, bottom}; the card opens below
     // it, or above when there is no room, and stays inside the window.
+    // Auto-hide: any interaction inside the card restarts the countdown; it
+    // never closes in the middle of a drag.
+    let hideTimer = null;
+    let dragging = false;
+    function restartHideTimer() {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+            if (dragging) restartHideTimer();
+            else closeColorPicker();
+        }, AUTO_HIDE_MS);
+    }
+    for (const type of ['pointerdown', 'pointermove', 'keydown', 'input', 'wheel']) {
+        card.addEventListener(type, () => session && restartHideTimer(), { passive: true });
+    }
+    card.addEventListener('pointerdown', () => (dragging = true));
+    window.addEventListener('pointerup', () => (dragging = false));
+    window.addEventListener('pointercancel', () => (dragging = false));
+
     function openColorPicker(anchor, opts) {
         if (session) closeColorPicker();
         session = { opts, active: opts.active || null, changed: false, hsv: null };
@@ -250,9 +269,11 @@
         }, 0);
         // No automatic focus: it would draw the keyboard focus ring around the
         // field on every open. Tab reaches it; Escape and Enter close the card.
+        restartHideTimer();
     }
 
     function closeColorPicker() {
+        clearTimeout(hideTimer);
         if (!session) return;
         const { opts, changed } = session;
         session = null;

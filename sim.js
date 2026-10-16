@@ -6,6 +6,16 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const backgroundCanvas = document.getElementById('background-canvas');
 const backgroundCtx = backgroundCanvas.getContext('2d');
+// Imprints that fade (Fade Imprints): FADE_LAYERS stacked canvases above the
+// permanent background, oldest first (see updateFadeLayers).
+const FADE_LAYERS = 4;
+const fadeLayers = [];
+for (let i = 0; i < FADE_LAYERS; i++) {
+    const layer = document.createElement('canvas');
+    layer.className = 'fade-layer';
+    canvas.before(layer); // between the background and the live drawing
+    fadeLayers.push({ canvas: layer, ctx: layer.getContext('2d'), born: 0, hasInk: false, opacity: 1 });
+}
 const gravityIndicatorCanvas = document.getElementById(
     'gravity-indicator-canvas',
 );
@@ -164,6 +174,18 @@ function setCreatureColor(hex) {
 }
 
 /**
+ * Turns the screen walls on or off, keeping the right-edge zone and the
+ * panel checkbox in line; tour.js flashes the new state.
+ */
+function setKeepOnScreen(on) {
+    keepOnScreen = on;
+    const check = document.getElementById('keepOnScreenCheck');
+    if (check) check.checked = on;
+    document.getElementById('keepOnScreenBtn')?.setAttribute('aria-pressed', String(on));
+    document.dispatchEvent(new CustomEvent('keeponscreenchange', { detail: { on } }));
+}
+
+/**
  * Sets the shiver color and updates its panel control.
  */
 function setShiverColor(hex) {
@@ -253,21 +275,29 @@ let imprintBlendMode = 'multiply';
 let usePerCreatureImprint = false;
 const keepImprintsOnReset = true; // randomize and start over leave the imprints
 let printOnShiver = true; // a creature prints when one of its feet lands
+// Walls and floor: body points stop at the screen edges (and slide along
+// them) instead of hanging past them, e.g. with soft springs and gravity.
+let keepOnScreen = true;
+const EDGE_FRICTION = 0.8; // share of the sliding speed kept along an edge
 const SHIVER_PRINT_COOLDOWN = 30; // frames between two shiver prints of one creature
+// Point circles: how much a shiver swells them, and their largest radius (px).
+const POINT_SHIVER_SWELL = 0.35;
+const MAX_POINT_RADIUS = 4;
 
-// Fading imprints: the imprint layer loses FADE_STEP of its opacity at
-// regular intervals, so an imprint is ~95% gone after fadeTimeSeconds.
-// Steps are fairly large (6%) because the canvas stores opacity in 256
-// levels: tiny steps get rounded away and leave a faint ghost. A cleanup
-// pass every half fade time (2-15 s) clears what is left below FADE_FLOOR.
+// Fading imprints, smooth on every frame. The fading part of each imprint
+// goes on one of the fade layers; each layer's CSS opacity (full precision,
+// composited by the GPU) goes from 1 to 0 over the fade time and is updated
+// every step. A new layer takes the prints every fadeTime / (FADE_LAYERS - 1);
+// a faded layer is cleared and reused. (Fading the pixels themselves cannot
+// be smooth: the canvas keeps 256 opacity levels, so tiny per-frame steps
+// round away to nothing.) fadeAmount decides how much of each imprint fades;
+// the rest stays on the background.
 let fadeImprints = false;
 let fadeTimeSeconds = 60;
-const FADE_STEP = 0.06;
-const FADE_STEPS_TO_VANISH = Math.log(0.05) / Math.log(1 - FADE_STEP); // ~48
-const FADE_FLOOR = 12; // of 255
+let fadeAmount = 1; // share of each imprint that fades (the rest stays)
 let printIntervalMs = 250;
 let printIntervalRandomness = 0.89;
-const gravity = 0.17;
+let gravity = 0.17; // Gravity Magnitude slider (fixed) or tilt sensitivity
 let gravityX = 0;
 let gravityY = gravity;
 
@@ -341,6 +371,29 @@ class Creature {
     }
 
     /**
+     * Stops body points at the screen edges. Runs after the springs, so a
+     * point pushed out by a spring is brought back in the same step. Feet are
+     * left alone: they already stick to the edges themselves.
+     */
+    keepInsideScreen() {
+        const w = canvas.width;
+        const h = canvas.height;
+        for (const p of this.points) {
+            if (p.isFoot) continue;
+            if (p.x < 0 || p.x > w) {
+                p.x = p.x < 0 ? 0 : w;
+                p.oldX = p.x; // no speed into the wall
+                p.oldY = p.y - (p.y - p.oldY) * EDGE_FRICTION; // slide along it
+            }
+            if (p.y < 0 || p.y > h) {
+                p.y = p.y < 0 ? 0 : h;
+                p.oldY = p.y;
+                p.oldX = p.x - (p.x - p.oldX) * EDGE_FRICTION;
+            }
+        }
+    }
+
+    /**
      * Called when a foot lands on an edge and a shiver starts.
      */
     onShiverStart() {
@@ -360,10 +413,21 @@ class Creature {
         const colorToUse = usePerCreatureImprint
             ? this.params.imprintColor
             : imprintColor;
-        backgroundCtx.save();
-        backgroundCtx.globalCompositeOperation = blendModeToUse;
-        this.draw(backgroundCtx, true, shadeToUse, hexToRgb(colorToUse));
-        backgroundCtx.restore();
+        const rgb = hexToRgb(colorToUse);
+        const stamp = (targetCtx, shade) => {
+            targetCtx.save();
+            targetCtx.globalCompositeOperation = blendModeToUse;
+            this.draw(targetCtx, true, shade, rgb);
+            targetCtx.restore();
+        };
+        if (!fadeImprints) {
+            stamp(backgroundCtx, shadeToUse);
+            return;
+        }
+        // Fade Amount splits each imprint: the part that fades goes on the
+        // fade layer, the part that stays on the permanent background.
+        if (fadeAmount > 0) stamp(currentFadeLayer().ctx, shadeToUse * fadeAmount);
+        if (fadeAmount < 1) stamp(backgroundCtx, shadeToUse * (1 - fadeAmount));
     }
 
     hasFaded() {
@@ -800,6 +864,7 @@ class Creature {
         const restFactor = this.currentRestLengthFactor;
         const tendrilStiffness = this.params.tendrilStiffness;
         for (const s of this.springs) s.update(restFactor, tendrilStiffness);
+        if (keepOnScreen) this.keepInsideScreen();
         this.propagationAccumulator += shiverPropagationSpeed;
         const hopsThisFrame = Math.floor(this.propagationAccumulator);
         if (hopsThisFrame > 0) {
@@ -920,12 +985,12 @@ class Creature {
                     Math.max(minShade, baseIntensity * shiverEffectMultiplier),
                 );
                 const radiusMultiplier =
-                    1 + baseIntensity * shiverEffectMultiplier * 0.5;
+                    1 + baseIntensity * shiverEffectMultiplier * POINT_SHIVER_SWELL;
                 const variation = 1.0 + point.sizeRandomizer * pointSizeVariation;
                 if (drawMode === 'point') {
-                    const finalRadius = Math.max(
-                        0.1,
-                        baseBodyRadius * radiusMultiplier * variation,
+                    const finalRadius = Math.min(
+                        MAX_POINT_RADIUS,
+                        Math.max(0.1, baseBodyRadius * radiusMultiplier * variation),
                     );
                     const k = Math.floor(shadeIntensity * SHADE_STEPS);
                     pointBatches[k].push(point);
@@ -1277,7 +1342,7 @@ class Spring {
  */
 function update() {
     time++;
-    if (fadeImprints) fadeImprintLayer();
+    updateFadeLayers();
     const limitsReached =
         (enableCreatureLimit && creatures.length >= maxCreatures) ||
         (enablePointLimit && getCurrentTotalPoints() >= maxPoints);
@@ -1424,43 +1489,53 @@ function addCreature() {
  * Clears the persistent background canvas.
  */
 /**
- * One fading step of the imprint layer, called from update() at the
- * interval that matches the chosen fade time.
+ * The fade layer that takes new prints. Every fadeTime / (FADE_LAYERS - 1)
+ * the oldest layer (faded out by then) is cleared and moved to the top.
  */
-function fadeImprintLayer() {
-    const interval = Math.max(1, Math.round((fadeTimeSeconds * 60) / FADE_STEPS_TO_VANISH));
-    if (time % interval === 0) {
-        backgroundCtx.save();
-        backgroundCtx.globalCompositeOperation = 'destination-out';
-        backgroundCtx.fillStyle = `rgba(0, 0, 0, ${FADE_STEP})`;
-        backgroundCtx.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-        backgroundCtx.restore();
+function currentFadeLayer() {
+    const slot = (fadeTimeSeconds * 60) / (FADE_LAYERS - 1);
+    let layer = fadeLayers[fadeLayers.length - 1];
+    if (layer.hasInk && time - layer.born >= slot) {
+        layer = fadeLayers.shift();
+        clearFadeLayer(layer);
+        canvas.before(layer.canvas); // top of the stack
+        fadeLayers.push(layer);
     }
-    const cleanupInterval = Math.min(15 * 60, Math.max(2 * 60, Math.round(fadeTimeSeconds * 30)));
-    if (time % cleanupInterval === 0) {
-        const { width, height } = backgroundCanvas;
-        const image = backgroundCtx.getImageData(0, 0, width, height);
-        const data = image.data;
-        let changed = false;
-        for (let i = 3; i < data.length; i += 4) {
-            if (data[i] !== 0 && data[i] < FADE_FLOOR) {
-                data[i] = 0;
-                changed = true;
-            }
+    if (!layer.hasInk) {
+        layer.born = time;
+        layer.hasInk = true;
+    }
+    return layer;
+}
+
+function clearFadeLayer(layer) {
+    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+    layer.hasInk = false;
+    layer.opacity = 1;
+    layer.canvas.style.opacity = '';
+}
+
+/**
+ * Every step: each fade layer's opacity follows its age, from 1 when its
+ * first print landed to 0 one fade time later, when it is cleared.
+ */
+function updateFadeLayers() {
+    const life = fadeTimeSeconds * 60;
+    for (const layer of fadeLayers) {
+        if (!layer.hasInk) continue;
+        const opacity = Math.max(0, 1 - (time - layer.born) / life);
+        if (opacity === 0) {
+            clearFadeLayer(layer);
+        } else if (Math.abs(opacity - layer.opacity) >= 0.001) {
+            layer.opacity = opacity;
+            layer.canvas.style.opacity = opacity.toFixed(4);
         }
-        if (changed) backgroundCtx.putImageData(image, 0, 0);
     }
 }
 
 function resetHistory() {
-    if (backgroundCtx) {
-        backgroundCtx.clearRect(
-            0,
-            0,
-            backgroundCanvas.width,
-            backgroundCanvas.height,
-        );
-    }
+    backgroundCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    fadeLayers.forEach(clearFadeLayer);
 }
 
 // =================================================================
@@ -1839,6 +1914,18 @@ function setupGravityControls() {
     const gravityLabel = document.getElementById('gravityLabel');
     if (!sourceSelector || !gravityLabel) return;
 
+    // Fixed mode: the slider sets the downward pull. Tilt mode: it scales
+    // the pull from the device orientation (see handleOrientationEvent).
+    setupSlider('gravity', 'gravityValue', (val) => {
+        gravity = val;
+        if (sourceSelector.value === 'fixed') {
+            gravityX = 0;
+            gravityY = gravity;
+            debugGravityX.textContent = gravityX.toFixed(3);
+            debugGravityY.textContent = gravityY.toFixed(3);
+        }
+    });
+
     sourceSelector.addEventListener('change', (e) => {
         window.removeEventListener('deviceorientation', handleOrientationEvent);
         const source = e.target.value;
@@ -1873,7 +1960,14 @@ function handleOrientationEvent(event) {
     const tiltX = Math.sin(gamma * DEG_TO_RAD) * gravity;
     const tiltY = Math.sin(beta * DEG_TO_RAD) * gravity;
 
-    switch (window.orientation) {
+    // Screen rotation: the deprecated window.orientation where it exists,
+    // else screen.orientation.angle (270 is the same as -90).
+    let rotation =
+        typeof window.orientation === 'number'
+            ? window.orientation
+            : (screen.orientation && screen.orientation.angle) || 0;
+    if (rotation === 270) rotation = -90;
+    switch (rotation) {
         case 90:
             gravityX = tiltY;
             gravityY = -tiltX;
@@ -1941,6 +2035,22 @@ function setDefaultGravitySource() {
         debugStatus.textContent = 'Orientation sensor detected. Activating.';
         selector.value = 'orientation';
         selector.dispatchEvent(new Event('change'));
+    } else if (isMobile && orientationPermissionRequired) {
+        // iPhone and iPad: the motion permission can only be requested during
+        // a tap, so tilt starts on the first tap anywhere. Until then, and if
+        // the visitor refuses, gravity stays fixed.
+        debugStatus.textContent = 'Tilt starts on the first tap.';
+        selector.value = 'fixed';
+        selector.dispatchEvent(new Event('change'));
+        const askOnFirstTap = () => {
+            document.removeEventListener('touchend', askOnFirstTap, true);
+            document.removeEventListener('click', askOnFirstTap, true);
+            if (selector.value === 'orientation') return;
+            selector.value = 'orientation';
+            selector.dispatchEvent(new Event('change')); // asks for permission
+        };
+        document.addEventListener('touchend', askOnFirstTap, true);
+        document.addEventListener('click', askOnFirstTap, true);
     } else {
         const reason = orientationPermissionRequired
             ? 'needs permission'
@@ -1961,19 +2071,23 @@ function resizeCanvases() {
     if (canvas.width === w && canvas.height === h) return;
     const oldW = canvas.width;
     const oldH = canvas.height;
-    // Setting a canvas dimension resets its bitmap, even to the same value.
-    if (snapshotCanvas.width !== oldW || snapshotCanvas.height !== oldH) {
-        snapshotCanvas.width = oldW;
-        snapshotCanvas.height = oldH;
-    } else {
-        snapshotCtx.clearRect(0, 0, oldW, oldH);
-    }
-    snapshotCtx.drawImage(backgroundCanvas, 0, 0);
     canvas.width = w;
     canvas.height = h;
-    backgroundCanvas.width = w;
-    backgroundCanvas.height = h;
-    backgroundCtx.drawImage(snapshotCanvas, 0, 0);
+    // Both imprint layers keep their content through the resize.
+    const layers = [[backgroundCanvas, backgroundCtx], ...fadeLayers.map((l) => [l.canvas, l.ctx])];
+    for (const [layer, layerCtx] of layers) {
+        // Setting a canvas dimension resets its bitmap, even to the same value.
+        if (snapshotCanvas.width !== oldW || snapshotCanvas.height !== oldH) {
+            snapshotCanvas.width = oldW;
+            snapshotCanvas.height = oldH;
+        } else {
+            snapshotCtx.clearRect(0, 0, oldW, oldH);
+        }
+        snapshotCtx.drawImage(layer, 0, 0);
+        layer.width = w;
+        layer.height = h;
+        layerCtx.drawImage(snapshotCanvas, 0, 0);
+    }
     moveFeetWithEdges(oldW, oldH, w, h);
 }
 
@@ -2008,41 +2122,36 @@ function handleResize() {
     resizePending = true;
 }
 
+// Pressing the title crossfades it with its negative copy (CSS transitions,
+// same duration both ways); release waits a moment so a quick tap still shows.
 const TITLE_RESTORE_DELAY_MS = 120;
-const TITLE_DISSOLVE_MS = 250; // matches the .is-restoring transition
-const TITLE_RETURN_MS = 400; // matches the .is-returning animation
 let titleRestoreTimeoutId = null;
-let titleRestoreEndTimeoutId = null;
 let titleH1El = null;
+let titleNegativeEl = null;
 
 function fadeTitleOut() {
     if (!titleH1El) return;
     clearTimeout(titleRestoreTimeoutId);
-    clearTimeout(titleRestoreEndTimeoutId);
-    titleH1El.classList.remove('is-restoring', 'is-returning');
     titleH1El.classList.add('is-pressed');
+    titleNegativeEl?.classList.add('is-visible');
 }
 
 function restoreTitle() {
     if (!titleH1El || !titleH1El.classList.contains('is-pressed')) return;
     clearTimeout(titleRestoreTimeoutId);
     titleRestoreTimeoutId = setTimeout(() => {
-        // 1. The negative dissolves, still in difference mode.
-        titleH1El.classList.add('is-restoring');
         titleH1El.classList.remove('is-pressed');
-        titleRestoreEndTimeoutId = setTimeout(() => {
-            // 2. The black title fades back in.
-            titleH1El.classList.remove('is-restoring');
-            titleH1El.classList.add('is-returning');
-            titleRestoreEndTimeoutId = setTimeout(
-                () => titleH1El.classList.remove('is-returning'),
-                TITLE_RETURN_MS,
-            );
-        }, TITLE_DISSOLVE_MS);
+        titleNegativeEl?.classList.remove('is-visible');
     }, TITLE_RESTORE_DELAY_MS);
 }
 
+// Auto print (double tap): a dot pulses under the negative title.
+function setTitleLatched(on) {
+    titleNegativeEl?.classList.toggle('is-latched', on);
+}
+
 function setupTitle() {
+    titleNegativeEl = document.getElementById('title-negative');
     titleH1El = document.querySelector('#title-container h1');
 }
 
@@ -2125,6 +2234,7 @@ function setupInteractionHandlers() {
             e.preventDefault();
             if (latched) {
                 latched = false;
+                setTitleLatched(false);
                 ignoreRelease = true;
                 endPrinting();
                 return;
@@ -2143,6 +2253,7 @@ function setupInteractionHandlers() {
                 const isTap = now - pressStartTime < TAP_MAX_MS;
                 if (isTap && now - lastTapEnd < DOUBLE_TAP_MS) {
                     latched = true;
+                    setTitleLatched(true);
                     lastTapEnd = -Infinity;
                     latchCount++;
                     if (latchCount === 1) trackEvent('title-latch'); // once per visit
@@ -2261,6 +2372,12 @@ function setupInteractionHandlers() {
         );
     });
 
+    // Middle of the right edge: keep creatures on screen, or let them leave.
+    document.getElementById('keepOnScreenBtn')?.addEventListener('click', () => {
+        setKeepOnScreen(!keepOnScreen);
+        trackEvent('keep-on-screen', { on: keepOnScreen });
+    });
+
     // Clears the printed imprints but keeps the creatures walking.
     document
         .getElementById('clearImprintsBtn')
@@ -2334,8 +2451,20 @@ function randomizeAndRespawn() {
         updateSlider('restLength', rand(0.5, 1.2, true));
         updateCheckbox('enableTendrils', Math.random() < 0.6);
         updateSlider('numTendrils', rand(1, 5));
-        updateSlider('tendrilLength', rand(3, 20));
-        updateSlider('tendrilStiffness', rand(0.01, 0.2, true));
+        // A grid creature standing on its tendrils sags to the floor when the
+        // tendrils are long and soft (measured at gravity 0.17: length 3 needs
+        // ~0.25 stiffness, 8 needs ~0.4, 15 needs ~0.6). So for grids on
+        // tendrils, keep them shorter and stiff enough for their length.
+        const feetOnTendrils = document.getElementById('feetOnTendrils')?.checked;
+        if (shape === 'grid' && feetOnTendrils) {
+            const length = rand(3, 12);
+            const minStiffness = Math.min(0.5, 0.15 + 0.03 * length);
+            updateSlider('tendrilLength', length);
+            updateSlider('tendrilStiffness', rand(minStiffness, 0.5, true));
+        } else {
+            updateSlider('tendrilLength', rand(3, 20));
+            updateSlider('tendrilStiffness', rand(0.01, 0.2, true));
+        }
         const blendModes = [
             'source-over',
             'lighter',
@@ -2372,6 +2501,7 @@ function handleCopyParameters() {
         damping,
         springStiffness,
         gravity,
+        gravitySource: document.getElementById('gravitySource')?.value,
         shiverIntensityFactor,
         shiverPropagationFactor,
         shiverPropagationSpeed,
@@ -2385,6 +2515,7 @@ function handleCopyParameters() {
         wobbleStrength,
         targetAttraction,
         gaitPattern,
+        waveDelay,
         enableTendrils,
         numTendrils,
         tendrilLength,
@@ -2397,6 +2528,7 @@ function handleCopyParameters() {
         pointBaseSize,
         letterToDraw,
         maxLineThickness,
+        minShade,
         pointSizeVariation,
         autoAddDelaySeconds,
         autoMode,
@@ -2405,6 +2537,8 @@ function handleCopyParameters() {
         breathingAmplitude,
         breathingOffset,
         pruneUnfootedPoints,
+        minPointsPerFoot,
+        keepOnScreen,
         enableProgressiveAppearance,
         growthSpeed,
         enableAging,
@@ -2416,14 +2550,18 @@ function handleCopyParameters() {
         maxCreatures,
         enablePointLimit,
         maxPoints,
+        randomizeMode,
         letterInput: document.getElementById('letterInput').value,
         imprintShade,
         imprintBlendMode,
         imprintColor,
+        usePerCreatureImprint,
+        printIntervalMs,
         imprintMatchesCreature,
         printOnShiver,
         fadeImprints,
         fadeTimeSeconds,
+        fadeAmount,
         randomCreatureColor,
         creatureColor,
         shiverColor,
@@ -2490,14 +2628,16 @@ function drawGravityIndicator() {
     gctx.save();
     const cX = w / 2;
     const cY = h / 2;
+    // Arrow length proportional to the strength, full length at the
+    // slider's maximum; the head scales down so short arrows keep a line.
     const maxLen = (w / 2) * 0.8;
-    const maxG = 0.5;
+    const maxG = parseFloat(document.getElementById('gravity')?.max) || 0.5;
     const normX = gravityX / mag;
     const normY = gravityY / mag;
-    const len = (mag / maxG) * maxLen;
+    const len = Math.min(1, mag / maxG) * maxLen;
     const endX = cX + normX * len;
     const endY = cY + normY * len;
-    const hL = 8;
+    const hL = Math.min(8, len * 0.4);
     const ang = Math.atan2(endY - cY, endX - cX);
     gctx.strokeStyle = '#000000';
     gctx.fillStyle = '#000000';
@@ -2704,10 +2844,12 @@ function runSetup() {
         (val) => (usePerCreatureImprint = val),
     );
     setupCheckbox('printOnShiverCheck', (val) => (printOnShiver = val));
+    setupCheckbox('keepOnScreenCheck', (val) => setKeepOnScreen(val));
     setupCheckbox('fadeImprintsCheck', (val) => (fadeImprints = val), false, [
         document.getElementById('fadeTimeContainer'),
     ]);
     setupSlider('fadeTime', 'fadeTimeValue', (val) => (fadeTimeSeconds = val), false);
+    setupSlider('fadeAmount', 'fadeAmountValue', (val) => (fadeAmount = val / 100), false);
 
     // Birth & Death
     setupSlider(

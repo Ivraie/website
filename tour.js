@@ -19,6 +19,9 @@
               cueErase: 'recommencer',
               clear: isTouch ? 'touchez pour effacer les empreintes' : 'cliquez pour effacer les empreintes',
               cueClear: 'effacer les empreintes',
+              keep: isTouch ? "touchez pour garder les créatures dans l'écran" : "cliquez pour garder les créatures dans l'écran",
+              cueKeep: "créatures dans l'écran",
+              keepState: (on) => `créatures dans l'écran : ${on ? 'oui' : 'non'}`,
               print: isTouch ? 'touchez pour choisir les couleurs' : 'cliquez pour choisir les couleurs',
               cuePrint: 'couleurs',
               printState: (same, color) => `couleur d'impression : ${same ? 'comme les créatures' : color}`,
@@ -36,6 +39,9 @@
               cueErase: 'start over',
               clear: isTouch ? 'tap to clear the imprints' : 'click to clear the imprints',
               cueClear: 'clear the imprints',
+              keep: isTouch ? 'tap to keep the creatures on screen' : 'click to keep the creatures on screen',
+              cueKeep: 'keep on screen',
+              keepState: (on) => `creatures stay on screen: ${on ? 'on' : 'off'}`,
               print: isTouch ? 'tap to choose the colors' : 'click to choose the colors',
               cuePrint: 'colors',
               printState: (same, color) => `print color: ${same ? 'same as the creatures' : color}`,
@@ -53,6 +59,7 @@
     const eraseBtn = document.getElementById('eraseBtn');
     const clearBtn = document.getElementById('clearImprintsBtn');
     const printBtn = document.getElementById('printColorBtn');
+    const keepBtn = document.getElementById('keepOnScreenBtn');
     if (!title || !randomizeBtn || !eraseBtn || !clearBtn || !printBtn) return;
 
     const track = (name, data) => {
@@ -71,6 +78,7 @@
         erase: () => { const r = eraseBtn.getBoundingClientRect(); return { x: r.left + EDGE, y: r.top + EDGE }; },
         clear: () => { const r = clearBtn.getBoundingClientRect(); return { x: r.left + EDGE, y: r.top + r.height / 2 }; },
         print: () => { const r = printBtn.getBoundingClientRect(); return { x: r.left + EDGE, y: r.bottom - EDGE }; },
+        keep: () => { const r = keepBtn.getBoundingClientRect(); return { x: r.right - EDGE, y: r.top + r.height / 2 }; },
     };
     // Distance from a point to a zone (0 inside it).
     const distanceToZone = (el, px, py) => {
@@ -167,6 +175,13 @@
                 return { x, y, lx: x + 56, ly: y - 56, side: 'right', text: TEXT.print };
             },
         },
+        {
+            id: 'keep-on-screen',
+            place: () => {
+                const { x, y } = anchor.keep();
+                return { x, y, lx: x - 64, ly: y, side: 'left', text: TEXT.keep };
+            },
+        },
     ];
 
     const tourHint = makeHint('is-tour');
@@ -187,8 +202,22 @@
                 label.left < t.right + margin &&
                 label.bottom > t.top - margin &&
                 label.top < t.bottom + margin;
-            if (overlaps) placeHint(el, { ...spot, ly: t.top - margin - label.height / 2 });
+            if (overlaps) {
+                spot = { ...spot, ly: t.top - margin - label.height / 2 };
+                placeHint(el, spot);
+            }
         }
+        // Then keep the label inside the screen (e.g. right-edge hints on small
+        // phones): slide it back in; the thread follows.
+        const edge = 8;
+        const r = el.querySelector('.tour-label').getBoundingClientRect();
+        let dx = 0;
+        let dy = 0;
+        if (r.left < edge) dx = edge - r.left;
+        else if (r.right > innerWidth - edge) dx = innerWidth - edge - r.right;
+        if (r.top < edge) dy = edge - r.top;
+        else if (r.bottom > innerHeight - edge) dy = innerHeight - edge - r.bottom;
+        if (dx || dy) placeHint(el, { ...spot, lx: spot.lx + dx, ly: spot.ly + dy });
     }
 
     function showStep(i) {
@@ -288,6 +317,12 @@
                 anchor: anchor.print,
                 place: (x, y) => ({ x, y, lx: x + 36, ly: y - 36, side: 'right', text: TEXT.cuePrint }),
             },
+            {
+                el: makeHint('is-cue'),
+                target: keepBtn,
+                anchor: anchor.keep,
+                place: (x, y) => ({ x, y, lx: x - 40, ly: y, side: 'left', text: TEXT.cueKeep }),
+            },
         ];
         let mouse = null;
         let frame = null;
@@ -323,6 +358,17 @@
         const { same, color } = e.detail;
         placeHint(flashHint, { x, y, lx: x + 36, ly: y - 36, side: 'right', text: TEXT.printState(same, color) });
         flashHint.querySelector('.tour-dot').style.background = color;
+        flashHint.classList.add('is-visible');
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => flashHint.classList.remove('is-visible'), 1600);
+    });
+
+    // Same for the keep-on-screen zone on the right edge.
+    document.addEventListener('keeponscreenchange', (e) => {
+        if (!keepBtn) return;
+        const { x, y } = anchor.keep();
+        placeHint(flashHint, { x, y, lx: x - 40, ly: y, side: 'left', text: TEXT.keepState(e.detail.on) });
+        flashHint.querySelector('.tour-dot').style.background = '';
         flashHint.classList.add('is-visible');
         clearTimeout(flashTimer);
         flashTimer = setTimeout(() => flashHint.classList.remove('is-visible'), 1600);
