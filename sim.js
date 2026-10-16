@@ -1019,6 +1019,7 @@ class Creature {
                     1 + baseIntensity * shiverEffectMultiplier * POINT_SHIVER_SWELL;
                 const variation = 1.0 + point.sizeRandomizer * pointSizeVariation;
                 if (drawMode === 'point') {
+                    if (pointBaseSize <= 0) continue; // Point Size 0: no dots
                     const finalRadius = Math.min(
                         MAX_POINT_RADIUS,
                         Math.max(0.1, baseBodyRadius * radiusMultiplier * variation),
@@ -2628,7 +2629,7 @@ function randomizeAndRespawn() {
         updateSlider('numSeekingFeet', rand(1, 4));
         updateSlider('stepHeight', rand(20, 80));
         updateSlider('wobbleStrength', rand(10, 50));
-        updateSlider('pointSize', rand(1.0, 3.0, true));
+        updateSlider('pointSize', rand(0.3, 2.0, true));
         updateSlider('pointSizeVariation', rand(0.0, 0.8, true));
         updateSlider('maxLineThickness', rand(1.0, 2.0, true));
         updateSlider('minShade', rand(0.0, 0.4, true));

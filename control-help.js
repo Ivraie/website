@@ -32,7 +32,7 @@
         darkPaperCheck: 'Invert the page: black paper and white ink, for dark rooms and projection. Also with ?dark in the address.',
         rendererMode: 'How the creatures are drawn: WebGL is much faster with many points and looks the same; Canvas is the original drawing. G switches between them. Letter mode always uses Canvas.',
         drawMode: 'Draw each point as a dot, or as a letter.',
-        pointSize: 'Base size of the dots.',
+        pointSize: 'Base size of the dots (0 hides them; the feet stay).',
         pointSizeVariation: 'How much dot sizes vary from point to point.',
         maxLineThickness: 'Thickest a spring line can get while shivering.',
         minShade: 'Darkness of the lines and dots at rest (0 is the lightest).',

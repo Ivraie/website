@@ -171,6 +171,7 @@
                     feet.push(p);
                     continue;
                 }
+                if (pointBaseSize <= 0) continue; // Point Size 0: no dots
                 const pulse = p.pulseMagnitude;
                 const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
                 const swell = 1 + pulse * shiverEffectMultiplier * POINT_SHIVER_SWELL;
