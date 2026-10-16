@@ -1234,3 +1234,19 @@ canvas {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* Hidden zones stay invisible with the keyboard too: out of the tab order
+   (tabindex -1), never focused by a click (sim.js), and no focus outline. */
+.hidden-zone:focus,
+.hidden-zone:focus-visible {
+  outline: none;
+}
+
+/* WebGL renderer canvas (renderer-webgl.js): same place as the 2D canvas. */
+#gl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -2;
+  pointer-events: none;
+}

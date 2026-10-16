@@ -180,6 +180,18 @@ function setCreatureColor(hex) {
  */
 function setKeepOnScreen(on) {
     keepOnScreen = on;
+    // Without the floor, feet standing on it let go and look for another edge.
+    if (!on) {
+        for (const c of creatures) {
+            if (c.isDead) continue;
+            for (const foot of c.feet) {
+                if (foot.footState !== FOOT_STATES.SEEKING && foot.targetPos.y >= canvas.height - 2) {
+                    foot.footState = FOOT_STATES.FIXED;
+                    c.activateFoot(foot);
+                }
+            }
+        }
+    }
     const check = document.getElementById('keepOnScreenCheck');
     if (check) check.checked = on;
     document.getElementById('keepOnScreenBtn')?.setAttribute('aria-pressed', String(on));
@@ -285,6 +297,7 @@ let keepOnScreen = false;
 let burstSize = 12;
 let burstSpreadSeconds = 0.5;
 let burstForce = 3;
+let burstKeyOrigin = 'random'; // B key: 'random' places or the screen 'center'
 const burstQueue = []; // { at (step), x, y, around: origin or null }
 let darkPaper = false; // inverted page: black paper, white ink (style.css)
 const EDGE_FRICTION = 0.8; // share of the sliding speed kept along an edge
@@ -1215,7 +1228,7 @@ class Point {
                     this.x <= 1 ||
                     this.x >= canvas.width - 1 ||
                     this.y <= 1 ||
-                    this.y >= canvas.height - 1
+                    (keepOnScreen && this.y >= canvas.height - 1)
                 ) {
                     this.footState = FOOT_STATES.SETTLING;
                     this.settleStartTime = time;
@@ -1250,7 +1263,9 @@ class Point {
     }
 
     getRandomEdgeTarget() {
-        const edge = Math.floor(Math.random() * 4);
+        // The floor (edge 2) only holds feet while Keep Creatures on Screen is on.
+        const edges = keepOnScreen ? [0, 1, 2, 3] : [0, 1, 3];
+        const edge = edges[Math.floor(Math.random() * edges.length)];
         switch (edge) {
             case 0:
                 return { x: Math.random() * canvas.width, y: 0 };
@@ -1285,10 +1300,12 @@ class Point {
         let bestDist = Infinity;
         let bestPoint = { x: 0, y: 0 };
         for (let x = 0; x <= canvas.width; x += 50) {
-            for (const p of [
-                { x, y: 0 },
-                { x, y: canvas.height },
-            ]) {
+            for (const p of keepOnScreen
+                ? [
+                      { x, y: 0 },
+                      { x, y: canvas.height },
+                  ]
+                : [{ x, y: 0 }]) {
                 const d = Math.hypot(p.x - oppositeX, p.y - oppositeY);
                 if (d < bestDist) {
                     bestDist = d;
@@ -2418,8 +2435,9 @@ function setupInteractionHandlers() {
             trackEvent('add-creature', { source: 'space' });
             addCreature();
         } else if (e.code === 'KeyB' && !e.repeat && !e.target.closest('input, select, textarea')) {
-            triggerBurst(); // random places
-            trackBurst('key');
+            const center = { x: canvas.width / 2, y: canvas.height / 2 };
+            triggerBurst(burstKeyOrigin === 'center' ? center : null);
+            trackBurst(burstKeyOrigin === 'center' ? 'key-center' : 'key');
         }
     });
 
@@ -2544,6 +2562,12 @@ function setupInteractionHandlers() {
                 },
             },
         );
+    });
+
+    // Hidden zones never take focus: a focused zone would show an outline and
+    // turn the next Space press into a click on it.
+    document.querySelectorAll('.hidden-zone').forEach((zone) => {
+        zone.addEventListener('mousedown', (e) => e.preventDefault());
     });
 
     // Middle of the right edge: keep creatures on screen, or let them leave.
@@ -2717,6 +2741,8 @@ function handleCopyParameters() {
         burstSize,
         burstSpreadSeconds,
         burstForce,
+        burstKeyOrigin,
+        renderer: window.ivraieRenderer?.mode,
         darkPaper,
         enableProgressiveAppearance,
         growthSpeed,
@@ -3030,6 +3056,9 @@ function runSetup() {
     setupSlider('burstSize', 'burstSizeValue', (val) => (burstSize = val), false);
     setupSlider('burstSpread', 'burstSpreadValue', (val) => (burstSpreadSeconds = val), true);
     setupSlider('burstForce', 'burstForceValue', (val) => (burstForce = val), true);
+    document
+        .getElementById('burstKeyOrigin')
+        ?.addEventListener('change', (e) => (burstKeyOrigin = e.target.value));
     // Dark paper, also from the address (?dark), e.g. for projection tests.
     const darkCheck = document.getElementById('darkPaperCheck');
     const setDarkPaper = (on) => {

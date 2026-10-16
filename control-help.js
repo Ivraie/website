@@ -9,7 +9,7 @@
         numFeet: 'How many feet each new creature has.',
         restLength: 'Natural length of the springs: below 1 the body pulls itself together, above 1 it swells.',
         randomPlacement: 'Place the feet on random points of the body instead of evenly around its outline.',
-        keepOnScreenCheck: 'Screen edges act as walls and a floor: bodies stop and slide there instead of leaving the screen.',
+        keepOnScreenCheck: 'Screen edges act as walls and a floor: bodies stop and slide there, and feet can stand on the floor. Off: no floor, creatures hang from the top and sides.',
         pruneUnfooted: 'Remove parts of the body that are not connected to any foot.',
         minPointsPerFoot: 'With Remove Loose Parts on, smallest number of points a part needs to be kept.',
         // Population
@@ -23,12 +23,14 @@
         burstSize: 'How many creatures a burst gives birth to (B key: at random places; long press on the paper: around your finger).',
         burstSpread: 'Seconds over which the burst births are spread: 0 is all at once.',
         burstForce: 'How hard burst creatures are pushed outward at birth.',
+        burstKeyOrigin: 'Where a burst from the B key is born: at random places, or around the center of the screen.',
         randomizeBtn: 'Pick random settings.',
         addCreatureBtn: 'Add one creature now (Space does the same).',
         // Appearance
         creatureColor: 'Color of the creatures at rest.',
         shiverColor: 'Color the creatures move toward while a shiver runs through them.',
         darkPaperCheck: 'Invert the page: black paper and white ink, for dark rooms and projection. Also with ?dark in the address.',
+        rendererMode: 'How the creatures are drawn: WebGL is much faster with many points and looks the same; Canvas is the original drawing. G switches between them. Letter mode always uses Canvas.',
         drawMode: 'Draw each point as a dot, or as a letter.',
         pointSize: 'Base size of the dots.',
         pointSizeVariation: 'How much dot sizes vary from point to point.',

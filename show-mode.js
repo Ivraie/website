@@ -35,7 +35,8 @@
         setInterval(() => {
             const frames = typeof fps === 'number' ? fps : '--';
             const points = typeof getCurrentTotalPoints === 'function' ? getCurrentTotalPoints() : '--';
-            stats.textContent = `${frames} fps · ${points} points · screen ${wakeLock ? 'kept awake' : 'may sleep'}`;
+            const renderer = window.ivraieRenderer?.mode === 'webgl' ? 'WebGL' : 'Canvas';
+            stats.textContent = `${frames} fps · ${points} points · ${renderer} · screen ${wakeLock ? 'kept awake' : 'may sleep'}`;
         }, 500);
 
         document.addEventListener('keydown', (e) => {

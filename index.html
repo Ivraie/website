@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Only scripts from this site (sim.js, favicon.js, show-mode.js, tour.js, color-picker.js, control-help.js) and Umami analytics may run.
+    <!-- Only scripts from this site (sim.js, renderer-webgl.js, favicon.js, show-mode.js, tour.js, color-picker.js, control-help.js) and Umami analytics may run.
          Inline scripts, eval and any other origin are blocked by the browser. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; connect-src 'self' https://cloud.umami.is https://gateway.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <title>Ivraie - Ink on canvas</title>
@@ -46,11 +46,11 @@
 
 <body>
 
-    <button id="eraseBtn" title="Start over"></button>
-    <button id="clearImprintsBtn" title="Clear the imprints"></button>
-    <button id="keepOnScreenBtn" title="Keep creatures on screen" aria-pressed="false"></button>
-    <button id="printColorBtn" title="Print color"></button>
-    <button id="toggleControlsBtn" title="Settings" aria-label="Settings"></button>
+    <button id="eraseBtn" class="hidden-zone" tabindex="-1" title="Start over"></button>
+    <button id="clearImprintsBtn" class="hidden-zone" tabindex="-1" title="Clear the imprints"></button>
+    <button id="keepOnScreenBtn" class="hidden-zone" tabindex="-1" title="Keep creatures on screen" aria-pressed="false"></button>
+    <button id="printColorBtn" class="hidden-zone" tabindex="-1" title="Print color"></button>
+    <button id="toggleControlsBtn" class="hidden-zone" tabindex="-1" title="Settings" aria-label="Settings"></button>
 
     <canvas id="background-canvas"></canvas>
     <canvas id="canvas"></canvas>
@@ -66,12 +66,12 @@
     <!-- Dark paper: inverts everything drawn below it (see style.css). -->
     <div id="dark-paper" aria-hidden="true"></div>
 
-    <button id="randomizeShortcutBtn">Randomize</button>
+    <button id="randomizeShortcutBtn" class="hidden-zone" tabindex="-1">Randomize</button>
 
     <main class="main-content">
         <div class="controls hidden">
             <div class="controls-bar">
-                <span class="controls-fps" title="Frame rate"><span id="fpsCounter">--</span> fps</span>
+                <span class="controls-fps" title="Frame rate and renderer (G switches)"><span id="fpsCounter">--</span> fps<span id="rendererName"></span></span>
                 <button id="closeControlsBtn" type="button" title="Close" aria-label="Close settings">&times;</button>
             </div>
             <div class="controls-scroll">
@@ -189,6 +189,13 @@
                     <input type="range" id="burstForce" min="0" max="10" step="0.5" value="3" autocomplete="off" />
                 </div>
                 <div class="sub-control">
+                    <label for="burstKeyOrigin">B Key Burst</label>
+                    <select id="burstKeyOrigin" autocomplete="off">
+                        <option value="random" selected>At random places</option>
+                        <option value="center">From the center</option>
+                    </select>
+                </div>
+                <div class="sub-control">
                     <button id="randomizeBtn">Randomize</button>
                 </div>
                 <div class="sub-control">
@@ -211,6 +218,13 @@
                 <div class="sub-control">
                     <input type="checkbox" id="darkPaperCheck" autocomplete="off" />
                     <label for="darkPaperCheck" class="checkbox-label">Dark Paper</label>
+                </div>
+                <div>
+                    <label for="rendererMode">Renderer</label>
+                    <select id="rendererMode" autocomplete="off">
+                        <option value="webgl" selected>WebGL (fast)</option>
+                        <option value="canvas">Canvas</option>
+                    </select>
                 </div>
                 <div>
                     <label for="drawMode">Draw Mode</label>
@@ -581,6 +595,7 @@
     <script src="color-picker.js"></script>
     <script src="control-help.js"></script>
     <script src="sim.js"></script>
+    <script src="renderer-webgl.js"></script>
     <script src="tour.js"></script>
 </body>
 
