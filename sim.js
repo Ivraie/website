@@ -279,6 +279,7 @@ let printOnShiver = true; // a creature prints when one of its feet lands
 // Walls and floor: body points stop at the screen edges (and slide along
 // them) instead of hanging past them, e.g. with soft springs and gravity.
 let keepOnScreen = false;
+let darkPaper = false; // inverted page: black paper, white ink (style.css)
 const EDGE_FRICTION = 0.8; // share of the sliding speed kept along an edge
 const SHIVER_PRINT_COOLDOWN = 30; // frames between two shiver prints of one creature
 // Point circles: how much a shiver swells them, and their largest radius (px).
@@ -300,7 +301,8 @@ let fadeAmount = 1; // share of each imprint that fades (the rest stays)
 // (measured in software rendering: 60 fps without, ~20 fps with).
 let blendFadeLayers = false;
 let printIntervalMs = 250;
-let printIntervalRandomness = 0.89;
+let printIntervalRandomness = 0.89; // 1 = between half and double the interval
+let imprintShadeVariation = 0; // each print's strength varies by up to this share
 let gravity = 0.17; // Gravity Magnitude slider (fixed) or tilt sensitivity
 let gravityX = 0;
 let gravityY = gravity;
@@ -408,9 +410,14 @@ class Creature {
     }
 
     printToBackground() {
-        const shadeToUse = usePerCreatureImprint
+        const baseShade = usePerCreatureImprint
             ? this.params.imprintShade
             : imprintShade;
+        // Shade Variation: each print a little stronger or fainter.
+        const shadeToUse = Math.min(
+            1,
+            Math.max(0, baseShade * (1 + (Math.random() * 2 - 1) * imprintShadeVariation)),
+        );
         const blendModeToUse = usePerCreatureImprint
             ? this.params.imprintBlendMode
             : imprintBlendMode;
@@ -1604,6 +1611,9 @@ function setupSlider(
                 shiverEffect: 2,
                 shiverDuration: 2,
                 imprintShade: 2,
+                waveDelay: 2,
+                stepCooldown: 2,
+                stepDuration: 1,
             };
             const precision = precisionMap[id] ?? 1;
             display.textContent = isFloat ? value.toFixed(precision) : value;
@@ -1663,13 +1673,13 @@ function setupShapeSelector() {
         creatureShape = event.target.value;
         if (creatureShape === 'grid') {
             letterInputControl.style.display = 'none';
-            densityLabel.childNodes[0].nodeValue = 'Points / Side ';
+            densityLabel.childNodes[0].nodeValue = 'Points per Side ';
             densitySlider.min = 3;
             densitySlider.max = 15;
             if (parseInt(densitySlider.value, 10) > 15) densitySlider.value = 15;
         } else if (creatureShape === 'letter') {
             letterInputControl.style.display = 'block';
-            densityLabel.childNodes[0].nodeValue = 'Sampling Density ';
+            densityLabel.childNodes[0].nodeValue = 'Body Detail ';
             densitySlider.min = 2;
             densitySlider.max = 18;
         }
@@ -1954,7 +1964,7 @@ function setupGravityControls() {
         window.removeEventListener('deviceorientation', handleOrientationEvent);
         const source = e.target.value;
         if (source === 'fixed') {
-            gravityLabel.childNodes[0].nodeValue = 'Gravity Magnitude ';
+            gravityLabel.childNodes[0].nodeValue = 'Gravity Strength ';
             gravityX = 0;
             gravityY = gravity;
             debugStatus.textContent = 'Fixed (Slider)';
@@ -2225,14 +2235,13 @@ function setupInteractionHandlers() {
             for (const creature of creatures) {
                 if (!creature.isDead) creature.printToBackground();
             }
-            const base = printIntervalMs;
-            const variation = base * printIntervalRandomness;
+            // Random wait on a multiplying scale, so the range can go past
+            // 100%: between base / (1 + v) and base * (1 + v), e.g. v = 3 gives
+            // a quarter to four times the interval.
+            const spread = Math.pow(1 + printIntervalRandomness, Math.random() * 2 - 1);
             // Floor of 8 ms: below one simulation step (~16.7 ms) prints repeat
             // the same pose, which only darkens it, so going lower adds nothing.
-            const randomDelay = Math.max(
-                8,
-                base + (Math.random() - 0.5) * 2 * variation,
-            );
+            const randomDelay = Math.max(8, printIntervalMs * spread);
             continuousPrintTimeoutId = setTimeout(scheduleNextPrint, randomDelay);
         };
         let pressStartTime = null;
@@ -2500,7 +2509,8 @@ function randomizeAndRespawn() {
             'imprintBlendMode',
             blendModes[rand(0, blendModes.length - 1)],
         );
-        updateSlider('printIntervalRandomness', rand(0.0, 0.8, true));
+        updateSlider('printIntervalRandomness', rand(0.0, 2.0, true));
+        updateSlider('imprintShadeVariation', rand(0.0, 0.6, true));
     };
 
     switch (randomizeMode) {
@@ -2563,6 +2573,7 @@ function handleCopyParameters() {
         pruneUnfootedPoints,
         minPointsPerFoot,
         keepOnScreen,
+        darkPaper,
         enableProgressiveAppearance,
         growthSpeed,
         enableAging,
@@ -2591,6 +2602,7 @@ function handleCopyParameters() {
         creatureColor,
         shiverColor,
         printIntervalRandomness,
+        imprintShadeVariation,
         shiverPropagationSpeedSlider: document.getElementById(
             'shiverPropagationSpeed',
         ).value,
@@ -2736,14 +2748,14 @@ function runSetup() {
     setupSlider(
         'stepCooldown',
         'stepCooldownValue',
-        (val) => (stepCooldown = val),
-        false,
+        (val) => (stepCooldown = Math.round(val * 60)), // shown in s, kept in steps
+        true,
     );
     setupSlider(
         'stepDuration',
         'stepDurationValue',
-        (val) => (stepDuration = val),
-        false,
+        (val) => (stepDuration = Math.round(val * 60)), // shown in s, kept in steps
+        true,
     );
     setupSlider(
         'stepHeight',
@@ -2763,7 +2775,8 @@ function runSetup() {
         (val) => (numSeekingFeet = val),
         false,
     );
-    setupSlider('waveDelay', 'waveDelayValue', (val) => (waveDelay = val), false);
+    // Shown in seconds, kept in simulation steps (60 per second).
+    setupSlider('waveDelay', 'waveDelayValue', (val) => (waveDelay = Math.round(val * 60)), true);
     setupGaitSelector();
 
     // Structure
@@ -2870,6 +2883,15 @@ function runSetup() {
     );
     setupCheckbox('printOnShiverCheck', (val) => (printOnShiver = val));
     setupCheckbox('keepOnScreenCheck', (val) => setKeepOnScreen(val));
+    // Dark paper, also from the address (?dark), e.g. for projection tests.
+    const darkCheck = document.getElementById('darkPaperCheck');
+    const setDarkPaper = (on) => {
+        darkPaper = on;
+        document.documentElement.classList.toggle('dark-paper', on);
+        if (darkCheck) darkCheck.checked = on;
+    };
+    setupCheckbox('darkPaperCheck', setDarkPaper);
+    if (new URLSearchParams(location.search).has('dark')) setDarkPaper(true);
     setupCheckbox('fadeImprintsCheck', (val) => (fadeImprints = val), false, [
         document.getElementById('fadeTimeContainer'),
     ]);
@@ -2909,6 +2931,11 @@ function runSetup() {
         'pointSizeVariation',
         'pointSizeVariationValue',
         (val) => (pointSizeVariation = val),
+    );
+    setupPercentageSlider(
+        'imprintShadeVariation',
+        'imprintShadeVariationValue',
+        (val) => (imprintShadeVariation = val),
     );
     setupPercentageSlider(
         'printIntervalRandomness',

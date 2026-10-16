@@ -3,6 +3,8 @@
 // when the mouse comes near a hidden button. Drawn like the creatures: an ink
 // dot on the target, a grey thread, a short label. French if the browser is.
 (function () {
+    // No tour, hints or "?" button in show mode (show-mode.js).
+    if (document.documentElement.classList.contains('show-mode')) return;
     const isFrench = (navigator.language || '').toLowerCase().startsWith('fr');
     const isTouch = window.matchMedia('(hover: none)').matches;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

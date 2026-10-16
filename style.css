@@ -1125,3 +1125,49 @@ body.tour-running #title-container h1[data-hint]::after {
   width: 10px;
   height: 10px;
 }
+
+/* ---------- Show mode (show-mode.js, open the page with ?show) ---------- */
+/* For projection: no cursor and no interface; the canvas, the title and the
+   hidden zones keep working. */
+.show-mode,
+.show-mode * {
+  cursor: none !important;
+}
+
+.show-mode footer,
+.show-mode .statement,
+.show-mode #tourHelpBtn,
+.show-mode .tour-layer,
+.show-mode #title-container h1[data-hint]::after {
+  display: none !important;
+}
+
+/* Small stats line for checking the frame rate on the real setup (H hides it). */
+#show-stats {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  z-index: 20;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  color: var(--thread-strong);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* ---------- Dark paper (Appearance, or ?dark in the address) ---------- */
+/* One full-screen layer above the drawing and the title inverts everything
+   under it: white paper turns black, ink turns white; the hue rotation keeps
+   colors recognizable. The interface (z-index 5 and up) stays as it is. */
+#dark-paper {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+  -webkit-backdrop-filter: invert(1) hue-rotate(180deg);
+  backdrop-filter: invert(1) hue-rotate(180deg);
+}
+
+html.dark-paper #dark-paper {
+  display: block;
+}
