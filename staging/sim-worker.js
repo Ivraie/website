@@ -5,7 +5,7 @@
 // copied into transferred buffers), what happened during the steps (step
 // ticks and prints, in order) and, once per creature, its fixed data
 // (springs, flags).
-importScripts('sim-core.js');
+importScripts(`sim-core.js${self.location.search}`); // same version stamp as the page
 
 // Letter shapes are measured on an OffscreenCanvas (missing before Safari
 // 16.4): without one, fail now so the page runs the simulation itself.

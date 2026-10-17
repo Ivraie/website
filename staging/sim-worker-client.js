@@ -10,7 +10,10 @@
     if (params.has('page') || params.get('worker') === '0' || typeof Worker === 'undefined') return;
 
     const MAX_PENDING_STEPS = MAX_STEPS_PER_FRAME * 2; // more: the simulation slows down
-    const worker = new Worker('sim-worker.js');
+    // The worker and the files it loads carry this script's version stamp
+    // (?v=..., added when publishing), so they always match the page.
+    const stamp = new URL(document.currentScript.src).search;
+    const worker = new Worker(`sim-worker.js${stamp}`);
     const original = {
         update, addCreature, triggerBurst, resetCreatures, startCreatures,
         releaseFloorFeet, moveFeetWithEdges, getCurrentTotalPoints,
