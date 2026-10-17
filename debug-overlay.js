@@ -2,6 +2,60 @@
 // simulation runs, its speed and costs, points and creatures, screen. Top
 // left, high contrast, updated four times a second.
 (function () {
+    // Its own styles, so the panel never depends on a cached style.css.
+    // Readable over any drawing, above the dark paper layer (never inverted).
+    const style = document.createElement('style');
+    style.textContent = `
+        #debug-overlay {
+          position: fixed;
+          top: 12px;
+          left: 12px;
+          z-index: 40;
+          padding: 10px 14px 8px;
+          border-radius: 8px;
+          background: rgba(12, 12, 12, 0.86);
+          color: #f2f2f2;
+          font: 14px/1.5 ui-monospace, Consolas, Menlo, monospace;
+          font-variant-numeric: tabular-nums;
+          pointer-events: none;
+          max-width: calc(100vw - 24px);
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+        }
+        #debug-overlay[hidden] {
+          display: none;
+        }
+        #debug-overlay dl {
+          display: grid;
+          grid-template-columns: auto auto;
+          gap: 0 14px;
+          margin: 0;
+        }
+        #debug-overlay dt {
+          color: #9a9a9a;
+        }
+        #debug-overlay dd {
+          margin: 0;
+          white-space: nowrap;
+        }
+        #debug-overlay dd.big {
+          font-size: 26px;
+          line-height: 1.15;
+          font-weight: 600;
+        }
+        #debug-overlay dd.warn {
+          color: #ffc24a;
+        }
+        #debug-overlay dd.bad {
+          color: #ff6b5e;
+        }
+        #debug-overlay p {
+          margin: 6px 0 0;
+          color: #8a8a8a;
+          font-size: 12px;
+        }
+    `;
+    document.head.appendChild(style);
+
     const panel = document.createElement('div');
     panel.id = 'debug-overlay';
     panel.hidden = true;
