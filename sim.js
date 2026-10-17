@@ -328,6 +328,90 @@ let gravityX = 0;
 let gravityY = gravity;
 
 // =================================================================
+//                         SHARED POINT POOL
+// =================================================================
+
+/**
+ * Positions, previous positions and shivers of every creature's points, in
+ * one set of flat arrays. Each creature owns a contiguous slice; its `store`
+ * holds views onto that slice, indexed by the creature's own point indices.
+ * New creatures are added at the end; compact() closes the gaps left by
+ * removed ones.
+ */
+const pointPool = {
+    FIELDS: ['x', 'y', 'oldX', 'oldY', 'pulse'],
+    capacity: 0,
+    used: 0,
+    arrays: {},
+    members: [], // creatures owning a slice, in slice order
+    minWaste: 4096, // compact once this many (and as many as live) points are unused
+
+    alloc(creature, n) {
+        if (this.capacity === 0 || this.used + n > this.capacity) this.grow(this.used + n);
+        creature.poolOffset = this.used;
+        creature.poolCount = n;
+        this.used += n;
+        this.members.push(creature);
+        creature.store = {};
+        this.bind(creature);
+        return creature.store;
+    },
+
+    // Points the creature's views at its slice (after alloc, grow or compact).
+    bind(c) {
+        for (const f of this.FIELDS) {
+            c.store[f] = this.arrays[f].subarray(c.poolOffset, c.poolOffset + c.poolCount);
+        }
+    },
+
+    grow(needed) {
+        const capacity = Math.max(needed, this.capacity * 2, 4096);
+        for (const f of this.FIELDS) {
+            const bigger = new Float64Array(capacity);
+            if (this.arrays[f]) bigger.set(this.arrays[f].subarray(0, this.used));
+            this.arrays[f] = bigger;
+        }
+        this.capacity = capacity;
+        for (const c of this.members) this.bind(c);
+    },
+
+    /**
+     * Keeps only the slices of the live creatures and moves them down to
+     * close the gaps. A removed creature still referenced somewhere keeps its
+     * numbers in its own arrays, so it never writes over another one.
+     */
+    compact(live) {
+        const keep = new Set(live);
+        let liveCount = 0;
+        for (const c of this.members) if (keep.has(c)) liveCount += c.poolCount;
+        if (this.used - liveCount < Math.max(this.minWaste, liveCount)) return; // little waste
+        const kept = [];
+        for (const c of this.members) {
+            if (keep.has(c)) {
+                kept.push(c);
+            } else {
+                for (const f of this.FIELDS) c.store[f] = c.store[f].slice();
+            }
+        }
+        let offset = 0;
+        for (const c of kept) {
+            // Slices are in order, so moving each one down never overlaps a
+            // slice that has not moved yet.
+            if (c.poolOffset !== offset) {
+                for (const f of this.FIELDS) {
+                    this.arrays[f].copyWithin(offset, c.poolOffset, c.poolOffset + c.poolCount);
+                }
+                c.poolOffset = offset;
+            }
+            this.bind(c);
+            offset += c.poolCount;
+        }
+        this.used = offset;
+        this.members = kept;
+    },
+};
+
+// =================================================================
 //                         CLASS DEFINITIONS
 // =================================================================
 
@@ -858,19 +942,13 @@ class Creature {
     }
 
     /**
-     * Moves the points' positions and shivers into flat arrays of the
-     * creature, and the springs' ends and rest lengths into index arrays, in
+     * Moves the points' positions and shivers into the creature's slice of
+     * the shared point pool, and the springs' ends and rest lengths into index arrays, in
      * the same order, for the physics loops.
      */
     packArrays() {
         const n = this.points.length;
-        const store = {
-            x: new Float64Array(n),
-            y: new Float64Array(n),
-            oldX: new Float64Array(n),
-            oldY: new Float64Array(n),
-            pulse: new Float64Array(n),
-        };
+        const store = pointPool.alloc(this, n);
         // Fixed once the creature is built: used by the physics and drawing.
         this.isFootFlags = new Uint8Array(n);
         this.isHairFlags = new Uint8Array(n);
@@ -1442,6 +1520,7 @@ class Spring {
  * Updates the physics and state of all creatures.
  */
 function update() {
+    pointPool.compact(creatures);
     time++;
     updateFadeLayers();
     while (burstQueue.length && burstQueue[0].at <= time) {
