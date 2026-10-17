@@ -208,14 +208,17 @@
     if (!icon) return;
     const S = makeScene(mulberry32(Math.floor(Math.random() * 100000)));
     LAYOUTS[Math.floor(Math.random() * LAYOUTS.length)](S);
-    // Anywhere but the live site (localhost, a dev server, a file): a red dot
-    // on the icon and "local ·" in the tab title, to tell the tabs apart.
+    // Anywhere but the live site, a dot on the icon and a word in the tab
+    // title, to tell the tabs apart: red "local ·" (localhost, a dev server,
+    // a file), blue "staging ·" (ivraie.ink/staging/).
     const isLocal = !/(^|\.)ivraie\.ink$/.test(location.hostname);
-    if (isLocal && !document.title.startsWith('local')) document.title = `local · ${document.title}`;
-    const LOCAL_BADGE = '<circle cx="50" cy="14" r="13" fill="#e0402f" stroke="#ffffff" stroke-width="3"/>';
+    const isStaging = !isLocal && location.pathname.startsWith('/staging/');
+    const tag = isLocal ? 'local' : isStaging ? 'staging' : null;
+    if (tag && !document.title.startsWith(tag)) document.title = `${tag} · ${document.title}`;
+    const BADGE = `<circle cx="50" cy="14" r="13" fill="${isLocal ? '#e0402f' : '#2f6fe0'}" stroke="#ffffff" stroke-width="3"/>`;
     const show = (t) => {
         let svg = creatureSvg(S, t);
-        if (isLocal) svg = svg.replace('</svg>', `${LOCAL_BADGE}</svg>`);
+        if (tag) svg = svg.replace('</svg>', `${BADGE}</svg>`);
         icon.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
     };
 
