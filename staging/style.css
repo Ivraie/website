@@ -1,0 +1,1252 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Palette from the favicon: ink dots, grey threads, white paper. */
+  --ink: #000000;
+  --ink-soft: #1e1e1e;
+  --thread-strong: #6b6b6b;
+  --thread: #b8b8b8;
+  --thread-faint: #e6e6e6;
+  --paper: #ffffff;
+  /* Hidden button zones, proportional to the screen so they work in phone
+     portrait too. Left edge: three stacked zones; top: one centered zone.
+     The title in the middle stays clear. */
+  --zone-left-w: 25vw;
+  --zone-left-h: 31vh;
+  --zone-top-w: 40vw;
+  --zone-top-h: 22vh;
+  /* Settings zone: a square in the top-right corner. */
+  --zone-corner: min(25vw, 25vh);
+}
+
+/* Everything is fixed to the screen: the page itself never scrolls (on
+   phones a swipe used to move the whole page and the address bar). Only the
+   settings panel scrolls, inside itself. touch-action also stops the
+   browser's double-tap zoom, which competed with the title's double tap. */
+html {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+body {
+  background: var(--paper);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--ink);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+#canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -2;
+  background: transparent;
+}
+
+#background-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -3;
+  background: #ffffff;
+}
+
+/* Fading imprint layers (sim.js), over the permanent ones: same z-index,
+   later in the page. */
+.fade-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -3;
+}
+
+#title-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+#title-container h1 {
+  font-size: 10vw;
+  color: rgba(0, 0, 0, 1);
+  font-weight: lighter;
+  letter-spacing: 0.05em;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    opacity 0.3s ease;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+#title-container h1:hover {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Pressing the title crossfades it with a negative copy (#title-negative):
+   white letters in "difference" mode invert whatever is under them, so the
+   title stays readable over any imprint colors. Same duration both ways. */
+#title-container h1.is-pressed {
+  opacity: 0;
+}
+
+/* Its own fixed layer, so the blend applies against the canvases. */
+#title-negative {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  text-align: center;
+  mix-blend-mode: difference;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#title-negative.is-visible {
+  opacity: 1;
+}
+
+/* Same type as the title (sizes per orientation are set below). */
+.title-negative-text {
+  position: relative;
+  color: #ffffff;
+  font-size: 10vw;
+  font-weight: lighter;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Auto print on (double tap): a dot pulses under the title. */
+.latch-dot {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 10px;
+  height: 10px;
+  margin: 10px 0 0 -5px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#title-negative.is-latched .latch-dot {
+  opacity: 1;
+  animation: latch-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes latch-pulse {
+  0%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #title-negative.is-latched .latch-dot {
+    animation: none;
+  }
+}
+
+#randomizeShortcutBtn {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--zone-top-w);
+  height: var(--zone-top-h);
+  z-index: 9;
+  pointer-events: auto;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-size: 1rem;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+#randomizeShortcutBtn:hover {
+  background-color: transparent;
+}
+
+#eraseBtn {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  border-radius: 0;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Middle of the left edge: clears the imprints only (invisible, like #eraseBtn). */
+/* Middle of the right edge: keeps creatures on screen or lets them leave. */
+#keepOnScreenBtn {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  margin-top: calc(var(--zone-left-h) / -2);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+#clearImprintsBtn {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  margin-top: calc(var(--zone-left-h) / -2);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  border-radius: 0;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Bottom-left corner: opens the print color picker (sim.js). */
+#printColorBtn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: var(--zone-left-w);
+  height: var(--zone-left-h);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9;
+  border-radius: 0;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Settings: an invisible square zone in the top-right corner, like the
+   other hidden zones. It only opens the panel; while the panel is open it
+   lets clicks through to the panel (which has its own close button). */
+#toggleControlsBtn {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 11;
+  width: var(--zone-corner);
+  height: var(--zone-corner);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Invisible in every state, focus included. */
+#toggleControlsBtn:focus,
+#toggleControlsBtn:focus-visible {
+  outline: none;
+}
+
+#toggleControlsBtn.is-visible {
+  pointer-events: none;
+}
+
+.main-content {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  /* Full-width row: let clicks through to the title and the hidden zones;
+     only the panel itself catches them. */
+  pointer-events: none;
+  /* The body centers its content vertically; keep the panel at the top. */
+  margin-bottom: auto;
+}
+
+/* Controls panel: drawn like the creatures and the favicon.
+   White paper, black ink dots, grey hairline threads. */
+.controls {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--thread);
+  border-radius: 2px;
+  width: 700px;
+  color: var(--ink);
+  /* Ends above the statement and the footer links instead of running under
+     them; the content scrolls inside .controls-scroll. */
+  max-height: calc(100vh - 130px);
+  max-height: calc(100dvh - 130px);
+  overflow: hidden;
+}
+
+/* Thin top bar holding the close button, above the scrolling area, so the
+   button never sits on the scrollbar. */
+.controls-bar {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 8px 0 30px;
+}
+
+/* Frame rate, always visible at the top of the panel. */
+.controls-fps {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--thread-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrolls the settings, with a thin grey scrollbar. */
+.controls-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--thread) transparent;
+  padding: 6px 30px 10px;
+}
+
+/* Close button: same family as the "?" button. */
+/* Close button: just an x. */
+#closeControlsBtn {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--thread-strong);
+  font: 300 24px/1 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+#closeControlsBtn:hover {
+  color: var(--ink);
+}
+
+#closeControlsBtn:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* The columns live in an inner wrapper: with a height limit on .controls
+   itself, extra columns would overflow sideways instead of scrolling. */
+.controls-columns {
+  column-count: 2;
+  column-gap: 36px;
+  column-rule: 1px solid var(--thread-faint);
+}
+
+.controls.hidden {
+  display: none;
+}
+
+.control-group {
+  margin-bottom: 26px;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Section title: an ink node on a thread. */
+.control-group h3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 16px;
+  color: var(--ink);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.control-group h3::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.control-group h3::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--thread);
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* Checkbox: an empty node that fills with ink when on. */
+input[type='checkbox'] {
+  opacity: 0;
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-label {
+  position: relative;
+  padding-left: 24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  -webkit-user-select: none;
+  user-select: none;
+  color: var(--ink-soft);
+}
+
+.checkbox-label::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border: 1px solid var(--thread-strong);
+  border-radius: 50%;
+  background: var(--paper);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+input[type='checkbox']:checked + .checkbox-label::before {
+  background: var(--ink);
+  border-color: var(--ink);
+  transform: scale(1.15);
+}
+
+input[type='checkbox']:focus-visible + .checkbox-label::before {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Slider: a hairline thread with an ink dot. */
+input[type='range'] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  outline: none;
+  padding: 0;
+  margin: 2px 0 12px;
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--thread-strong);
+}
+
+input[type='range']::-moz-range-track {
+  height: 1px;
+  background: var(--thread-strong);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -5px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.15s;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.15s;
+}
+
+input[type='range']:hover::-webkit-slider-thumb,
+input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.35);
+}
+
+input[type='range']:hover::-moz-range-thumb,
+input[type='range']:active::-moz-range-thumb {
+  transform: scale(1.35);
+}
+
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Color picker: an ink dot of the chosen color on a hairline ring. */
+.color-control {
+  margin-bottom: 12px;
+}
+
+input[type='color'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid var(--thread);
+  border-radius: 50%;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+input[type='color']:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+input[type='color']:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+input[type='color']:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+input[type='color']::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+/* Select and text: no box, just a thread underneath. */
+select,
+input[type='text'] {
+  width: 100%;
+  padding: 7px 0;
+  margin-bottom: 12px;
+  background-color: transparent;
+  color: var(--ink);
+  border: none;
+  border-bottom: 1px solid var(--thread-strong);
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s;
+}
+
+select:hover,
+input[type='text']:hover,
+select:focus,
+input[type='text']:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3ccircle cx='10' cy='10' r='3' fill='%23000'/%3e%3c/svg%3e");
+  background-position: right 2px center;
+  background-repeat: no-repeat;
+  background-size: 1.2em 1.2em;
+  padding-right: 1.8rem;
+}
+
+#letterInput {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: lighter;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 8px;
+}
+
+#letterInputContainer input {
+  height: 56px;
+}
+
+#letterInputContainer {
+  margin-top: 12px;
+}
+
+.value-display {
+  float: right;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons: ink outline, inverted on hover. */
+.controls button {
+  padding: 10px 15px;
+  background-color: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.controls button:hover:not(:disabled) {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+.controls button:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.controls button:disabled {
+  color: var(--thread-strong);
+  border-color: var(--thread);
+  cursor: not-allowed;
+}
+
+.sub-control {
+  margin-top: 12px;
+  padding-left: 0;
+}
+
+/* Short statement just above the footer row: quiet, but visible text for
+   search engines. */
+.statement {
+  position: fixed;
+  left: 50%;
+  bottom: 76px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 40px));
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--thread-strong);
+  pointer-events: none;
+  text-wrap: balance;
+}
+
+.statement p {
+  margin: 0;
+}
+
+/* No room under the title on short screens (phones in landscape). Search
+   crawlers render a portrait phone screen, where it stays visible. */
+@media (max-height: 480px) {
+  .statement {
+    display: none;
+  }
+}
+
+/* A fixed 34px row, so the links line up with the "?" button (30px,
+   centered on the same line, see #tourHelpBtn). */
+footer {
+  position: fixed;
+  bottom: 30px;
+  left: 0;
+  width: 100%;
+  height: 34px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+footer a {
+  pointer-events: auto;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 15px;
+  border-radius: 2px;
+  border: 1px solid var(--ink);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+footer a:hover {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+#debug-info {
+  background: transparent;
+  border: 1px solid var(--thread-faint);
+  padding: 10px;
+  border-radius: 2px;
+  font-family: ui-monospace, Consolas, 'Courier New', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+#debug-info p {
+  margin: 0;
+  padding: 0;
+}
+
+#debug-info span {
+  font-weight: bold;
+  color: var(--ink);
+}
+
+#gravity-indicator-canvas {
+  border: 1px solid var(--thread);
+  border-radius: 50%;
+  background: var(--paper);
+  display: inline-block;
+}
+
+@media (orientation: landscape) {
+  #title-container h1,
+  .title-negative-text {
+    font-size: 8vw;
+  }
+}
+
+/* Portrait (phones): a bigger title, and narrower left-edge zones so the
+   title's first letter stays clear of them (about 10px at 20vw / 20vw). */
+@media (orientation: portrait) {
+  :root {
+    --zone-left-w: 20vw;
+  }
+
+  #title-container h1,
+  .title-negative-text {
+    font-size: 20vw;
+  }
+}
+
+@media (max-width: 800px) {
+  .main-content {
+    justify-content: center;
+  }
+
+  .controls {
+    width: 90vw;
+    max-width: 450px;
+  }
+
+  .controls-scroll {
+    padding: 6px 20px 20px;
+  }
+
+  .controls-bar {
+    padding-left: 20px;
+  }
+
+  .controls-columns {
+    column-count: 1;
+  }
+}
+
+/* ---------- Guided tour and hints (tour.js) ---------- */
+/* Same drawing as the creatures: an ink dot, a grey thread, a short label. */
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.tour-hint {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.tour-hint.is-tour.is-visible,
+.tour-hint.is-flash.is-visible {
+  opacity: 1;
+}
+
+/* Proximity cues follow the mouse through inline opacity; hidden during the tour. */
+.tour-hint.is-cue {
+  transition: opacity 0.15s linear;
+}
+
+body.tour-running .tour-hint.is-cue {
+  display: none;
+}
+
+/* While the color picker is open, the corner hints would sit under it. */
+body:has(.cp-card:not([hidden])) .tour-hint.is-cue {
+  visibility: hidden;
+}
+
+/* While a toggle state is flashing, hide the proximity cues so texts don't overlap. */
+.tour-layer:has(.is-flash.is-visible) .tour-hint.is-cue {
+  visibility: hidden;
+}
+
+.tour-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.tour-hint.is-tour .tour-dot {
+  animation: tour-pulse 1.4s ease-in-out infinite;
+}
+
+.tour-hint.is-cue .tour-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+}
+
+@keyframes tour-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(0, 0, 0, 0);
+  }
+}
+
+.tour-thread {
+  position: absolute;
+  height: 1px;
+  background: var(--thread-strong);
+  transform-origin: 0 50%;
+}
+
+.tour-label {
+  position: absolute;
+  display: grid;
+  gap: 2px;
+  padding: 4px 0;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: lighter;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.tour-label[data-side='below'] {
+  transform: translate(-50%, 2px);
+  text-align: center;
+}
+
+.tour-label[data-side='right'] {
+  transform: translate(6px, -50%);
+}
+
+.tour-label[data-side='left'] {
+  transform: translate(calc(-100% - 6px), -50%);
+  text-align: right;
+}
+
+.tour-sub {
+  font-size: 0.78rem;
+  color: var(--thread-strong);
+}
+
+.tour-sub:empty {
+  display: none;
+}
+
+.tour-hint.is-cue .tour-label {
+  font-size: 0.8rem;
+  color: var(--thread-strong);
+}
+
+/* Title: the hint appears under the word on hover. */
+#title-container h1 {
+  position: relative;
+  /* Box hugs the letters, so the hint sits right under the word. */
+  line-height: 1;
+}
+
+#title-container h1[data-hint]::after {
+  content: attr(data-hint);
+  position: absolute;
+  left: 50%;
+  /* Just under the letters: tour.js measures the baseline into --hint-top. */
+  top: var(--hint-top, 100%);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--thread-strong);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+#title-container h1[data-hint]:hover::after {
+  opacity: 1;
+}
+
+body.tour-running #title-container h1[data-hint]::after {
+  opacity: 0;
+}
+
+/* "?" button: replays the tour. */
+#tourHelpBtn {
+  position: fixed;
+  right: 20px;
+  /* Centered on the footer row: 30px + (34px - 30px) / 2. */
+  bottom: 32px;
+  z-index: 11;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--thread);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--thread-strong);
+  font: 300 0.95rem/1 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+#tourHelpBtn:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+#tourHelpBtn:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-hint.is-tour .tour-dot {
+    animation: none;
+  }
+}
+
+/* ---------- Ink color picker (color-picker.js) ---------- */
+/* The card and its target dots are shown and hidden with the hidden
+   attribute; their display rules below must not override it. */
+.cp-card[hidden],
+.cp-card [hidden] {
+  display: none;
+}
+
+/* Minimal: a color square and a thread, on a borderless white card. */
+.cp-card {
+  position: fixed;
+  z-index: 30;
+  display: grid;
+  gap: 10px;
+  padding: 8px;
+  background: var(--paper);
+}
+
+/* Square for the current tint: intensity across, light to dark down. */
+.cp-field {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  cursor: crosshair;
+  touch-action: none;
+  outline: none;
+}
+
+.cp-field canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cp-field:focus-visible {
+  outline: 1px dashed var(--ink);
+  outline-offset: 3px;
+}
+
+/* The current color: a thin ink ring. */
+.cp-marker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1.5px var(--paper),
+    0 0 0 2.5px var(--ink);
+  pointer-events: none;
+}
+
+/* Optional row of target dots above the field (main color, shiver). */
+.cp-targets {
+  display: flex;
+  gap: 10px;
+  padding: 2px;
+}
+
+.cp-target {
+  display: flex;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.cp-target-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.cp-toggle {
+  margin-left: 6px; /* set apart from the color dots */
+}
+
+.cp-target.is-selected .cp-target-dot {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.cp-target:focus-visible {
+  outline: 1px dashed var(--ink);
+  outline-offset: 3px;
+}
+
+/* Tint: a hairline rainbow thread with an ink dot. */
+.cp-card input.cp-hue {
+  --track: linear-gradient(
+    to right,
+    #ff0000,
+    #ffff00,
+    #00ff00,
+    #00ffff,
+    #0000ff,
+    #ff00ff,
+    #ff0000
+  );
+}
+
+.cp-card input.cp-range {
+  width: 100%;
+  height: 14px;
+  margin: 0;
+}
+
+.cp-card input.cp-range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--track, var(--thread));
+}
+
+.cp-card input.cp-range::-moz-range-track {
+  height: 2px;
+  background: var(--track, var(--thread));
+}
+
+.cp-card input.cp-range::-webkit-slider-thumb {
+  margin-top: -4px;
+  width: 10px;
+  height: 10px;
+}
+
+.cp-card input.cp-range::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+}
+
+/* ---------- Show mode (show-mode.js, open the page with ?show) ---------- */
+/* For projection: no cursor and no interface; the canvas, the title and the
+   hidden zones keep working. */
+.show-mode,
+.show-mode * {
+  cursor: none !important;
+}
+
+.show-mode footer,
+.show-mode .statement,
+.show-mode #tourHelpBtn,
+.show-mode .tour-layer,
+.show-mode #title-container h1[data-hint]::after {
+  display: none !important;
+}
+
+/* Small stats line for checking the frame rate on the real setup (H hides it). */
+#show-stats {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  z-index: 20;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  color: var(--thread-strong);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* ---------- Dark paper (Appearance, or ?dark in the address) ---------- */
+/* One full-screen layer above the drawing and the title inverts everything
+   under it: white paper turns black, ink turns white; the hue rotation keeps
+   colors recognizable. The interface (z-index 5 and up) stays as it is. */
+#dark-paper {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+  -webkit-backdrop-filter: invert(1) hue-rotate(180deg);
+  backdrop-filter: invert(1) hue-rotate(180deg);
+}
+
+html.dark-paper #dark-paper {
+  display: block;
+}
+
+/* ---------- Burst long press (sim.js) ---------- */
+/* An ink ring grows under the finger while pressing; it pops on the burst. */
+.press-ring {
+  position: fixed;
+  z-index: 8;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border: 1px solid var(--thread-strong);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.2);
+}
+
+.press-ring.is-pressing {
+  animation: press-grow 0.55s linear forwards;
+}
+
+.press-ring.is-burst {
+  animation: press-pop 0.4s ease-out forwards;
+}
+
+@keyframes press-grow {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+@keyframes press-pop {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+/* No callout or selection on long press over the paper. */
+body {
+  -webkit-touch-callout: none;
+}
+
+canvas {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Hidden zones stay invisible with the keyboard too: out of the tab order
+   (tabindex -1), never focused by a click (sim.js), and no focus outline. */
+.hidden-zone:focus,
+.hidden-zone:focus-visible {
+  outline: none;
+}
+
+/* WebGL renderer canvas (renderer-webgl.js): same place as the 2D canvas. */
+#gl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -2;
+  pointer-events: none;
+}

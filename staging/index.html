@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Only scripts from this site (sim.js, renderer-webgl.js, favicon.js, show-mode.js, tour.js, color-picker.js, control-help.js) and Umami analytics may run.
+         Inline scripts, eval and any other origin are blocked by the browser. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; connect-src 'self' https://cloud.umami.is https://gateway.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'" />
+    <title>Ivraie - Ink on canvas</title>
+    <meta name="description" content="Ivraie. Ink creatures made of points and springs wander, shiver and leave their imprints." />
+    <link rel="canonical" href="https://ivraie.ink/" />
+    <meta name="theme-color" content="#ffffff" />
+    <!-- PNG icons for Safari and iOS, which do not use SVG favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- Default favicon ("Loose", seed 69352); replaced by a random one below -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cstyle%3E.line{stroke:%236b6b6b}.leg{stroke:%23000000}.dotf{fill:%231e1e1e}.legf{fill:%23000000}@media (prefers-color-scheme:dark){.line{stroke:%239a9a9a}.leg{stroke:%23ffffff}.dotf{fill:%23e6e6e6}.legf{fill:%23ffffff}}%3C/style%3E%3Cg class='line' stroke-width='1.6' stroke-linecap='round' fill='none'%3E%3Cline x1='36.3' y1='24.3' x2='37.3' y2='25.8'/%3E%3Cline x1='36.3' y1='24.3' x2='34.8' y2='20.6'/%3E%3Cline x1='36.3' y1='24.3' x2='30' y2='24.9'/%3E%3Cline x1='27.6' y1='22.1' x2='30' y2='24.9'/%3E%3Cline x1='27.6' y1='22.1' x2='31.4' y2='17.7'/%3E%3Cline x1='27.6' y1='22.1' x2='34.8' y2='20.6'/%3E%3Cline x1='30' y1='24.9' x2='34.8' y2='20.6'/%3E%3Cline x1='31.4' y1='17.7' x2='34.8' y2='20.6'/%3E%3Cline x1='30' y1='24.9' x2='31.4' y2='17.7'/%3E%3Cline x1='34.8' y1='20.6' x2='37.3' y2='25.8'/%3E%3Cline x1='30' y1='24.9' x2='37.3' y2='25.8'/%3E%3Cline x1='12.7' y1='39.2' x2='12' y2='39.7'/%3E%3Cline x1='12.7' y1='39.2' x2='19.1' y2='38.6'/%3E%3Cline x1='12' y1='39.7' x2='19.1' y2='38.6'/%3E%3Cline x1='30' y1='24.9' x2='19.1' y2='38.6'/%3E%3Cline x1='41.6' y1='50.1' x2='41.2' y2='51'/%3E%3Cline x1='41.6' y1='50.1' x2='41.4' y2='48.3'/%3E%3Cline x1='39.9' y1='47.1' x2='41.4' y2='48.3'/%3E%3Cline x1='41.6' y1='50.1' x2='39.9' y2='47.1'/%3E%3Cline x1='44.7' y1='42.7' x2='41.4' y2='48.3'/%3E%3Cline x1='39.9' y1='47.1' x2='44.7' y2='42.7'/%3E%3Cline x1='41.4' y1='48.3' x2='41.2' y2='51'/%3E%3Cline x1='37.3' y1='25.8' x2='42.5' y2='33.6'/%3E%3Cline x1='44.7' y1='42.7' x2='42.5' y2='33.6'/%3E%3Cline x1='32.4' y1='59.8' x2='30.8' y2='58.5'/%3E%3Cline x1='37.3' y1='25.8' x2='36.9' y2='37.1'/%3E%3Cline x1='36.9' y1='37.1' x2='34.4' y2='47.9'/%3E%3Cline x1='30.8' y1='58.5' x2='34.4' y2='47.9'/%3E%3C/g%3E%3Cg class='leg' stroke-width='2' stroke-linecap='round' fill='none'%3E%3Cline x1='31.4' y1='17.7' x2='30' y2='1'/%3E%3C/g%3E%3Cg class='dotf'%3E%3Ccircle cx='36.3' cy='24.3' r='3.1'/%3E%3Ccircle cx='27.6' cy='22.1' r='1.8'/%3E%3Ccircle cx='30' cy='24.9' r='3'/%3E%3Ccircle cx='31.4' cy='17.7' r='2.6'/%3E%3Ccircle cx='34.8' cy='20.6' r='1.6'/%3E%3Ccircle cx='37.3' cy='25.8' r='2.7'/%3E%3Ccircle cx='12.7' cy='39.2' r='2.6'/%3E%3Ccircle cx='12' cy='39.7' r='2.8'/%3E%3Ccircle cx='19.1' cy='38.6' r='1.9'/%3E%3Ccircle cx='41.6' cy='50.1' r='2.7'/%3E%3Ccircle cx='39.9' cy='47.1' r='1.8'/%3E%3Ccircle cx='44.7' cy='42.7' r='3.2'/%3E%3Ccircle cx='41.4' cy='48.3' r='1.7'/%3E%3Ccircle cx='41.2' cy='51' r='2.6'/%3E%3Ccircle cx='42.5' cy='33.6' r='1.3'/%3E%3Ccircle cx='32.4' cy='59.8' r='2.3'/%3E%3Ccircle cx='30.8' cy='58.5' r='2'/%3E%3Ccircle cx='36.9' cy='37.1' r='1.9'/%3E%3Ccircle cx='34.4' cy='47.9' r='1.2'/%3E%3C/g%3E%3C/svg%3E" />
+    <script src="favicon.js"></script>
+    <script src="show-mode.js"></script>
+
+    <!-- Link previews: absolute URLs; the image and the MP4 loop are captured from the page. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ivraie.ink/" />
+    <meta property="og:title" content="Ivraie - Ink on canvas" />
+    <meta property="og:description" content="Ink creatures made of points and springs wander, shiver and leave their imprints." />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://ivraie.ink/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Ink creatures drawn as grey points and springs, with their imprints, around the word Ivraie." />
+    <meta property="og:video" content="https://ivraie.ink/og-video.mp4" />
+    <meta property="og:video:type" content="video/mp4" />
+    <meta property="og:video:width" content="1200" />
+    <meta property="og:video:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ivraie - Ink on canvas" />
+    <meta name="twitter:description" content="Ink creatures made of points and springs wander, shiver and leave their imprints." />
+    <meta name="twitter:image" content="https://ivraie.ink/og-image.png" />
+    <link rel="stylesheet" href="style.css" />
+    <!-- Umami analytics -->
+
+</head>
+
+<body>
+
+    <button id="eraseBtn" class="hidden-zone" tabindex="-1" title="Start over"></button>
+    <button id="clearImprintsBtn" class="hidden-zone" tabindex="-1" title="Clear the imprints"></button>
+    <button id="keepOnScreenBtn" class="hidden-zone" tabindex="-1" title="Keep creatures on screen" aria-pressed="false"></button>
+    <button id="printColorBtn" class="hidden-zone" tabindex="-1" title="Print color"></button>
+    <button id="toggleControlsBtn" class="hidden-zone" tabindex="-1" title="Settings" aria-label="Settings"></button>
+
+    <canvas id="background-canvas"></canvas>
+    <canvas id="canvas"></canvas>
+
+    <div id="title-container">
+        <h1>Ivraie</h1>
+    </div>
+    <!-- Negative copy of the title, crossfaded in while the title is pressed;
+         its dot pulses while printing is latched (double tap). -->
+    <div id="title-negative" aria-hidden="true">
+        <span class="title-negative-text">Ivraie<span class="latch-dot"></span></span>
+    </div>
+    <!-- Dark paper: inverts everything drawn below it (see style.css). -->
+    <div id="dark-paper" aria-hidden="true"></div>
+
+    <button id="randomizeShortcutBtn" class="hidden-zone" tabindex="-1">Randomize</button>
+
+    <main class="main-content">
+        <div class="controls hidden">
+            <div class="controls-bar">
+                <span class="controls-fps" title="Frame rate and renderer (G switches)"><span id="fpsCounter">--</span> fps<span id="rendererName"></span></span>
+                <button id="closeControlsBtn" type="button" title="Close" aria-label="Close settings">&times;</button>
+            </div>
+            <div class="controls-scroll">
+            <div class="controls-columns">
+
+            <div class="control-group">
+                <h3>Structure</h3>
+                <div>
+                    <label for="creatureShape">Creature Shape</label>
+                    <select id="creatureShape">
+                        <option value="grid">Grid</option>
+                        <option value="letter" selected>Letter</option>
+                    </select>
+                </div>
+                <div id="letterInputContainer" style="display: block;">
+                    <label for="letterInput">Enter a Character</label>
+                    <input type="text" id="letterInput" value="+" maxlength="1" />
+                </div>
+                <div>
+                    <label for="pointDensity" id="pointDensityLabel">Body Detail <span id="pointDensityValue"
+                            class="value-display">15</span></label>
+                    <input type="range" id="pointDensity" min="3" max="20" step="1" value="15" />
+                </div>
+                <div>
+                    <label for="numFeet">Number of Feet <span id="numFeetValue" class="value-display">2</span></label>
+                    <input type="range" id="numFeet" min="2" max="16" step="1" value="2" />
+                </div>
+                <div>
+                    <label for="restLength">Body Size <span id="restLengthValue"
+                            class="value-display">0.88</span></label>
+                    <input type="range" id="restLength" min="0.0" max="1.5" step="0.01" value="0.8828470773159127" />
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="randomPlacement" checked />
+                    <label for="randomPlacement" class="checkbox-label">Random Foot Placement</label>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="keepOnScreenCheck" autocomplete="off" />
+                    <label for="keepOnScreenCheck" class="checkbox-label">Keep Creatures on Screen</label>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="pruneUnfooted" checked />
+                    <label for="pruneUnfooted" class="checkbox-label">Remove Loose Parts</label>
+                </div>
+                <div id="pruneThresholdContainer">
+                    <div class="sub-control">
+                        <label for="minPointsPerFoot">Smallest Part Kept <span id="minPointsPerFootValue"
+                                class="value-display">20</span></label>
+                        <input type="range" id="minPointsPerFoot" min="1" max="50" step="1" value="20" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Population</h3>
+                <div class="sub-control">
+                    <input type="checkbox" id="enableCreatureLimit" />
+                    <label for="enableCreatureLimit" class="checkbox-label">Enable Creature Limit</label>
+                </div>
+                <div id="creatureLimitContainer" style="display: none;">
+                    <div class="sub-control">
+                        <label>Max Creatures <span id="maxCreaturesValue" class="value-display">31</span></label>
+                        <input type="range" id="maxCreatures" min="1" max="50" step="1" value="31" />
+                    </div>
+                    <div class="sub-control">
+                        <label>Current Creatures <span id="currentCreaturesValue" class="value-display">0</span></label>
+                    </div>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="enablePointLimit" checked />
+                    <label for="enablePointLimit" class="checkbox-label">Enable Point Limit</label>
+                </div>
+                <div id="pointLimitContainer" style="display: block;">
+                    <div class="sub-control">
+                        <label>Max Points <span id="maxPointsValue" class="value-display">400</span></label>
+                        <input type="range" id="maxPoints" min="100" max="10000" step="100" value="400" />
+                    </div>
+                    <div class="sub-control">
+                        <label>Current Points <span id="currentPointsValue" class="value-display">0</span></label>
+                    </div>
+                </div>
+                <div class="sub-control">
+                    <label for="autoMode">New Creatures</label>
+                    <select id="autoMode">
+                        <option value="off">Never</option>
+                        <option value="respawn">When Empty</option>
+                        <option value="top-up" selected>Continuously</option>
+                    </select>
+                </div>
+                <div class="sub-control">
+                    <label for="autoAddDelay">Time Between New Creatures (s) <span id="autoAddDelayValue"
+                            class="value-display">2.90</span></label>
+                    <input type="range" id="autoAddDelay" min="0.0" max="10.0" step="0.01" value="2.9" />
+                </div>
+                <div class="sub-control">
+                    <label for="randomizeModeSelect">Randomize Mode</label>
+                    <select id="randomizeModeSelect">
+                        <option value="reset" selected>Full Reset</option>
+                        <option value="evolve">Evolve Next Creature</option>
+                    </select>
+                </div>
+                <div class="sub-control">
+                    <label for="burstSize">Burst Size <span id="burstSizeValue"
+                            class="value-display">12</span></label>
+                    <input type="range" id="burstSize" min="1" max="40" step="1" value="12" autocomplete="off" />
+                </div>
+                <div class="sub-control">
+                    <label for="burstSpread">Burst Spread (s) <span id="burstSpreadValue"
+                            class="value-display">0.5</span></label>
+                    <input type="range" id="burstSpread" min="0" max="3" step="0.1" value="0.5" autocomplete="off" />
+                </div>
+                <div class="sub-control">
+                    <label for="burstForce">Burst Force <span id="burstForceValue"
+                            class="value-display">3.0</span></label>
+                    <input type="range" id="burstForce" min="0" max="10" step="0.5" value="3" autocomplete="off" />
+                </div>
+                <div class="sub-control">
+                    <label for="burstKeyOrigin">B Key Burst</label>
+                    <select id="burstKeyOrigin" autocomplete="off">
+                        <option value="random" selected>At random places</option>
+                        <option value="center">From the center</option>
+                    </select>
+                </div>
+                <div class="sub-control">
+                    <button id="randomizeBtn">Randomize</button>
+                </div>
+                <div class="sub-control">
+                    <button id="addCreatureBtn" title="Add Another Creature">+ Add Creature</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Appearance</h3>
+                <div class="color-control">
+                    <label for="creatureColor">Creature Color <span id="creatureColorValue"
+                            class="value-display">#000000</span></label>
+                    <input type="color" id="creatureColor" value="#000000" autocomplete="off" />
+                </div>
+                <div class="color-control">
+                    <label for="shiverColor">Shiver Color <span id="shiverColorValue"
+                            class="value-display">#000000</span></label>
+                    <input type="color" id="shiverColor" value="#000000" autocomplete="off" />
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="darkPaperCheck" autocomplete="off" />
+                    <label for="darkPaperCheck" class="checkbox-label">Dark Paper</label>
+                </div>
+                <div>
+                    <label for="rendererMode">Renderer</label>
+                    <select id="rendererMode" autocomplete="off">
+                        <option value="webgl" selected>WebGL (fast)</option>
+                        <option value="canvas">Canvas</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="drawMode">Draw Mode</label>
+                    <select id="drawMode">
+                        <option value="point" selected>Point</option>
+                        <option value="letter">Letter</option>
+                    </select>
+                </div>
+                <div id="pointSizeContainer">
+                    <label for="pointSize">Point Size <span id="pointSizeValue" class="value-display">1.4</span></label>
+                    <input type="range" id="pointSize" min="0" max="2" step="0.1" value="1.4" />
+                </div>
+                <div class="sub-control">
+                    <label for="pointSizeVariation">Size Variation <span id="pointSizeVariationValue"
+                            class="value-display">25%</span></label>
+                    <input type="range" id="pointSizeVariation" min="0.0" max="1.0" step="0.01" value="0.25" />
+                </div>
+                <div>
+                    <label for="maxLineThickness">Max Line Width <span id="maxLineThicknessValue"
+                            class="value-display">1.0</span></label>
+                    <input type="range" id="maxLineThickness" min="1.0" max="2.0" step="0.1" value="1.0" />
+                </div>
+                <div class="sub-control">
+                    <label for="minShade">Darkness at Rest <span id="minShadeValue"
+                            class="value-display">0.00</span></label>
+                    <input type="range" id="minShade" min="0" max="1.0" step="0.01" value="0.0" />
+                </div>
+                <div class="sub-control">
+                    <label for="shiverEffect">Shiver Darkening <span id="shiverEffectValue"
+                            class="value-display">1.00</span></label>
+                    <input type="range" id="shiverEffect" min="0.0" max="5.0" step="0.01" value="1.0" />
+                </div>
+                <div id="letterChoiceContainer" style="display: none;">
+                    <label for="letterChoice">Choose Letter</label>
+                    <select id="letterChoice">
+                        <option value="i" selected>i</option>
+                        <option value="v">v</option>
+                        <option value="r">r</option>
+                        <option value="a">a</option>
+                        <option value="e">e</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Printing</h3>
+                <div>
+                    <label for="printInterval">Print Interval (ms) <span id="printIntervalValue"
+                            class="value-display">250</span></label>
+                    <input type="range" id="printInterval" min="10" max="1000" step="10" value="250" />
+                </div>
+                <div class="sub-control">
+                    <label for="printIntervalRandomness">Interval Variation <span id="printIntervalRandomnessValue"
+                            class="value-display">89%</span></label>
+                    <input type="range" id="printIntervalRandomness" min="0.0" max="3.0" step="0.05" value="0.89" />
+                </div>
+                <div class="color-control">
+                    <label for="imprintColor">Imprint Color <span id="imprintColorValue"
+                            class="value-display">#000000</span></label>
+                    <input type="color" id="imprintColor" value="#000000" disabled autocomplete="off" />
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="imprintMatchesCreatureCheck" checked autocomplete="off" />
+                    <label for="imprintMatchesCreatureCheck" class="checkbox-label">Imprint Uses Creature Colors</label>
+                </div>
+                <div>
+                    <label for="imprintShade">Print Strength <span id="imprintShadeValue"
+                            class="value-display">0.39</span></label>
+                    <input type="range" id="imprintShade" min="0.0" max="1.0" step="0.01" value="0.39" />
+                </div>
+                <div class="sub-control">
+                    <label for="imprintShadeVariation">Strength Variation <span id="imprintShadeVariationValue"
+                            class="value-display">0%</span></label>
+                    <input type="range" id="imprintShadeVariation" min="0.0" max="1.0" step="0.01" value="0" autocomplete="off" />
+                </div>
+                <div style="margin-top: 15px;">
+                    <label for="imprintBlendMode">Imprint Blend Mode</label>
+                    <select id="imprintBlendMode">
+                        <option value="source-over">Normal</option>
+                        <option value="lighter">Additive (Lighter)</option>
+                        <option value="multiply" selected>Multiply (Darken)</option>
+                        <option value="difference">Difference</option>
+                        <option value="screen">Screen</option>
+                        <option value="overlay">Overlay</option>
+                        <option value="color-burn">Color Burn</option>
+                        <option value="color-dodge">Color Dodge</option>
+                        <option value="exclusion">Exclusion</option>
+                    </select>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="printOnShiverCheck" checked autocomplete="off" />
+                    <label for="printOnShiverCheck" class="checkbox-label">Print When a Shiver Starts</label>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="fadeImprintsCheck" autocomplete="off" />
+                    <label for="fadeImprintsCheck" class="checkbox-label">Fade Imprints</label>
+                </div>
+                <div id="fadeTimeContainer" style="display: none;">
+                    <div class="sub-control">
+                        <label for="fadeTime">Fade Time (s) <span id="fadeTimeValue"
+                                class="value-display">10</span></label>
+                        <input type="range" id="fadeTime" min="1" max="20" step="1" value="10" autocomplete="off" />
+                    </div>
+                    <div class="sub-control">
+                        <label for="fadeAmount">Fade Amount (%) <span id="fadeAmountValue"
+                                class="value-display">100</span></label>
+                        <input type="range" id="fadeAmount" min="0" max="100" step="5" value="100" autocomplete="off" />
+                    </div>
+                    <div class="sub-control">
+                        <input type="checkbox" id="blendFadeLayersCheck" autocomplete="off" />
+                        <label for="blendFadeLayersCheck" class="checkbox-label">Blend Fade Layers (slower)</label>
+                    </div>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="perCreatureImprintCheck" />
+                    <label for="perCreatureImprintCheck" class="checkbox-label">Keep Print Settings from Birth</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Tendrils</h3>
+                <div class="sub-control">
+                    <input type="checkbox" id="enableTendrils" />
+                    <label for="enableTendrils" class="checkbox-label">Enable Tendrils</label>
+                </div>
+                <div id="tendrilControlsContainer">
+                    <div id="tendrilCountContainer">
+                        <label for="numTendrils">Number of Tendrils <span id="numTendrilsValue"
+                                class="value-display">5</span></label>
+                        <input type="range" id="numTendrils" min="1" max="5" step="1" value="5" />
+                    </div>
+                    <div>
+                        <label for="tendrilLength">Tendril Length <span id="tendrilLengthValue"
+                                class="value-display">5</span></label>
+                        <input type="range" id="tendrilLength" min="2" max="30" step="1" value="5" />
+                    </div>
+                    <div>
+                        <label for="tendrilQuality">Tendril Length Factor <span id="tendrilQualityValue"
+                                class="value-display">1.00</span></label>
+                        <input type="range" id="tendrilQuality" min="0.1" max="1.0" step="0.01" value="1.0" />
+                    </div>
+                    <div>
+                        <label for="tendrilLengthVariation">Length Variation <span id="tendrilLengthVariationValue"
+                                class="value-display">0%</span></label>
+                        <input type="range" id="tendrilLengthVariation" min="0" max="1.0" step="0.01" value="0" />
+                    </div>
+                    <div>
+                        <label for="tendrilStiffness">Tendril Stiffness <span id="tendrilStiffnessValue"
+                                class="value-display">0.10</span></label>
+                        <input type="range" id="tendrilStiffness" min="0.01" max="0.5" step="0.01" value="0.1" />
+                    </div>
+                    <div class="sub-control">
+                        <input type="checkbox" id="shiversOnTendrils" checked />
+                        <label for="shiversOnTendrils" class="checkbox-label">Shivers Reach Tendrils</label>
+                    </div>
+                    <div class="sub-control">
+                        <input type="checkbox" id="feetOnTendrils" checked />
+                        <label for="feetOnTendrils" class="checkbox-label">Place Feet on Tendrils</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Motion Physics</h3>
+                <div>
+                    <label for="stiffness">Body Stiffness <span id="stiffnessValue"
+                            class="value-display">0.21</span></label>
+                    <input type="range" id="stiffness" min="0.01" max="0.3" step="0.01" value="0.21" />
+                </div>
+                <div>
+                    <label for="damping">Damping <span id="dampingValue" class="value-display">0.100</span></label>
+                    <input type="range" id="damping" min="0.001" max="0.2" step="0.001" value="0.1" />
+                </div>
+                <div>
+                    <label for="shiverIntensity">Shiver Contraction <span id="shiverIntensityValue"
+                            class="value-display">0.50</span></label>
+                    <input type="range" id="shiverIntensity" min="-3.0" max="3.0" step="0.01" value="0.5" />
+                </div>
+                <div>
+                    <label for="shiverPropagation">Shiver Spread <span id="shiverPropagationValue"
+                            class="value-display">0.95</span></label>
+                    <input type="range" id="shiverPropagation" min="0" max="1.0" step="0.01" value="0.95" />
+                </div>
+                <div>
+                    <label for="shiverPropagationSpeed">Shiver Speed <span
+                            id="shiverPropagationSpeedValue" class="value-display">1.00</span></label>
+                    <input type="range" id="shiverPropagationSpeed" min="-30" max="9" step="1" value="0" />
+                </div>
+                <div>
+                    <label for="shiverDuration">Shiver Duration <span id="shiverDurationValue"
+                            class="value-display">0.80</span></label>
+                    <input type="range" id="shiverDuration" min="0.1" max="1.0" step="0.01" value="0.8" />
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Gravity & Sensors</h3>
+                <div>
+                    <label for="gravitySource">Gravity Source</label>
+                    <select id="gravitySource">
+                        <option value="fixed" selected>Fixed (Slider)</option>
+                        <option value="orientation">Device Orientation</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="gravity" id="gravityLabel">Gravity Strength <span id="gravityValue"
+                            class="value-display">0.17</span></label>
+                    <input type="range" id="gravity" min="0" max="0.5" step="0.01" value="0.17" />
+                </div>
+                <div>
+                    <label>Gravity Direction</label>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <canvas id="gravity-indicator-canvas" width="80" height="80"></canvas>
+                    </div>
+                </div>
+                <div id="debug-info-container" style="margin-top: 15px;">
+                    <label>Debug Info</label>
+                    <div id="debug-info">
+                        <p>Status: <span id="debug-status">Fixed (Slider)</span></p>
+                        <p>Orientation: <span id="debug-orientation">0</span></p>
+                        <p>Gravity X|Y: <span id="debug-gravity-x">0.000</span> | <span
+                                id="debug-gravity-y">0.170</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Birth & Death</h3>
+                <div class="sub-control">
+                    <input type="checkbox" id="enableProgressiveAppearance" checked />
+                    <label for="enableProgressiveAppearance" class="checkbox-label">Enable Progressive
+                        Appearance</label>
+                </div>
+                <div id="progressiveAppearanceControls">
+                    <div class="sub-control">
+                        <label>Growth Speed (frames/layer)<span id="growthSpeedValue"
+                                class="value-display">2</span></label>
+                        <input type="range" id="growthSpeed" min="1" max="10" step="1" value="2" />
+                    </div>
+                </div>
+                <div class="sub-control">
+                    <input type="checkbox" id="enableAging" checked />
+                    <label for="enableAging" class="checkbox-label">Enable Aging</label>
+                </div>
+                <div id="agingControlsContainer" style="display: block;">
+                    <div class="sub-control">
+                        <label for="agingMode">Aging Mode</label>
+                        <select id="agingMode">
+                            <option value="time" selected>Time</option>
+                            <option value="steps">Footsteps</option>
+                        </select>
+                    </div>
+                    <div id="lifespanContainer" class="sub-control">
+                        <label>Lifespan (s) <span id="lifespanValue" class="value-display">25</span></label>
+                        <input type="range" id="lifespan" min="1" max="120" step="1" value="25" />
+                    </div>
+                    <div id="maxStepsContainer" class="sub-control" style="display: none;">
+                        <label>Max Footsteps <span id="maxStepsValue" class="value-display">50</span></label>
+                        <input type="range" id="maxSteps" min="10" max="200" step="5" value="50" />
+                    </div>
+                    <div class="sub-control">
+                        <label for="deathEffect">On Death</label>
+                        <select id="deathEffect">
+                            <option value="fall">Fall Apart</option>
+                            <option value="fade" selected>Fade Away</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Breathing Effect</h3>
+                <div class="sub-control">
+                    <input type="checkbox" id="enableBreathing" checked />
+                    <label for="enableBreathing" class="checkbox-label">Enable Breathing</label>
+                </div>
+                <div id="breathingControlsContainer">
+                    <div>
+                        <label for="breathingRate">Breathing Rate <span id="breathingRateValue"
+                                class="value-display">0.007</span></label>
+                        <input type="range" id="breathingRate" min="0.001" max="0.1" step="0.001" value="0.007" />
+                    </div>
+                    <div>
+                        <label for="breathingAmplitude">Amplitude <span id="breathingAmplitudeValue"
+                                class="value-display">0.04</span></label>
+                        <input type="range" id="breathingAmplitude" min="0" max="0.5" step="0.01" value="0.04" />
+                    </div>
+                    <div>
+                        <label for="breathingOffset">Base Rest Length <span id="breathingOffsetValue"
+                                class="value-display">0.92</span></label>
+                        <input type="range" id="breathingOffset" min="0.5" max="1.5" step="0.01" value="0.92" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Foot Behavior</h3>
+                <div>
+                    <label for="gaitPattern">Gait Pattern</label>
+                    <select id="gaitPattern">
+                        <option value="sequential" selected>Sequential</option>
+                        <option value="paired">Paired</option>
+                        <option value="sidewinder">Sidewinder</option>
+                    </select>
+                </div>
+                <div id="seekingFeetControl">
+                    <label for="numSeekingFeet">Feet Moving at Once <span id="numSeekingFeetValue"
+                            class="value-display">2</span></label>
+                    <input type="range" id="numSeekingFeet" min="1" max="6" step="1" value="2" />
+                </div>
+                <div id="waveDelayControl" style="display: none;">
+                    <label for="waveDelay">Wave Delay (s) <span id="waveDelayValue"
+                            class="value-display">0.08</span></label>
+                    <input type="range" id="waveDelay" min="0" max="0.35" step="0.01" value="0.08" />
+                </div>
+                <div>
+                    <label for="footCoordination">Foot Coordination <span id="footCoordinationValue"
+                            class="value-display">0.00</span></label>
+                    <input type="range" id="footCoordination" min="0.0" max="1.0" step="0.01" value="0.0" />
+                </div>
+                <div>
+                    <label for="stepCooldown">Step Cooldown (s) <span id="stepCooldownValue"
+                            class="value-display">2.00</span></label>
+                    <input type="range" id="stepCooldown" min="0" max="2" step="0.05" value="2" />
+                </div>
+                <div>
+                    <label for="targetAttraction">Step Pull <span id="targetAttractionValue"
+                            class="value-display">0.05</span></label>
+                    <input type="range" id="targetAttraction" min="0.01" max="0.2" step="0.01" value="0.05" />
+                </div>
+                <div>
+                    <label for="stepDuration">Step Duration (s) <span id="stepDurationValue"
+                            class="value-display">5.0</span></label>
+                    <input type="range" id="stepDuration" min="0.8" max="5" step="0.1" value="5" />
+                </div>
+                <div>
+                    <label for="stepHeight">Step Height <span id="stepHeightValue"
+                            class="value-display">68</span></label>
+                    <input type="range" id="stepHeight" min="10" max="80" step="1" value="68" />
+                </div>
+                <div>
+                    <label for="wobbleStrength">Step Wobble <span id="wobbleStrengthValue"
+                            class="value-display">36</span></label>
+                    <input type="range" id="wobbleStrength" min="0" max="50" step="1" value="36" />
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Export</h3>
+                <button id="copyParamsBtn">Copy Parameters</button>
+            </div>
+
+            </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Visible statement: search engines read only this text, not the canvas. -->
+    <div class="statement">
+        <p lang="en">Ink creatures made of points and springs wander, shiver and leave their imprints.</p>
+    </div>
+
+    <footer>
+        <a href="https://linktr.ee/ivraie">linktr.ee/ivraie</a>
+        <a href="https://www.instagram.com/ant_______1/">Instagram</a>
+    </footer>
+
+    <script src="color-picker.js"></script>
+    <script src="control-help.js"></script>
+    <script src="sim-core.js"></script>
+    <script src="sim.js"></script>
+    <script src="renderer-webgl.js"></script>
+    <script src="sim-worker-client.js"></script>
+    <script src="debug-overlay.js"></script>
+    <script src="tour.js"></script>
+</body>
+
+</html>
