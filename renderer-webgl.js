@@ -121,9 +121,9 @@
     }
     // Lines thinner than 1px: 1px wide with proportional alpha, which is how
     // Canvas 2D renders hairlines.
-    function pushLine(a, b, width, c) {
-        if (width < 1) push(a.x, a.y, b.x, b.y, 1, 0, [c[0], c[1], c[2], c[3] * width]);
-        else push(a.x, a.y, b.x, b.y, width, 0, c);
+    function pushLine(ax, ay, bx, by, width, c) {
+        if (width < 1) push(ax, ay, bx, by, 1, 0, [c[0], c[1], c[2], c[3] * width]);
+        else push(ax, ay, bx, by, width, 0, c);
     }
     // Numeric twin of liveInk() in sim.js.
     function ink(base, restLightness, intensity, alpha) {
@@ -155,30 +155,36 @@
             }
             feet.length = 0;
             const tendrilColor = ink(base, 0, 0, 0.5 * fadeAlpha);
-            for (const s of c.springs) {
-                if (time < s.p1.birthTime || time < s.p2.birthTime) continue;
-                if (s.isHair) {
-                    pushLine(s.p1, s.p2, 1, tendrilColor);
+            // The creature's flat arrays (see Creature.packArrays); batches
+            // hold spring or point indices.
+            const { x: X, y: Y, pulse: P } = c.store;
+            const { springA: A, springB: B, pointBirth: BIRTH } = c;
+            for (let k = 0, m = A.length; k < m; k++) {
+                const a = A[k];
+                const b = B[k];
+                if (time < BIRTH[a] || time < BIRTH[b]) continue;
+                if (c.springIsHair[k]) {
+                    pushLine(X[a], Y[a], X[b], Y[b], 1, tendrilColor);
                     continue;
                 }
-                const pulse = (s.p1.pulseMagnitude + s.p2.pulseMagnitude) / 2;
+                const pulse = (P[a] + P[b]) / 2;
                 const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
-                springB[Math.floor(shade * SHADE_STEPS)].push(s);
+                springB[Math.floor(shade * SHADE_STEPS)].push(k);
             }
-            for (const p of c.points) {
-                if (p.isHair || time < p.birthTime) continue;
-                if (p.isFoot) {
-                    feet.push(p);
+            for (let i = 0, count = c.points.length; i < count; i++) {
+                if (c.isHairFlags[i] || time < BIRTH[i]) continue;
+                if (c.isFootFlags[i]) {
+                    feet.push(i);
                     continue;
                 }
                 if (pointBaseSize <= 0) continue; // Point Size 0: no dots
-                const pulse = p.pulseMagnitude;
+                const pulse = P[i];
                 const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
                 const swell = 1 + pulse * shiverEffectMultiplier * POINT_SHIVER_SWELL;
-                const variation = 1 + p.sizeRandomizer * pointSizeVariation;
+                const variation = 1 + c.pointSizeRandom[i] * pointSizeVariation;
                 const r = Math.min(MAX_POINT_RADIUS, Math.max(0.1, pointBaseSize * swell * variation));
                 const k = Math.floor(shade * SHADE_STEPS);
-                pointB[k].push(p);
+                pointB[k].push(i);
                 radiusB[k].push(r);
             }
             const baseLineWidth = Math.max(0.2, 2.8 - c.points.length / 25);
@@ -187,20 +193,20 @@
                 const si = k / SHADE_STEPS;
                 const width = Math.min(baseLineWidth + si * (baseLineWidth * 3.5), maxLineThickness);
                 const color = ink(base, 80 / 255, si, fadeAlpha);
-                for (const s of springB[k]) pushLine(s.p1, s.p2, width, color);
+                for (const s of springB[k]) pushLine(X[A[s]], Y[A[s]], X[B[s]], Y[B[s]], width, color);
             }
             for (let k = 0; k <= SHADE_STEPS; k++) {
                 if (pointB[k].length === 0) continue;
                 const color = ink(base, 180 / 255, k / SHADE_STEPS, fadeAlpha);
                 for (let i = 0; i < pointB[k].length; i++) {
                     const p = pointB[k][i];
-                    push(p.x, p.y, 0, 0, radiusB[k][i], 1, color);
+                    push(X[p], Y[p], 0, 0, radiusB[k][i], 1, color);
                 }
             }
             if (feet.length) {
                 const color = ink(base, 0, 0, fadeAlpha);
                 const footRadius = pointBaseSize + 2;
-                for (const p of feet) push(p.x, p.y, 0, 0, footRadius, 1, color);
+                for (const i of feet) push(X[i], Y[i], 0, 0, footRadius, 1, color);
             }
         }
         state.instances = n;
