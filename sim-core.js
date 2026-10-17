@@ -175,6 +175,104 @@ let gravity = 0.17; // Gravity Magnitude slider (fixed) or tilt sensitivity
 let gravityX = 0;
 let gravityY = gravity;
 
+/**
+ * Every setting, by name, with its getter and setter: the page sends them to
+ * the worker this way (see sim-worker-client.js).
+ */
+const SIM_SETTINGS = {
+    newCreatureChar: [() => newCreatureChar, (v) => (newCreatureChar = v)],
+    damping: [() => damping, (v) => (damping = v)],
+    springStiffness: [() => springStiffness, (v) => (springStiffness = v)],
+    shiverIntensityFactor: [() => shiverIntensityFactor, (v) => (shiverIntensityFactor = v)],
+    shiverPropagationFactor: [() => shiverPropagationFactor, (v) => (shiverPropagationFactor = v)],
+    shiverEffectMultiplier: [() => shiverEffectMultiplier, (v) => (shiverEffectMultiplier = v)],
+    shiverDurationFactor: [() => shiverDurationFactor, (v) => (shiverDurationFactor = v)],
+    shiverPropagationSpeed: [() => shiverPropagationSpeed, (v) => (shiverPropagationSpeed = v)],
+    numSeekingFeet: [() => numSeekingFeet, (v) => (numSeekingFeet = v)],
+    footCoordinationFactor: [() => footCoordinationFactor, (v) => (footCoordinationFactor = v)],
+    stepCooldown: [() => stepCooldown, (v) => (stepCooldown = v)],
+    stepDuration: [() => stepDuration, (v) => (stepDuration = v)],
+    stepHeight: [() => stepHeight, (v) => (stepHeight = v)],
+    wobbleStrength: [() => wobbleStrength, (v) => (wobbleStrength = v)],
+    targetAttraction: [() => targetAttraction, (v) => (targetAttraction = v)],
+    gaitPattern: [() => gaitPattern, (v) => (gaitPattern = v)],
+    waveDelay: [() => waveDelay, (v) => (waveDelay = v)],
+    drawMode: [() => drawMode, (v) => (drawMode = v)],
+    pointBaseSize: [() => pointBaseSize, (v) => (pointBaseSize = v)],
+    letterToDraw: [() => letterToDraw, (v) => (letterToDraw = v)],
+    maxLineThickness: [() => maxLineThickness, (v) => (maxLineThickness = v)],
+    minShade: [() => minShade, (v) => (minShade = v)],
+    pointSizeVariation: [() => pointSizeVariation, (v) => (pointSizeVariation = v)],
+    enableBreathing: [() => enableBreathing, (v) => (enableBreathing = v)],
+    breathingRate: [() => breathingRate, (v) => (breathingRate = v)],
+    breathingAmplitude: [() => breathingAmplitude, (v) => (breathingAmplitude = v)],
+    breathingOffset: [() => breathingOffset, (v) => (breathingOffset = v)],
+    enableAging: [() => enableAging, (v) => (enableAging = v)],
+    agingMode: [() => agingMode, (v) => (agingMode = v)],
+    lifespanSeconds: [() => lifespanSeconds, (v) => (lifespanSeconds = v)],
+    maxFootsteps: [() => maxFootsteps, (v) => (maxFootsteps = v)],
+    deathEffect: [() => deathEffect, (v) => (deathEffect = v)],
+    enableProgressiveAppearance: [() => enableProgressiveAppearance, (v) => (enableProgressiveAppearance = v)],
+    growthSpeed: [() => growthSpeed, (v) => (growthSpeed = v)],
+    creatureShape: [() => creatureShape, (v) => (creatureShape = v)],
+    pointDensity: [() => pointDensity, (v) => (pointDensity = v)],
+    numFeet: [() => numFeet, (v) => (numFeet = v)],
+    restLengthFactor: [() => restLengthFactor, (v) => (restLengthFactor = v)],
+    useRandomPlacement: [() => useRandomPlacement, (v) => (useRandomPlacement = v)],
+    pruneUnfootedPoints: [() => pruneUnfootedPoints, (v) => (pruneUnfootedPoints = v)],
+    minPointsPerFoot: [() => minPointsPerFoot, (v) => (minPointsPerFoot = v)],
+    enableTendrils: [() => enableTendrils, (v) => (enableTendrils = v)],
+    numTendrils: [() => numTendrils, (v) => (numTendrils = v)],
+    tendrilLength: [() => tendrilLength, (v) => (tendrilLength = v)],
+    tendrilStiffness: [() => tendrilStiffness, (v) => (tendrilStiffness = v)],
+    placeFeetOnTendrils: [() => placeFeetOnTendrils, (v) => (placeFeetOnTendrils = v)],
+    shiversOnTendrils: [() => shiversOnTendrils, (v) => (shiversOnTendrils = v)],
+    tendrilQuality: [() => tendrilQuality, (v) => (tendrilQuality = v)],
+    tendrilLengthVariation: [() => tendrilLengthVariation, (v) => (tendrilLengthVariation = v)],
+    autoAddDelaySeconds: [() => autoAddDelaySeconds, (v) => (autoAddDelaySeconds = v)],
+    autoMode: [() => autoMode, (v) => (autoMode = v)],
+    enableCreatureLimit: [() => enableCreatureLimit, (v) => (enableCreatureLimit = v)],
+    maxCreatures: [() => maxCreatures, (v) => (maxCreatures = v)],
+    enablePointLimit: [() => enablePointLimit, (v) => (enablePointLimit = v)],
+    maxPoints: [() => maxPoints, (v) => (maxPoints = v)],
+    randomizeMode: [() => randomizeMode, (v) => (randomizeMode = v)],
+    imprintShade: [() => imprintShade, (v) => (imprintShade = v)],
+    imprintColor: [() => imprintColor, (v) => (imprintColor = v)],
+    creatureColor: [() => creatureColor, (v) => (creatureColor = v)],
+    shiverColor: [() => shiverColor, (v) => (shiverColor = v)],
+    imprintMatchesCreature: [() => imprintMatchesCreature, (v) => (imprintMatchesCreature = v)],
+    randomCreatureColor: [() => randomCreatureColor, (v) => (randomCreatureColor = v)],
+    imprintBlendMode: [() => imprintBlendMode, (v) => (imprintBlendMode = v)],
+    usePerCreatureImprint: [() => usePerCreatureImprint, (v) => (usePerCreatureImprint = v)],
+    printOnShiver: [() => printOnShiver, (v) => (printOnShiver = v)],
+    keepOnScreen: [() => keepOnScreen, (v) => (keepOnScreen = v)],
+    burstSize: [() => burstSize, (v) => (burstSize = v)],
+    burstSpreadSeconds: [() => burstSpreadSeconds, (v) => (burstSpreadSeconds = v)],
+    burstForce: [() => burstForce, (v) => (burstForce = v)],
+    burstKeyOrigin: [() => burstKeyOrigin, (v) => (burstKeyOrigin = v)],
+    darkPaper: [() => darkPaper, (v) => (darkPaper = v)],
+    fadeImprints: [() => fadeImprints, (v) => (fadeImprints = v)],
+    fadeTimeSeconds: [() => fadeTimeSeconds, (v) => (fadeTimeSeconds = v)],
+    fadeAmount: [() => fadeAmount, (v) => (fadeAmount = v)],
+    blendFadeLayers: [() => blendFadeLayers, (v) => (blendFadeLayers = v)],
+    printIntervalMs: [() => printIntervalMs, (v) => (printIntervalMs = v)],
+    printIntervalRandomness: [() => printIntervalRandomness, (v) => (printIntervalRandomness = v)],
+    imprintShadeVariation: [() => imprintShadeVariation, (v) => (imprintShadeVariation = v)],
+    gravity: [() => gravity, (v) => (gravity = v)],
+    gravityX: [() => gravityX, (v) => (gravityX = v)],
+    gravityY: [() => gravityY, (v) => (gravityY = v)],
+};
+
+function getSimSettings() {
+    const out = {};
+    for (const name in SIM_SETTINGS) out[name] = SIM_SETTINGS[name][0]();
+    return out;
+}
+
+function setSimSettings(values) {
+    for (const name in values) SIM_SETTINGS[name]?.[1](values[name]);
+}
+
 // =================================================================
 //                         SHARED POINT POOL
 // =================================================================

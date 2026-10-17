@@ -171,7 +171,7 @@
                 const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
                 springB[Math.floor(shade * SHADE_STEPS)].push(k);
             }
-            for (let i = 0, count = c.points.length; i < count; i++) {
+            for (let i = 0, count = c.store.x.length; i < count; i++) {
                 if (c.isHairFlags[i] || time < BIRTH[i]) continue;
                 if (c.isFootFlags[i]) {
                     feet.push(i);
@@ -187,7 +187,7 @@
                 pointB[k].push(i);
                 radiusB[k].push(r);
             }
-            const baseLineWidth = Math.max(0.2, 2.8 - c.points.length / 25);
+            const baseLineWidth = Math.max(0.2, 2.8 - c.store.x.length / 25);
             for (let k = 0; k <= SHADE_STEPS; k++) {
                 if (springB[k].length === 0) continue;
                 const si = k / SHADE_STEPS;
