@@ -1,6 +1,6 @@
-// Debug panel (D, or ?debug in the address): frame rate, renderer, where the
-// simulation runs, its speed and costs, points and creatures, screen. Top
-// left, high contrast, updated four times a second.
+// Debug panel (D, three-finger tap, or ?debug in the address): frame rate,
+// renderer, where the simulation runs, its speed and costs, points and
+// creatures, screen. Top left, high contrast, updated four times a second.
 (function () {
     // Its own styles, so the panel never depends on a cached style.css.
     // Readable over any drawing, above the dark paper layer (never inverted).
@@ -17,7 +17,7 @@
           color: #f2f2f2;
           font: 14px/1.5 ui-monospace, Consolas, Menlo, monospace;
           font-variant-numeric: tabular-nums;
-          pointer-events: none;
+          cursor: pointer; /* a tap or click hides it */
           max-width: calc(100vw - 24px);
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
         }
@@ -94,6 +94,10 @@
 
     let last = { at: performance.now(), time, replies: 0, workerMs: 0, cost: { ...cost } };
 
+    const HINT = matchMedia('(pointer: coarse)').matches
+        ? 'tap to hide · 3-finger tap shows it again'
+        : 'D or click to hide · G renderer · B burst';
+
     // Value classes: ok, warn (amber), bad (red).
     const level = (value, warn, bad) => (value >= bad ? 'bad' : value >= warn ? 'warn' : '');
     const row = (label, value, cls = '') => `<dt>${label}</dt><dd class="${cls}">${value}</dd>`;
@@ -156,7 +160,7 @@
             row('screen', `${simSize.width}×${simSize.height} · ×${devicePixelRatio.toFixed(2)}`) +
             row('step', time.toLocaleString('en')) +
             (switches.length ? row('on', switches.join(' · ')) : '') +
-            `</dl><p>D hide · G renderer · B burst</p>`;
+            `</dl><p>${HINT}</p>`;
 
         last.at = now;
         last.time = time;
@@ -192,5 +196,15 @@
     } catch (e) {
         /* storage unavailable */
     }
-    if (new URLSearchParams(location.search).has('debug') || remembered) setVisible(true);
+    // Touch: a tap on the panel hides it; a three-finger tap anywhere shows
+    // or hides it.
+    panel.addEventListener('click', () => setVisible(false));
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 3) setVisible(panel.hidden);
+    }, { passive: true });
+
+    // ?debug opens it, ?debug=0 closes it; otherwise as last time.
+    const param = new URLSearchParams(location.search).get('debug');
+    if (param === '0') setVisible(false);
+    else if (param !== null || remembered) setVisible(true);
 })();

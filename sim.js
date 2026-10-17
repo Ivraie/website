@@ -1272,7 +1272,7 @@ function setupInteractionHandlers() {
     pressRing.className = 'press-ring';
     document.body.appendChild(pressRing);
     const onPaper = (el) =>
-        !el.closest('#title-container h1, button, a, input, select, label, .controls, .cp-card');
+        !el.closest('#title-container h1, button, a, input, select, label, .controls, .cp-card, #debug-overlay');
     const cancelPress = () => {
         if (!press) return;
         clearTimeout(press.timer);
