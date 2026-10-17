@@ -1,10 +1,13 @@
-// Worker mode (?worker): the simulation runs in sim-worker.js and the page
-// only draws. The page keeps light copies of the creatures (CreatureView)
-// that the usual drawing code reads, replays the worker's events in order
-// (step ticks for the fading imprints, prints), and sends the settings, the
-// screen size and commands (add, burst, start over...) with each request.
+// Worker mode (the default; ?page keeps the simulation on the page): the
+// simulation runs in sim-worker.js and the page only draws. The page keeps
+// light copies of the creatures (CreatureView) that the usual drawing code
+// reads, replays the worker's events in order (step ticks for the fading
+// imprints, prints), and sends the settings, the screen size and commands
+// (add, burst, start over...) with each request. If the worker cannot run
+// or fails, the simulation goes back to the page and starts over.
 (function () {
-    if (!new URLSearchParams(location.search).has('worker') || typeof Worker === 'undefined') return;
+    const params = new URLSearchParams(location.search);
+    if (params.has('page') || params.get('worker') === '0' || typeof Worker === 'undefined') return;
 
     const MAX_PENDING_STEPS = MAX_STEPS_PER_FRAME * 2; // more: the simulation slows down
     const worker = new Worker('sim-worker.js');
@@ -34,6 +37,7 @@
     let lastSettings = '';
     let currentPool = null; // the pool copy the creature views read
     let returnBuffers = null; // the one before, handed back to the worker
+    let failed = false;
     const stats = { replies: 0, simMs: 0, roundTripMs: 0, applyMs: 0 };
 
     function send(steps) {
@@ -110,7 +114,11 @@
         pending?.resolve(reply);
     };
     worker.onerror = (err) => {
+        if (failed) return;
+        failed = true;
         console.error('Simulation worker failed, back to the page:', err.message);
+        worker.terminate();
+        inFlight = null;
         Object.assign(window, original);
         window.ivraieSim.worker = false;
         init(false);
@@ -136,7 +144,7 @@
     // time; steps due meanwhile wait for the next one).
     const innerDraw = draw;
     draw = () => {
-        if (!inFlight && (pendingSteps > 0 || commands.length > 0)) {
+        if (!failed && !inFlight && (pendingSteps > 0 || commands.length > 0)) {
             const steps = pendingSteps;
             pendingSteps = 0;
             send(steps);

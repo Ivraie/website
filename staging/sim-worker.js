@@ -1,10 +1,17 @@
-// Runs the simulation (sim-core.js) off the page's thread. The page sends a
-// request with the settings, the screen size, commands and how many steps
-// to take; the worker steps and answers with what the page draws: every
-// creature's slice of the point pool (positions and shivers, copied into
-// transferred buffers), what happened during the steps (step ticks and
-// prints, in order) and, once per creature, its fixed data (springs, flags).
+// Runs the simulation (sim-core.js) off the page's thread, by default. The
+// page sends a request with the settings, the screen size, commands and how
+// many steps to take; the worker steps and answers with what the page
+// draws: every creature's slice of the point pool (positions and shivers,
+// copied into transferred buffers), what happened during the steps (step
+// ticks and prints, in order) and, once per creature, its fixed data
+// (springs, flags).
 importScripts('sim-core.js');
+
+// Letter shapes are measured on an OffscreenCanvas (missing before Safari
+// 16.4): without one, fail now so the page runs the simulation itself.
+if (typeof OffscreenCanvas === 'undefined' || !new OffscreenCanvas(1, 1).getContext('2d')) {
+    throw new Error('no OffscreenCanvas 2D in workers');
+}
 
 const ids = new WeakMap();
 let nextId = 1;

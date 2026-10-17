@@ -20,35 +20,47 @@
     window.ivraieRenderer = state;
 
     // ---------- GPU program: one quad per instance ----------
-    // kind 0 = line from a to b with a width; kind 1 = disc at a with a radius.
-    let prog, uViewport, vao, instBuf;
+    // Each instance: a, b, size and a color code. The code is a slot in the
+    // palette texture (block * 64 + slot): slots 0..21 are lines (0 tendrils,
+    // 1..21 springs by shade), 22..43 discs (22..42 dots by shade, 43 feet).
+    // A line has a width, a disc a radius.
+    let prog, uViewport, uPalette, vao, instBuf, paletteTex;
     function setupGL() {
         const vs = `#version 300 es
         layout(location=0) in vec2 corner;   // x: 0..1 along, y: -1..1 across
         layout(location=1) in vec4 ab;       // ax, ay, bx, by
-        layout(location=2) in vec2 sizeKind; // width or radius, kind
-        layout(location=3) in vec4 color;    // straight rgba
+        layout(location=2) in vec2 sizeCode; // width or radius, color code
         uniform vec2 viewport;
+        uniform highp sampler2D palette;     // straight rgba per slot, a row per block
         out vec2 vLocal; out float vHalf; out float vKind; out vec4 vColor;
         void main() {
+            int code = int(sizeCode.y + 0.5);
+            int slot = code & 63;
+            vec4 color = texelFetch(palette, ivec2(slot, code >> 6), 0);
             vec2 p;
-            if (sizeKind.y < 0.5) {
+            if (slot < 22) {
+                // Lines thinner than 1px: 1px wide with proportional alpha,
+                // which is how Canvas 2D renders hairlines.
+                float width = max(sizeCode.x, 1.0);
+                color.a *= min(sizeCode.x, 1.0);
                 vec2 a = ab.xy, b = ab.zw;
                 vec2 dir = b - a; float len = length(dir);
                 dir = len > 0.0 ? dir / len : vec2(1.0, 0.0);
                 vec2 n = vec2(-dir.y, dir.x);
-                float half_ = sizeKind.x * 0.5 + 0.5; // + antialiasing margin
+                float half_ = width * 0.5 + 0.5; // + antialiasing margin
                 p = mix(a, b, corner.x) + n * corner.y * half_;
                 vLocal = vec2(0.0, corner.y * half_);
-                vHalf = sizeKind.x * 0.5;
+                vHalf = width * 0.5;
+                vKind = 0.0;
             } else {
-                float r = sizeKind.x + 1.0;
+                float r = sizeCode.x + 1.0;
                 vec2 off = vec2(corner.x * 2.0 - 1.0, corner.y) * r;
                 p = ab.xy + off;
                 vLocal = off;
-                vHalf = sizeKind.x;
+                vHalf = sizeCode.x;
+                vKind = 1.0;
             }
-            vKind = sizeKind.y; vColor = color;
+            vColor = color;
             vec2 clip = p / viewport * 2.0 - 1.0;
             gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
         }`;
@@ -75,6 +87,7 @@
         gl.linkProgram(prog);
         if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
         uViewport = gl.getUniformLocation(prog, 'viewport');
+        uPalette = gl.getUniformLocation(prog, 'palette');
 
         vao = gl.createVertexArray();
         gl.bindVertexArray(vao);
@@ -91,56 +104,114 @@
         gl.enableVertexAttribArray(2);
         gl.vertexAttribPointer(2, 2, gl.FLOAT, false, bytes, 16);
         gl.vertexAttribDivisor(2, 1);
-        gl.enableVertexAttribArray(3);
-        gl.vertexAttribPointer(3, 4, gl.FLOAT, false, bytes, 24);
-        gl.vertexAttribDivisor(3, 1);
+
+        paletteTex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, paletteTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     }
 
     // ---------- Instances, filled from the creatures each frame ----------
-    const STRIDE = 10; // ax ay bx by size kind r g b a
-    let data = new Float32Array(STRIDE * 20000);
+    // Order per creature: tendrils, springs by shade (lightest first), dots
+    // by shade, feet; within a shade, in creature order. Written straight
+    // into one Float32Array; shades are sorted by counting into reused
+    // typed arrays. Colors go in the palette: a block of slots per creature
+    // color and fade, shared by the creatures that have the same.
+    const STRIDE = 6; // ax ay bx by size code
+    let data = new Float32Array(STRIDE * 40000);
     let n = 0;
-    function push(ax, ay, bx, by, size, kind, c) {
-        if ((n + 1) * STRIDE > data.length) {
-            const bigger = new Float32Array(data.length * 2);
-            bigger.set(data);
+    const NONE = 255; // not drawn in a shade (unborn, tendril, foot...)
+    const SHADES = SHADE_STEPS + 1;
+    let keys = new Uint8Array(4096); // shade of each spring or point
+    let order = new Int32Array(4096); // indices sorted by shade
+    let radii = new Float64Array(4096); // dot radius of each point
+    const counts = new Int32Array(SHADES);
+    const starts = new Int32Array(SHADES);
+    const SLOTS = 44; // per block: 0 tendril, 1..21 springs, 22..42 dots, 43 feet
+    const SLOT_SPRING = 1;
+    const SLOT_DOT = 22;
+    const SLOT_FOOT = 43;
+    let palette = new Float32Array(SLOTS * 4 * 8);
+    let blocks = 0;
+    const blockOf = new Map(); // 'r,g,b,fade' -> block, for this frame
+
+    function reserve(instances, items) {
+        if ((n + instances) * STRIDE > data.length) {
+            const bigger = new Float32Array(Math.max(data.length * 2, (n + instances) * STRIDE));
+            bigger.set(data.subarray(0, n * STRIDE));
             data = bigger;
         }
+        if (items > keys.length) {
+            const size = Math.max(items, keys.length * 2);
+            keys = new Uint8Array(size);
+            order = new Int32Array(size);
+            radii = new Float64Array(size);
+        }
+    }
+    // Numeric twin of liveInk() in sim.js, into a palette slot.
+    function ink(o, base, restLightness, intensity, alpha) {
+        const mix = (c, s) => {
+            const rest = c + (255 - c) * restLightness;
+            return Math.round(rest + (s - rest) * intensity) / 255;
+        };
+        palette[o] = mix(base.r, shiverRgb.r);
+        palette[o + 1] = mix(base.g, shiverRgb.g);
+        palette[o + 2] = mix(base.b, shiverRgb.b);
+        palette[o + 3] = alpha;
+    }
+    // The palette block for a creature color and fade, made on first use.
+    function paletteBlock(base, fadeAlpha) {
+        const key = `${base.r},${base.g},${base.b},${fadeAlpha}`;
+        let block = blockOf.get(key);
+        if (block !== undefined) return block;
+        block = blocks++;
+        blockOf.set(key, block);
+        if (blocks * SLOTS * 4 > palette.length) {
+            const bigger = new Float32Array(palette.length * 2);
+            bigger.set(palette);
+            palette = bigger;
+        }
+        const o = block * SLOTS * 4;
+        ink(o, base, 0, 0, 0.5 * fadeAlpha);
+        for (let k = 0; k < SHADES; k++) {
+            ink(o + (SLOT_SPRING + k) * 4, base, 80 / 255, k / SHADE_STEPS, fadeAlpha);
+            ink(o + (SLOT_DOT + k) * 4, base, 180 / 255, k / SHADE_STEPS, fadeAlpha);
+        }
+        ink(o + SLOT_FOOT * 4, base, 0, 0, fadeAlpha);
+        return block;
+    }
+    // Groups the indices with a shade (keys[0..count)) by shade, keeping
+    // their order: order[starts[k] .. starts[k] + counts[k]).
+    function sortByShade(count) {
+        let at = 0;
+        for (let k = 0; k < SHADES; k++) {
+            starts[k] = at;
+            at += counts[k];
+        }
+        for (let i = 0; i < count; i++) {
+            const k = keys[i];
+            if (k !== NONE) order[starts[k]++] = i;
+        }
+        for (let k = 0; k < SHADES; k++) starts[k] -= counts[k];
+    }
+    // One instance: a line (a to b, width) or a disc (at a, radius).
+    function put(ax, ay, bx, by, size, code) {
         const o = n * STRIDE;
         data[o] = ax;
         data[o + 1] = ay;
         data[o + 2] = bx;
         data[o + 3] = by;
         data[o + 4] = size;
-        data[o + 5] = kind;
-        data[o + 6] = c[0];
-        data[o + 7] = c[1];
-        data[o + 8] = c[2];
-        data[o + 9] = c[3];
+        data[o + 5] = code;
         n++;
     }
-    // Lines thinner than 1px: 1px wide with proportional alpha, which is how
-    // Canvas 2D renders hairlines.
-    function pushLine(ax, ay, bx, by, width, c) {
-        if (width < 1) push(ax, ay, bx, by, 1, 0, [c[0], c[1], c[2], c[3] * width]);
-        else push(ax, ay, bx, by, width, 0, c);
-    }
-    // Numeric twin of liveInk() in sim.js.
-    function ink(base, restLightness, intensity, alpha) {
-        const mix = (c, s) => {
-            const rest = c + (255 - c) * restLightness;
-            return Math.round(rest + (s - rest) * intensity) / 255;
-        };
-        return [mix(base.r, shiverRgb.r), mix(base.g, shiverRgb.g), mix(base.b, shiverRgb.b), alpha];
-    }
-
-    const springB = Array.from({ length: SHADE_STEPS + 1 }, () => []);
-    const pointB = Array.from({ length: SHADE_STEPS + 1 }, () => []);
-    const radiusB = Array.from({ length: SHADE_STEPS + 1 }, () => []);
-    const feet = [];
 
     function fillInstances() {
         n = 0;
+        blocks = 0;
+        blockOf.clear();
         for (const c of creatures) {
             let fadeAlpha = 1;
             if (c.isDead && deathEffect === 'fade') {
@@ -148,69 +219,88 @@
                 if (fadeAlpha <= 0.01) continue;
             }
             const base = c.inkRgb || creatureRgb;
-            for (let k = 0; k <= SHADE_STEPS; k++) {
-                springB[k].length = 0;
-                pointB[k].length = 0;
-                radiusB[k].length = 0;
-            }
-            feet.length = 0;
-            const tendrilColor = ink(base, 0, 0, 0.5 * fadeAlpha);
-            // The creature's flat arrays (see Creature.packArrays); batches
-            // hold spring or point indices.
+            // The creature's flat arrays (see Creature.packArrays).
             const { x: X, y: Y, pulse: P } = c.store;
-            const { springA: A, springB: B, pointBirth: BIRTH } = c;
-            for (let k = 0, m = A.length; k < m; k++) {
+            const { springA: A, springB: B, springIsHair, pointBirth: BIRTH, isHairFlags, isFootFlags, pointSizeRandom } = c;
+            const m = A.length;
+            const count = X.length;
+            reserve(m + count, Math.max(m, count));
+            const code = paletteBlock(base, fadeAlpha) * 64;
+
+            // Springs: tendrils now, the others by shade.
+            counts.fill(0);
+            for (let k = 0; k < m; k++) {
                 const a = A[k];
                 const b = B[k];
-                if (time < BIRTH[a] || time < BIRTH[b]) continue;
-                if (c.springIsHair[k]) {
-                    pushLine(X[a], Y[a], X[b], Y[b], 1, tendrilColor);
-                    continue;
+                if (time < BIRTH[a] || time < BIRTH[b]) {
+                    keys[k] = NONE;
+                } else if (springIsHair[k]) {
+                    keys[k] = NONE;
+                    put(X[a], Y[a], X[b], Y[b], 1, code);
+                } else {
+                    const pulse = (P[a] + P[b]) / 2;
+                    const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
+                    const key = Math.floor(shade * SHADE_STEPS);
+                    keys[k] = key;
+                    counts[key]++;
                 }
-                const pulse = (P[a] + P[b]) / 2;
-                const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
-                springB[Math.floor(shade * SHADE_STEPS)].push(k);
             }
-            for (let i = 0, count = c.store.x.length; i < count; i++) {
-                if (c.isHairFlags[i] || time < BIRTH[i]) continue;
-                if (c.isFootFlags[i]) {
-                    feet.push(i);
+            sortByShade(m);
+            const baseLineWidth = Math.max(0.2, 2.8 - count / 25);
+            for (let k = 0; k < SHADES; k++) {
+                if (counts[k] === 0) continue;
+                const si = k / SHADE_STEPS;
+                const width = Math.min(baseLineWidth + si * (baseLineWidth * 3.5), maxLineThickness);
+                const slot = code + SLOT_SPRING + k;
+                for (let j = starts[k], end = j + counts[k]; j < end; j++) {
+                    const s = order[j];
+                    put(X[A[s]], Y[A[s]], X[B[s]], Y[B[s]], width, slot);
+                }
+            }
+
+            // Dots by shade (none at Point Size 0), then the feet.
+            counts.fill(0);
+            let feet = 0;
+            for (let i = 0; i < count; i++) {
+                keys[i] = NONE;
+                if (isHairFlags[i] || time < BIRTH[i]) continue;
+                if (isFootFlags[i]) {
+                    feet++;
                     continue;
                 }
-                if (pointBaseSize <= 0) continue; // Point Size 0: no dots
+                if (pointBaseSize <= 0) continue;
                 const pulse = P[i];
                 const shade = Math.min(1, Math.max(minShade, pulse * shiverEffectMultiplier));
                 const swell = 1 + pulse * shiverEffectMultiplier * POINT_SHIVER_SWELL;
-                const variation = 1 + c.pointSizeRandom[i] * pointSizeVariation;
-                const r = Math.min(MAX_POINT_RADIUS, Math.max(0.1, pointBaseSize * swell * variation));
-                const k = Math.floor(shade * SHADE_STEPS);
-                pointB[k].push(i);
-                radiusB[k].push(r);
+                const variation = 1 + pointSizeRandom[i] * pointSizeVariation;
+                radii[i] = Math.min(MAX_POINT_RADIUS, Math.max(0.1, pointBaseSize * swell * variation));
+                const key = Math.floor(shade * SHADE_STEPS);
+                keys[i] = key;
+                counts[key]++;
             }
-            const baseLineWidth = Math.max(0.2, 2.8 - c.store.x.length / 25);
-            for (let k = 0; k <= SHADE_STEPS; k++) {
-                if (springB[k].length === 0) continue;
-                const si = k / SHADE_STEPS;
-                const width = Math.min(baseLineWidth + si * (baseLineWidth * 3.5), maxLineThickness);
-                const color = ink(base, 80 / 255, si, fadeAlpha);
-                for (const s of springB[k]) pushLine(X[A[s]], Y[A[s]], X[B[s]], Y[B[s]], width, color);
-            }
-            for (let k = 0; k <= SHADE_STEPS; k++) {
-                if (pointB[k].length === 0) continue;
-                const color = ink(base, 180 / 255, k / SHADE_STEPS, fadeAlpha);
-                for (let i = 0; i < pointB[k].length; i++) {
-                    const p = pointB[k][i];
-                    push(X[p], Y[p], 0, 0, radiusB[k][i], 1, color);
+            sortByShade(count);
+            for (let k = 0; k < SHADES; k++) {
+                if (counts[k] === 0) continue;
+                const slot = code + SLOT_DOT + k;
+                for (let j = starts[k], end = j + counts[k]; j < end; j++) {
+                    const i = order[j];
+                    put(X[i], Y[i], 0, 0, radii[i], slot);
                 }
             }
-            if (feet.length) {
-                const color = ink(base, 0, 0, fadeAlpha);
+            if (feet > 0) {
                 const footRadius = pointBaseSize + 2;
-                for (const i of feet) push(X[i], Y[i], 0, 0, footRadius, 1, color);
+                const slot = code + SLOT_FOOT;
+                for (let i = 0; i < count; i++) {
+                    if (isFootFlags[i] && !isHairFlags[i] && time >= BIRTH[i]) put(X[i], Y[i], 0, 0, footRadius, slot);
+                }
             }
         }
         state.instances = n;
     }
+
+    // Tests: the instance data of the last frame, and the filling alone.
+    state.instanceData = () => data.slice(0, n * STRIDE);
+    state.fillInstances = fillInstances;
 
     function renderGL() {
         if (glCanvas.width !== canvas.width || glCanvas.height !== canvas.height) {
@@ -225,6 +315,10 @@
         gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         gl.useProgram(prog);
         gl.uniform2f(uViewport, glCanvas.width, glCanvas.height);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, paletteTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, SLOTS, Math.max(blocks, 1), 0, gl.RGBA, gl.FLOAT, palette.subarray(0, Math.max(blocks, 1) * SLOTS * 4));
+        gl.uniform1i(uPalette, 0);
         gl.bindVertexArray(vao);
         gl.bindBuffer(gl.ARRAY_BUFFER, instBuf);
         gl.bufferData(gl.ARRAY_BUFFER, data.subarray(0, n * STRIDE), gl.DYNAMIC_DRAW);
